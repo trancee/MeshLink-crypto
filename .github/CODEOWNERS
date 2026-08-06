@@ -1,0 +1,14 @@
+# Requires review from the listed owner(s) for changes to sensitive paths:
+# crypto, routing, and wire-format code; the design memos for those areas;
+# and the CI/hook files and governance documents that enforce this
+# constitution. See CONSTITUTION.md Quality Gates and Governance.
+
+# Crypto, routing, and wire-format code
+/meshlink/src/*/kotlin/ch/trancee/meshlink/crypto/ @trancee
+
+# CI and git-hook enforcement — protect the gates themselves
+/.github/workflows/ @trancee
+/.githooks/ @trancee
+
+# Governance documents
+/AGENTS.md @trancee
