@@ -1,0 +1,8 @@
+# detekt configuration for :crypto (ADR-0003, ticket 02).
+#
+# `buildUponDefaultConfig = true` (set in crypto/build.gradle.kts) keeps detekt's
+# built-in rule set active on top of this file; here we only opt the custom
+# crypto-constant-time rule set in so `@Secret`-sensitive code is statically gated.
+crypto-constant-time:
+  ConstantTimeRule:
+    active: true
