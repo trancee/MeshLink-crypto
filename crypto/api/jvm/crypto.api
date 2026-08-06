@@ -1,4 +1,4 @@
-public final class dev/omp/cryptokmp/VersionKt {
+public final class ch/trancee/meshlink/crypto/VersionKt {
 	public static final fun moduleVersion ()Ljava/lang/String;
 }
 

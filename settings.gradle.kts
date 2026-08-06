@@ -14,5 +14,5 @@ dependencyResolutionManagement {
   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 }
 
-rootProject.name = "crypto-kmp"
-include(":crypto-kmp")
+rootProject.name = "MeshLink-crypto"
+include(":crypto")

@@ -1,4 +1,4 @@
-package dev.omp.cryptokmp
+package ch.trancee.meshlink.crypto
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

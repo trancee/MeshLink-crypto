@@ -1,0 +1,9 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <ch.trancee.meshlink:crypto>
+final fun ch.trancee.meshlink.crypto/moduleVersion(): kotlin/String // ch.trancee.meshlink.crypto/moduleVersion|moduleVersion(){}[0]

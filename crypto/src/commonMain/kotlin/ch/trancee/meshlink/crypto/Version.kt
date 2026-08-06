@@ -1,4 +1,4 @@
-package dev.omp.cryptokmp
+package ch.trancee.meshlink.crypto
 
 /**
  * Public module version (scaffold smoke; exercised by [VersionTest] so the build toolchain —

@@ -9,7 +9,7 @@ plugins {
   alias(libs.plugins.dokka)
 }
 
-group = "dev.omp.cryptokmp"
+group = "ch.trancee.meshlink"
 
 version = "0.1.0-SNAPSHOT"
 
@@ -24,7 +24,7 @@ kotlin {
   // `android {}` extension). See:
   // https://developer.android.com/kotlin/multiplatform/plugin
   android {
-    namespace = "dev.omp.cryptokmp"
+    namespace = "ch.trancee.meshlink.crypto"
     compileSdk = 37
     minSdk = 21
     // targetSdk omitted: library module — AGP 9.x deprecated targetSdk in a
@@ -47,7 +47,7 @@ kotlin {
   // Binary compatibility validation via the KGP built-in ABI dumper (ADR-0007).
   // `abiValidation {}` enables it; `checkKotlinAbi`/`updateKotlinAbi` auto-wire to
   // `check`; `updateKotlinAbi` writes the reference dump (committed under
-  // crypto-kmp/api) so CI detects ABI drift. Experimental in KGP 2.4.10 — opted in
+  // crypto/api) so CI detects ABI drift. Experimental in KGP 2.4.10 — opted in
   // at file top via @OptIn(ExperimentalAbiValidation).
   // Docs: https://kotlinlang.org/docs/gradle-binary-compatibility-validation.html
   abiValidation {}
