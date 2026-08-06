@@ -1,0 +1,4 @@
+public final class dev/omp/cryptokmp/VersionKt {
+	public static final fun moduleVersion ()Ljava/lang/String;
+}
+
