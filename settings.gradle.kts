@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MeshLink-crypto"
 include(":crypto")
+include(":crypto-detekt-rules")

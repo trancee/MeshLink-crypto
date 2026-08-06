@@ -6,4 +6,8 @@
 // - Show declarations: true
 
 // Library unique name: <ch.trancee.meshlink:crypto>
+open annotation class ch.trancee.meshlink.crypto/Secret : kotlin/Annotation { // ch.trancee.meshlink.crypto/Secret|null[0]
+    constructor <init>() // ch.trancee.meshlink.crypto/Secret.<init>|<init>(){}[0]
+}
+
 final fun ch.trancee.meshlink.crypto/moduleVersion(): kotlin/String // ch.trancee.meshlink.crypto/moduleVersion|moduleVersion(){}[0]

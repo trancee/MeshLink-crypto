@@ -71,6 +71,14 @@ tasks
 // gradle/detekt.yml (with the ADR-0003 constant-time rule) lands in ticket 02.
 detekt {
   buildUponDefaultConfig = true
+  config.from(files("detekt.yml"))
+}
+
+dependencies {
+  // Custom detekt rule set enforcing constant-time discipline on :crypto's
+  // common sources (ADR-0003, ticket 02). Registered via the ServiceLoader in
+  // :crypto-detekt-rules and loaded into the detekt tasks below.
+  detektPlugins(project(":crypto-detekt-rules"))
 }
 
 val detektLintTasks = tasks.matching {

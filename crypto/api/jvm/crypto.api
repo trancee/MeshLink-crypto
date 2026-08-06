@@ -1,3 +1,6 @@
+public abstract interface annotation class ch/trancee/meshlink/crypto/Secret : java/lang/annotation/Annotation {
+}
+
 public final class ch/trancee/meshlink/crypto/VersionKt {
 	public static final fun moduleVersion ()Ljava/lang/String;
 }

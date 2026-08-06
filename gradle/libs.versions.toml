@@ -22,6 +22,12 @@ detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+# JVM subproject (host-only: compiles detekt custom rules).
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
 [libraries]
 # Pure-K crypto — no third-party runtime dependencies by design (ADR-0005).
+# Static-analysis host deps live under the `:crypto-detekt-rules` JVM subproject so the
+# shipped `:crypto` KMP module stays dependency-free. (ADR-0007 / ticket 02.)
+detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
+detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }
