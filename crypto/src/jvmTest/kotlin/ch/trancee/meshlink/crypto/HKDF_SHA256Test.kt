@@ -108,6 +108,18 @@ internal class HKDF_SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Test
+  fun `HKDF SHA-256 expand with known PRK produces correct OKM`() {
+    val prk = hex("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5")
+    val info = hex("f0f1f2f3f4f5f6f7f8f9")
+    assertContentEquals(
+        hex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"),
+        HKDF_SHA256.expand(prk, info, 42),
+    )
+  }
+
   // ------------------------------------------------------------------
   // Wycheproof HKDF-SHA256 vectors (correctness oracle, ADR-0003)
   // ------------------------------------------------------------------
