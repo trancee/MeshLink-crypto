@@ -61,4 +61,67 @@ class ConstantTimeRuleTest {
 
     assertEquals(0, subject.lint(code).size, "constant-time bitwise cswap must not be flagged")
   }
+
+  @Test
+  fun `field engine cswap with secret parameter name does not flag constant index access`() {
+    // Mirrors FieldElement.cswap: the secret name "bytes" appears in the file
+    // via fromBytes, but cswap uses a non-secret `bit` parameter with a loop
+    // index — no data-dependent branch or secret indexing.
+    val code =
+      """
+      import ch.trancee.meshlink.crypto.Secret
+
+      class FieldElement(private val limbs: LongArray) {
+        fun cswap(other: FieldElement, bit: Int) {
+          val mask = -bit.toLong()
+          for (i in 0 until 10) {
+            val diff = limbs[i] xor other.limbs[i]
+            limbs[i] = limbs[i] xor (diff and mask)
+            other.limbs[i] = other.limbs[i] xor (diff and mask)
+          }
+        }
+
+        companion object {
+          fun fromBytes(@Secret bytes: ByteArray): FieldElement {
+            val h = LongArray(10)
+            h[0] = bytes[0].toLong() and 0xFFL
+            h[1] = bytes[1].toLong() and 0xFFL
+            return FieldElement(h)
+          }
+        }
+      }
+      """.trimIndent()
+
+    assertEquals(0, subject.lint(code).size, "field engine cswap must not be flagged")
+  }
+
+  @Test
+  fun `field engine fe_mul with @Secret bytes parameter does not flag constant indexing`() {
+    // fe_mul indexes by loop variables and constant positions in the limbs array —
+    // the @Secret "bytes" parameter is never used as an index or branch condition.
+    val code =
+      """
+      import ch.trancee.meshlink.crypto.Secret
+
+      class FieldElement(private val limbs: LongArray) {
+        fun mul(other: FieldElement): LongArray {
+          val f0 = limbs[0]; val f1 = limbs[1]
+          val g0 = other.limbs[0]; val g1 = other.limbs[1]
+          val h = longArrayOf(f0 * g0, f1 * g1)
+          return h
+        }
+
+        companion object {
+          fun fromBytes(@Secret bytes: ByteArray): FieldElement {
+            val h = LongArray(10)
+            h[0] = bytes[0].toLong() and 0xFFL
+            h[9] = (bytes[31].toLong() and 0x7FL) shl 2
+            return FieldElement(h)
+          }
+        }
+      }
+      """.trimIndent()
+
+    assertEquals(0, subject.lint(code).size, "field engine fe_mul must not be flagged")
+  }
 }
