@@ -12,6 +12,7 @@ detekt = "2.0.0-alpha.6"
 kover = "0.9.9"
 spotless = "8.9.0"
 dokka = "2.2.0"
+kotlinx-benchmark = "0.4.17"
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -24,6 +25,8 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 # JVM subproject (host-only: compiles detekt custom rules).
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinxBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
+kotlinAllOpen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 
 [libraries]
 # Pure-K crypto — no third-party runtime dependencies by design (ADR-0005).
@@ -31,3 +34,5 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 # shipped `:crypto` KMP module stays dependency-free. (ADR-0007 / ticket 02.)
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
 detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }
+# Benchmark runtime — dev tooling only; not part of the shipped ABI.
+kotlinxBenchmarkRuntime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinx-benchmark" }

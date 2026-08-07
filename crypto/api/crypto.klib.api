@@ -10,4 +10,8 @@ open annotation class ch.trancee.meshlink.crypto/Secret : kotlin/Annotation { //
     constructor <init>() // ch.trancee.meshlink.crypto/Secret.<init>|<init>(){}[0]
 }
 
+final object ch.trancee.meshlink.crypto/SHA256 { // ch.trancee.meshlink.crypto/SHA256|null[0]
+    final fun digest(kotlin/ByteArray): kotlin/ByteArray // ch.trancee.meshlink.crypto/SHA256.digest|digest(kotlin.ByteArray){}[0]
+}
+
 final fun ch.trancee.meshlink.crypto/moduleVersion(): kotlin/String // ch.trancee.meshlink.crypto/moduleVersion|moduleVersion(){}[0]

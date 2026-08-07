@@ -12,5 +12,8 @@ local.properties
 # Logs
 *.log
 
+# Detekt baseline XMLs (generated per-source-set by detektBaseline* tasks)
+crypto/detekt-baseline-*.xml
+
 # Keep the Gradle wrapper jar tracked
 !gradle/wrapper/gradle-wrapper.jar

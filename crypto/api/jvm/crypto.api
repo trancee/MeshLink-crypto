@@ -1,3 +1,8 @@
+public final class ch/trancee/meshlink/crypto/SHA256 {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/SHA256;
+	public final fun digest ([B)[B
+}
+
 public abstract interface annotation class ch/trancee/meshlink/crypto/Secret : java/lang/annotation/Annotation {
 }
 

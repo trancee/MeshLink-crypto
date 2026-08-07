@@ -24,3 +24,18 @@ Per ADR-0007, the verification toolchain is:
 ## Kotlin version
 
 Use Kotlin 2.4.10 (latest stable KMP). No legacy toolchains.
+
+## Benchmarking
+
+JMH microbenchmarks live in `crypto/src/jvmBenchmark/` and are configured via the
+`benchmark {}` extension in `crypto/build.gradle.kts`. The `kotlinx-benchmark` plugin
+provides the `jvmBenchmarkBenchmark` task (JMH-backed, JSON config — do **not** pass
+JMH CLI args via `--args`, the plugin handles them).
+
+```bash
+# Run all benchmarks (warms up + measures per the config: 2 warmup + 3 measure iters)
+./gradlew :crypto:jvmBenchmarkBenchmark --rerun --no-build-cache
+```
+
+Benchmark dependencies are dev-only (see ADR-0005): `kotlinx-benchmark-runtime` is
+declared on the `jvmBenchmark` source set only, never on `commonMain`.

@@ -7,6 +7,8 @@ plugins {
   alias(libs.plugins.kover)
   alias(libs.plugins.spotless)
   alias(libs.plugins.dokka)
+  alias(libs.plugins.kotlinxBenchmark)
+  alias(libs.plugins.kotlinAllOpen)
 }
 
 group = "ch.trancee.meshlink"
@@ -17,7 +19,17 @@ kotlin {
   jvmToolchain(21)
 
   // JVM target.
-  jvm()
+  // Separate 'benchmark' compilation for JMH microbenchmarks (kotlinx-benchmark guide:
+  // "Setting Up a Separate Source Set for Benchmarks"). associateWith links the
+  // benchmark compilation to 'main' so benchmark code can access library internals.
+  jvm {
+    val jvmTarget = this
+    compilations {
+      create("benchmark") {
+        associateWith(jvmTarget.compilations.getByName("main"))
+      }
+    }
+  }
 
   // Android target — under the AGP-9 Kotlin Multiplatform library plugin, the AGP
   // android config lives INSIDE `kotlin { android { } }` (there is no top-level
@@ -40,6 +52,13 @@ kotlin {
     getByName("commonTest") {
       dependencies {
         implementation(kotlin("test"))
+      }
+    }
+    // Benchmark source set — depends on kotlinx-benchmark-runtime for annotations.
+    // Not part of the shipped library: only the 'benchmark' compilation uses it.
+    getByName("jvmBenchmark") {
+      dependencies {
+        implementation(libs.kotlinxBenchmarkRuntime)
       }
     }
   }
@@ -85,8 +104,30 @@ val detektLintTasks = tasks.matching {
   it.name.startsWith("detekt") &&
       (it.name.endsWith("SourceSet") ||
           it.name == "detektMainAndroid" ||
-          it.name == "detektTestJvm")
+          it.name == "detektTestJvm") &&
+      // Exclude benchmark source sets from detekt — JMH annotation-heavy code
+      // would trip style rules (MaxLineLength, MagicNumber, etc.).
+      !it.name.contains("Benchmark") &&
+      // Exclude baseline-generation tasks: they're prerequisites, not linters.
+      !it.name.contains("Baseline")
 }
+
+// Fix Gradle 9.6 implicit-dependency validation: detekt's baseline tasks
+// produce XML files consumed by the lint tasks without declaring the dependency.
+// Wire the dependency explicitly so Gradle 9 doesn't reject the task graph.
+tasks
+    .matching {
+      it.name.startsWith("detekt") &&
+          !it.name.startsWith("detektBaseline") &&
+          (it.name.endsWith("SourceSet") ||
+              it.name == "detektMainAndroid" ||
+              it.name == "detektTestJvm") &&
+          !it.name.contains("Benchmark")
+    }
+    .configureEach {
+      val baselineTaskName = "detektBaseline${name.removePrefix("detekt")}"
+      dependsOn(baselineTaskName)
+    }
 
 // kover (ADR-0007): 100% line + branch coverage on the pure-K JVM path.
 // `total { xml { onCheck = true }; verify { rule {} } }` auto-wires the koverVerify
@@ -94,6 +135,13 @@ val detektLintTasks = tasks.matching {
 kover {
   reports {
     total {
+      // Exclude benchmark code from coverage: benchmarks are dev-only tooling
+      // (ADR-0005) and have no tests. Including them would drop coverage below the 100% gate.
+      filters {
+        excludes {
+          classes("ch.trancee.meshlink.crypto.SHA256Benchmark")
+        }
+      }
       xml { onCheck = true }
       html { onCheck = true }
       verify {
@@ -112,6 +160,30 @@ tasks.named("koverXmlReport") {
 
 tasks.named("check") {
   dependsOn(detektLintTasks)
+}
+
+// allopen: JMH generates subclasses of benchmark classes at runtime;
+// the plugin opens any class annotated with @State so JMH can subclass it.
+// (Without this, Kotlin 'final' classes crash JMH's bytecode generation.)
+allOpen {
+  annotation("org.openjdk.jmh.annotations.State")
+}
+
+// kotlinx-benchmark (ticket 03): JMH-backed microbenchmarks for JVM.
+// The target name must match the source set name ('jvmBenchmark') when using
+// a separate compilation — see the plugin's "Separate source set for benchmarks" guide.
+benchmark {
+  configurations {
+    named("main") {
+      warmups = 2
+      iterations = 3
+      iterationTime = 1
+      iterationTimeUnit = "SECONDS"
+    }
+  }
+  targets {
+    register("jvmBenchmark") {}
+  }
 }
 
 // Spotless + ktfmt: the single owner of Kotlin style (ADR-0007).
