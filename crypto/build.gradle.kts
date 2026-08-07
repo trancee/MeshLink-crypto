@@ -140,6 +140,7 @@ kover {
       filters {
         excludes {
           classes("ch.trancee.meshlink.crypto.SHA256Benchmark")
+          classes("ch.trancee.meshlink.crypto.SHA512Benchmark")
         }
       }
       xml { onCheck = true }
