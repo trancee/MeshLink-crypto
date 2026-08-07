@@ -10,6 +10,17 @@ A Kotlin Multiplatform (KMP) cryptography library: pure-Kotlin, constant-time im
 - **GitHub**: Use the `gh` CLI for issues, PRs, and workflow runs.
 - **Git commits**: Always ask before committing. Prepare Conventional Commits after each unit of work, pending your approval.
 
+## Documentation
+
+Write documentation in ASD-STE100 Simplified Technical English.
+
+- Use short sentences. One idea per sentence.
+- State one fact per sentence.
+- Use active voice.
+- Use simple, approved words. Avoid jargon.
+- Use the simple present for instructions. Use the simple past for descriptions.
+- Avoid vague words and nominalizations.
+
 ## Workflow
 
 Follow the 5-step agent workflow:

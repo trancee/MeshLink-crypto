@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# git pre-commit hook (ADR-0009)
+#
+# Purpose:
+#   Auto-surface a before/after JMH comparison when a commit touches a pure-K
+#   crypto primitive. This is a developer aid, not a hard gate.
+#
+# Why non-blocking:
+#   The JVM is not deterministic. CI does not gate on the comparison (ADR-0009).
+#   The human records the delta in the PR. The review gates the merge.
+#
+# Skip:
+#   SKIP_BENCH_HOOK=1 git commit ...   -> comparison skipped
+#   git commit --no-verify            -> hook skipped
+#
+# Activate (one time per clone):
+#   git config core.hooksPath .githooks
+
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 0
+cd "$ROOT" || exit 0
+
+# Skip on request.
+if [[ "${SKIP_BENCH_HOOK:-0}" == "1" ]]; then
+  echo "[bench] SKIP_BENCH_HOOK=1 -> comparison skipped" >&2
+  exit 0
+fi
+
+# Only fire when staged changes touch crypto primitive sources.
+touched=()
+while IFS= read -r line; do
+  [[ -n "$line" ]] && touched+=("$line")
+done < <(git diff --cached --name-only -- 'crypto/src/commonMain/kotlin/ch/trancee/meshlink/crypto/' 2>/dev/null || true)
+if [[ ${#touched[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+echo "[bench] primitive files staged:" >&2
+printf '  %s\n' "${touched[@]}" >&2
+echo "[bench] running before/after JMH comparison (ADR-0009; ~2x :crypto:jvmBenchmarkBenchmark)" >&2
+echo "[bench] set SKIP_BENCH_HOOK=1 to skip" >&2
+
+before="$(mktemp)"
+after="$(mktemp)"
+trap 'rm -f "$before" "$after"' EXIT
+
+# Baseline = HEAD (pristine). Stash staged changes, benchmark, restore.
+git stash push -u -m 'bench hook: baseline' >/dev/null 2>&1
+./gradlew :crypto:jvmBenchmarkBenchmark --rerun --no-build-cache --quiet >"$before" 2>&1
+# Restore staged changes for the after measurement.
+if ! git stash pop >/dev/null 2>&1; then
+  echo "[bench] WARNING: stash pop failed. Check 'git stash list' and restore manually." >&2
+  echo "[bench] surfacing baseline-only; exiting without after measurement." >&2
+  cat "$before"
+  exit 0
+fi
+
+# After = current staged change.
+./gradlew :crypto:jvmBenchmarkBenchmark --rerun --no-build-cache --quiet >"$after" 2>&1
+
+echo "===== bench before/after diff (ADR-0009) =====" >&2
+diff "$before" "$after" || true
+echo "===== end bench diff =====" >&2
+echo "[bench] review the diff. Record mean ns/op and ops/s in the PR." >&2
+echo "[bench] A regression of more than 10% blocks merge (human + PR-review gate)." >&2
+exit 0
