@@ -216,3 +216,55 @@ internal fun loadWycheproof(resourcePath: String): List<WycheproofTestCase> {
     }
   }
 }
+
+/** A single Wycheproof HKDF-SHA256 test case. */
+internal data class WycheproofHkdfTestCase(
+    val tcId: Int,
+    val ikm: ByteArray,
+    val salt: ByteArray,
+    val info: ByteArray,
+    val outputLength: Int,
+    val okm: ByteArray,
+    val result: String,
+    val flags: List<String>,
+) {
+  override fun equals(other: Any?): Boolean =
+      other is WycheproofHkdfTestCase &&
+          tcId == other.tcId &&
+          ikm.contentEquals(other.ikm) &&
+          salt.contentEquals(other.salt) &&
+          info.contentEquals(other.info) &&
+          outputLength == other.outputLength &&
+          okm.contentEquals(other.okm) &&
+          result == other.result
+
+  override fun hashCode(): Int = tcId
+}
+
+/** Loads all test cases from a Wycheproof HkdfTest JSON resource. */
+internal fun loadWycheproofHkdf(resourcePath: String): List<WycheproofHkdfTestCase> {
+  val json =
+      WycheproofJson.parseResource(resourcePath) as? Map<*, *>
+          ?: error("top-level JSON is not an object")
+  val groups = json["testGroups"] as? List<Any?> ?: emptyList()
+  return groups.flatMap { group ->
+    val groupMap = group as Map<*, *>
+    val tests = groupMap["tests"] as? List<Any?> ?: emptyList()
+    tests.map { testEntry ->
+      val testCase = testEntry as Map<*, *>
+      WycheproofHkdfTestCase(
+          tcId = (testCase["tcId"] as Number).toInt(),
+          ikm = hex(testCase["ikm"] as String),
+          salt = hex(testCase["salt"] as String),
+          info = hex(testCase["info"] as String),
+          outputLength = (testCase["size"] as Number).toInt(),
+          okm = hex(testCase["okm"] as String),
+          result = testCase["result"] as String,
+          flags =
+              (testCase["flags"] as? List<*>).let {
+                it?.map { flag -> flag.toString() } ?: emptyList()
+              },
+      )
+    }
+  }
+}

@@ -11,6 +11,18 @@ HMAC_SHA256Benchmark.oneShotSmall	1263.568	15.673
 HMAC_SHA256Benchmark.oneShotTwoBlocks	1854.838	73.087
 HMAC_SHA256Benchmark.verifyLarge	9796213.152	712111.730
 HMAC_SHA256Benchmark.verifySmall	2531.014	135.857
+
+# HKDF_SHA256Benchmark entries — added with HKDF-SHA256 ticket
+HKDF_SHA256Benchmark.emptyIkmShortOutput	2886.275	1287.301
+HKDF_SHA256Benchmark.emptySaltShortOutput	2984.786	2873.657
+HKDF_SHA256Benchmark.largeIkmShortOutput	5542496.270	3103862.257
+HKDF_SHA256Benchmark.oneBlockIkmShortOutput	3125.592	1007.016
+HKDF_SHA256Benchmark.smallIkmLongOutput	4191.563	1380.482
+HKDF_SHA256Benchmark.smallIkmMaxOutput	357635.298	165576.094
+HKDF_SHA256Benchmark.smallIkmShortOutput	2547.362	184.067
+HKDF_SHA256Benchmark.twoBlockIkmShortOutput	3149.162	219.154
+
+# SHA256Benchmark entries — added with ticket 01
 SHA256Benchmark.incrementalChunked	5308799.671	3565137.888
 SHA256Benchmark.incrementalLarge	5220084.079	1668249.398
 SHA256Benchmark.incrementalSmall	313.881	14.644
@@ -19,6 +31,8 @@ SHA256Benchmark.oneShotLarge	4817670.885	111748.883
 SHA256Benchmark.oneShotOneBlock	314.163	6.869
 SHA256Benchmark.oneShotSmall	313.841	1.457
 SHA256Benchmark.oneShotTwoBlocks	901.064	31.296
+
+# SHA512Benchmark entries — added with ticket 01
 SHA512Benchmark.incrementalChunked	3333263.939	98377.187
 SHA512Benchmark.incrementalLarge	3348674.724	317722.871
 SHA512Benchmark.incrementalSmall	434.244	35.768
