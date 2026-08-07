@@ -8,7 +8,18 @@ A Kotlin Multiplatform (KMP) cryptography library: pure-Kotlin, constant-time im
 
 - **Build**: Gradle with Kotlin DSL (Kotlin 2.4.10). Always invoke `./gradlew` with `--rerun` and `--no-build-cache` — see [docs/agents/build.md](docs/agents/build.md).
 - **GitHub**: Use the `gh` CLI for issues, PRs, and workflow runs.
-- **Git commits**: Always ask before committing. Prepare Conventional Commits after each unit of work, pending your approval.
+- **Git commits**: Always ask before committing. Prepare Conventional Commits after each unit of work, pending your approval. PR titles must use Conventional Commit format too.
+
+## Documentation
+
+Write documentation in ASD-STE100 Simplified Technical English.
+
+- Use short sentences. One idea per sentence.
+- State one fact per sentence.
+- Use active voice.
+- Use simple, approved words. Avoid jargon.
+- Use the simple present for instructions. Use the simple past for descriptions.
+- Avoid vague words and nominalizations.
 
 ## Workflow
 

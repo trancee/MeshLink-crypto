@@ -139,7 +139,8 @@ kover {
       // (ADR-0005) and have no tests. Including them would drop coverage below the 100% gate.
       filters {
         excludes {
-          classes("ch.trancee.meshlink.crypto.SHA256Benchmark")
+          // ADR-0009: wildcard covers every `*Benchmark` class -- new primitives self-excluded.
+          classes("ch.trancee.meshlink.crypto.*Benchmark")
         }
       }
       xml { onCheck = true }
