@@ -5,6 +5,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 internal class SHA256Test {
 
@@ -12,6 +13,8 @@ internal class SHA256Test {
   // RFC 6234 Appendix B test vectors
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 RFC 6234 test 1 - ABC`() {
     assertContentEquals(
@@ -20,6 +23,8 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 RFC 6234 test 2 - abcdbcdecdef-trailing`() {
     val input =
@@ -33,6 +38,8 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 RFC 6234 test 3 - one million a's`() {
     val input = ByteArray(1_000_000) { 0x61.toByte() }
@@ -42,6 +49,8 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 RFC 6234 test 4 - 64-byte block repeated 10 times`() {
     val half = "01234567012345670123456701234567".encodeToByteArray()
@@ -54,6 +63,8 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 RFC 6234 test 6 - single byte 0x19`() {
     assertContentEquals(
@@ -66,6 +77,9 @@ internal class SHA256Test {
   // Edge cases (known-answer tests)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 empty message produces known empty-string digest`() {
     assertContentEquals(
@@ -74,9 +88,13 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 single-byte digest differs from empty`() {
     val empty = SHA256.digest(ByteArray(0))
+    // 0x42 = arbitrary non-zero byte, distinct from 0x00 (empty)
     val one = SHA256.digest(byteArrayOf(0x42))
     assertFalse(empty.contentEquals(one), "digest must depend on content")
   }
@@ -85,6 +103,9 @@ internal class SHA256Test {
   // Block-boundary coverage (exercises every padding + branch path)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 boundary 55 bytes - padding fits in the first block`() {
     assertContentEquals(
@@ -93,6 +114,9 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 boundary 56 bytes - padding spills to a second block`() {
     assertContentEquals(
@@ -101,6 +125,9 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 boundary 57 bytes - two bytes into the second block`() {
     assertContentEquals(
@@ -109,6 +136,9 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 boundary 63 bytes - last byte of the first block`() {
     assertContentEquals(
@@ -117,6 +147,9 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 boundary 64 bytes - exactly one full block`() {
     assertContentEquals(
@@ -125,6 +158,9 @@ internal class SHA256Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA256 boundary 128 bytes - exactly two full blocks`() {
     assertContentEquals(
@@ -137,6 +173,8 @@ internal class SHA256Test {
   // Incremental hasher tests (exercises SHA256Hasher buffering)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 incremental update matches one-shot digest`() {
     val data = ByteArray(200) { (it * 7).toByte() }
@@ -150,6 +188,8 @@ internal class SHA256Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 incremental update with defaults matches one-shot`() {
     val data = ByteArray(300) { (it * 13).toByte() }
@@ -161,6 +201,8 @@ internal class SHA256Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 incremental update with partial offset matches one-shot`() {
     val data = ByteArray(200) { (it * 3).toByte() }
@@ -172,6 +214,8 @@ internal class SHA256Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA256 digest over multi-update with exact-block boundaries`() {
     // 64 + 64 + 1 = 129 bytes: two full blocks + 1 byte buffered
@@ -192,6 +236,9 @@ internal class SHA256Test {
   // Timing harness integration (ADR-0003, seam 3)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("security")
   @Test
   fun `SHA256 timing harness records samples over varied input sizes`() {
     val harness = TimingHarness()
@@ -217,15 +264,4 @@ internal class SHA256Test {
         "all samples carry the SHA-256 label",
     )
   }
-
-  // ------------------------------------------------------------------
-  // Test helper
-  // ------------------------------------------------------------------
-
-  private fun hex(s: String): ByteArray =
-      ByteArray(s.length / 2) { i ->
-        val hi = s[i * 2].digitToInt(16)
-        val lo = s[i * 2 + 1].digitToInt(16)
-        (hi shl 4 or lo).toByte()
-      }
 }

@@ -3,8 +3,11 @@ package ch.trancee.meshlink.crypto
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 class TimingHarnessTest {
+  @Tag("positive")
+  @Tag("security")
   @Test
   fun `timing harness records one sample per varied input`() {
     val harness = TimingHarness()
@@ -30,6 +33,8 @@ class TimingHarnessTest {
     assertTrue(recorded.all { it.totalDuration.isPositive() }, "duration recorded per sample")
   }
 
+  @Tag("positive")
+  @Tag("security")
   @Test
   fun `reset clears recorded samples`() {
     val harness = TimingHarness()
