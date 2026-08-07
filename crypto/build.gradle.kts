@@ -84,6 +84,16 @@ tasks
       enabled = false
     }
 
+// JUnit 5 trait-tag filter (ADR-0003, seam 3). Tests carry @Tag annotations.
+// NOTE: tests live in jvmTest (not commonTest) to enable JUnit 5 @Tag.
+// If iOS test execution is re-enabled, move tests back or use expect/actual.
+// Uncomment for CI gating:
+tasks.named<org.gradle.api.tasks.testing.Test>("jvmTest") {
+  useJUnitPlatform {
+    // includeTags("positive", "critical-path")
+  }
+}
+
 // detekt (ADR-0007): 2.0's top-level `detekt` task is a no-source aggregator; the
 // per-source-set `detekt*SourceSet` / `detektMainAndroid` / `detektTestJvm` tasks
 // are the real linters. Wire `check` to them so static analysis actually runs.

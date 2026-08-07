@@ -5,6 +5,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 internal class SHA512Test {
 
@@ -12,6 +13,8 @@ internal class SHA512Test {
   // RFC 6234 Appendix B test vectors
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 RFC 6234 test 1 - ABC`() {
     assertContentEquals(
@@ -22,6 +25,8 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 RFC 6234 test 2 - one million a's`() {
     val input = ByteArray(1_000_000) { 0x61.toByte() }
@@ -37,6 +42,9 @@ internal class SHA512Test {
   // Edge cases (known-answer tests)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 empty message produces known empty-string digest`() {
     assertContentEquals(
@@ -47,9 +55,13 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 single-byte digest differs from empty`() {
     val empty = SHA512.digest(ByteArray(0))
+    // 0x42 = arbitrary non-zero byte, distinct from 0x00 (empty)
     val one = SHA512.digest(byteArrayOf(0x42))
     assertFalse(empty.contentEquals(one), "digest must depend on content")
   }
@@ -59,6 +71,9 @@ internal class SHA512Test {
   // SHA-512 block size = 128 bytes; padding boundary = 112 (128 - 16 length field)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 boundary 111 bytes - padding fits in the first block`() {
     assertContentEquals(
@@ -69,6 +84,9 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 boundary 112 bytes - padding spills to a second block`() {
     assertContentEquals(
@@ -79,6 +97,9 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 boundary 113 bytes - two bytes into the second block`() {
     assertContentEquals(
@@ -89,6 +110,9 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 boundary 127 bytes - last byte of the first block`() {
     assertContentEquals(
@@ -99,6 +123,9 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 boundary 128 bytes - exactly one full block`() {
     assertContentEquals(
@@ -109,6 +136,9 @@ internal class SHA512Test {
     )
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("boundary")
   @Test
   fun `SHA512 boundary 129 bytes - one byte into the second block`() {
     assertContentEquals(
@@ -123,6 +153,8 @@ internal class SHA512Test {
   // Incremental hasher tests (exercises SHA512Hasher buffering)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 incremental update matches one-shot digest`() {
     val data = ByteArray(200) { (it * 7).toByte() }
@@ -136,6 +168,8 @@ internal class SHA512Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 incremental update with defaults matches one-shot`() {
     val data = ByteArray(300) { (it * 13).toByte() }
@@ -147,6 +181,8 @@ internal class SHA512Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 incremental update with partial offset matches one-shot`() {
     val data = ByteArray(200) { (it * 3).toByte() }
@@ -158,6 +194,8 @@ internal class SHA512Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 digest over multi-update with exact-block boundaries`() {
     // 128 + 128 + 1 = 257 bytes: two full blocks + 1 byte buffered
@@ -174,6 +212,8 @@ internal class SHA512Test {
     assertContentEquals(oneShot, hasher.digest())
   }
 
+  @Tag("positive")
+  @Tag("critical-path")
   @Test
   fun `SHA512 digest over multi-update with byte-at-a-time feeding`() {
     // Feed one byte at a time — exercises maximal buffering paths in processBlock.
@@ -181,9 +221,7 @@ internal class SHA512Test {
     val oneShot = SHA512.digest(data)
 
     val hasher = SHA512Hasher()
-    for (i in data.indices) {
-      hasher.update(data, i, 1)
-    }
+    data.forEachIndexed { i, _ -> hasher.update(data, i, 1) }
     assertContentEquals(oneShot, hasher.digest())
   }
 
@@ -191,6 +229,9 @@ internal class SHA512Test {
   // Timing harness integration (ADR-0003, seam 3)
   // ------------------------------------------------------------------
 
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("security")
   @Test
   fun `SHA512 timing harness records samples over varied input sizes`() {
     val harness = TimingHarness()
@@ -215,15 +256,4 @@ internal class SHA512Test {
         "all samples carry the SHA-512 label",
     )
   }
-
-  // ------------------------------------------------------------------
-  // Test helper
-  // ------------------------------------------------------------------
-
-  private fun hex(s: String): ByteArray =
-      ByteArray(s.length / 2) { i ->
-        val hi = s[i * 2].digitToInt(16)
-        val lo = s[i * 2 + 1].digitToInt(16)
-        (hi shl 4 or lo).toByte()
-      }
 }
