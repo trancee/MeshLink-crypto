@@ -50,12 +50,17 @@ git config core.hooksPath .githooks
 
 The `pre-commit` hook enforces the ADR-0009 benchmark gate in practice. When a
 commit stages a file under `crypto/src/commonMain/kotlin/ch/trancee/meshlink/crypto/`,
-the hook stashes the change, benchmarks `HEAD`, restores the change, benchmarks it
-again, and surfaces a `diff` of the before/after JMH output.
+the hook runs one JMH pass and compares it against the committed baseline
+(`crypto/benchmarks/baseline.tsv`). It prints a table of deltas and tags each
+benchmark STABLE or NOISY.
 
-This is a surf, not a hard block. The JVM is non-deterministic. A small delta is
-noise, not a defect. Record the mean ns/op and ops/s in the PR and let review gate
-the merge (ADR-0009).
+This is a surf, not a hard block. The JVM is not deterministic. The baseline is a
+single sample on one host. A small delta is noise, not a defect. Record the mean
+ns/op in the PR and let review gate the merge (ADR-0009).
+
+After a primitive improvement, or on a new host or JVM, refresh the baseline with
+`REFRESH_BASELINE=1 git commit ...`. The hook rewrites `baseline.tsv` from the
+current run and stages it.
 
 Skip it with `SKIP_BENCH_HOOK=1 git commit ...`, or `git commit --no-verify`.
 

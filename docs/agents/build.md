@@ -70,3 +70,39 @@ Steps:
 **Noise discipline.** Close other applications. Run twice. Compare the two
 runs. Treat small deltas as noise unless they repeat. The committed benchmark
 source lets CI replay any disputed regression at will.
+
+### Committed baseline (fast path)
+
+The `pre-commit` hook uses a committed baseline. This avoids a full before/after
+run on every commit. The baseline lives at `crypto/benchmarks/baseline.tsv`. It
+holds the mean ns/op for each benchmark, captured on the host that wrote it.
+
+When a commit stages a primitive change, the hook runs
+`:crypto:jvmBenchmarkBenchmark` once. It compares the current numbers to the
+baseline. It prints a table of deltas. The hook tags each benchmark:
+
+- **STABLE** — measurement error under 30% of the score. A regression of more
+  than 10% here is a real signal.
+- **NOISY** — measurement error over 30% of the score. Not gated. Run more
+  iterations to confirm a claimed regression.
+
+The baseline is **host-pinned**. The host is `uname -sm` plus the JDK major. If
+the current host does not match, the hook skips numeric comparison and asks you
+to refresh. This prevents false alarms across different CPUs, OSes, or JDKs.
+
+The hook is a surf, not a hard block. The JVM is not deterministic. A
+single-sample baseline can false-flag. Review gates the merge (ADR-0009).
+
+**Refresh the baseline.** Do this when you land a primitive improvement. Do it
+also when the host or JDK changes.
+
+```bash
+REFRESH_BASELINE=1 git commit -m "perf(crypto): ..."
+```
+
+The hook rewrites `baseline.tsv` from the current run and stages the file. The
+improvement and the drifted baseline ship in the same commit.
+
+**Confirm a disputed delta.** If the surf flags a regression on a STABLE
+benchmark, run the manual before/after above. Rule out JVM noise before you
+defend the change in review.

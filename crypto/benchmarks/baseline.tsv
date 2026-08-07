@@ -1,0 +1,19 @@
+# host: Darwin arm64 jdk21
+# generated: 2026-08-07T12:04:20Z
+# benchmark<TAB>ns_per_op<TAB>score_error  (AverageTime mode, ns/op)
+SHA256Benchmark.incrementalChunked	5308799.671	3565137.888
+SHA256Benchmark.incrementalLarge	5220084.079	1668249.398
+SHA256Benchmark.incrementalSmall	313.881	14.644
+SHA256Benchmark.oneShotEmpty	311.208	14.773
+SHA256Benchmark.oneShotLarge	4817670.885	111748.883
+SHA256Benchmark.oneShotOneBlock	314.163	6.869
+SHA256Benchmark.oneShotSmall	313.841	1.457
+SHA256Benchmark.oneShotTwoBlocks	901.064	31.296
+SHA512Benchmark.incrementalChunked	3333263.939	98377.187
+SHA512Benchmark.incrementalLarge	3348674.724	317722.871
+SHA512Benchmark.incrementalSmall	434.244	35.768
+SHA512Benchmark.oneShotEmpty	431.663	38.995
+SHA512Benchmark.oneShotLarge	3350190.525	280306.132
+SHA512Benchmark.oneShotOneBlock	432.314	40.862
+SHA512Benchmark.oneShotSmall	434.442	51.536
+SHA512Benchmark.oneShotTwoBlocks	1222.875	101.682

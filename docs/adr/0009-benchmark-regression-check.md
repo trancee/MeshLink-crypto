@@ -56,12 +56,11 @@ vectors instead.
 ## Consequences
 
 - Benchmarks are part of the definition of done for a primitive. They are not optional.
-- The kover exclude uses one wildcard. New primitives do not need a manual edit to
-  the exclude list.
-- The comparison is developer-run. CI does not gate on it. The committed benchmark
-  source lets CI replay any regression at will.
-- Primitives without an existing benchmark have no "before". Rule 2 applies only to
-  changes against a previously-shipped benchmark.
+- The kover exclude uses one wildcard. New primitives do not need a manual edit to the exclude list.
+- The pre-commit hook compares one run to a committed baseline (`crypto/benchmarks/baseline.tsv`) rather than a live before/after. The baseline is host-pinned and refreshed with `REFRESH_BASELINE=1` after a primitive improvement or a host or JVM change.
+- The hook is a surf, not a hard gate. The JVM is non-deterministic. A no-op change once swung about 13 percent. CI does not gate on the comparison. The PR review and the issue checklist gate the merge.
+- STABLE benchmarks (measurement error under 30 percent) are gated at 10 percent. NOISY benchmarks (error over 30 percent) are surfaced but not gated. Run more iterations to confirm a claimed regression on a noisy benchmark.
+- Primitives without an existing benchmark have no baseline. Rule 2 applies only to changes against a previously-shipped benchmark. The first commit that ships a benchmark adds the baseline.
 
 ## Corroborating research
 

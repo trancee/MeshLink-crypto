@@ -41,12 +41,15 @@ The repo keeps git hooks in `/.githooks/`. Install them, one time, per clone:
 git config core.hooksPath .githooks
 ```
 
-The `pre-commit` hook runs the ADR-0009 before/after benchmark comparison
-automatically when a commit stages a file under
-`crypto/src/commonMain/kotlin/ch/trancee/meshlink/crypto/`. It surfaces a diff of
-the before/after JMH output. It does not hard-block — the JVM is
-non-deterministic, so small deltas are noise, not defects. Skip it with
-`SKIP_BENCH_HOOK=1 git commit ...`, or `git commit --no-verify`.
+The `pre-commit` hook runs the ADR-0009 benchmark comparison automatically when a
+commit stages a file under `crypto/src/commonMain/kotlin/ch/trancee/meshlink/crypto/`.
+It runs one JMH pass and compares it to the committed baseline
+(`crypto/benchmarks/baseline.tsv`). It prints a table of deltas and tags each
+benchmark STABLE or NOISY. It does not hard-block — the JVM is non-deterministic
+and the baseline is a single sample. Small deltas are noise, not defects. Skip it
+with `SKIP_BENCH_HOOK=1 git commit ...`, or `git commit --no-verify`.
+Refresh the baseline with `REFRESH_BASELINE=1 git commit ...` after a primitive
+improvement or a host/JVM change (see `docs/agents/workflow.md`).
 
 ## Contributing a crypto primitive
 
