@@ -331,6 +331,48 @@ private constructor(
   fun sqr(): FieldElement = mul(this)
 
   /**
+   * Computes the multiplicative inverse 1/`this` via Fermat's little theorem (ref10 `fe_invert`).
+   *
+   * p−2 = 2^255 − 21 is a public exponent, so the addition chain is fixed and the operation
+   * sequence is independent of the input — the same constant-time discipline as [X25519]. Uses the
+   * addition chain from ref10 `fe_invert`: 254 squarings + 11 multiplications.
+   */
+  fun invert(): FieldElement {
+    // Exponent = 2^255 − 21 = (2^5)(2^250 − 1) + 11.
+    var t0 = this.sqr() // z^2
+    var t1 = t0.sqr() // z^4
+    t1 = t1.sqr() // z^8
+    t1 = this.mul(t1) // z^9
+    t0 = t0.mul(t1) // z^11 (stash for the end)
+
+    var t2 = t0.sqr() // z^22
+    t1 = t1.mul(t2) // z^31 = z^(2^5 − 1)
+    t2 = t1.sqr() // z^62
+    repeat(4) { t2 = t2.sqr() } // z^(31·2^5) = z^992
+    t1 = t2.mul(t1) // z^1023 = z^(2^10 − 1)
+    t2 = t1.sqr() // z^2046
+    repeat(9) { t2 = t2.sqr() } // z^(2^20 − 1)
+    t2 = t2.mul(t1)
+    var t3 = t2.sqr()
+    repeat(19) { t3 = t3.sqr() } // z^(2^40 − 1)
+    t2 = t3.mul(t2)
+    repeat(10) { t2 = t2.sqr() } // z^((2^40−1)·2^10)
+    t1 = t2.mul(t1) // z^(2^50 − 1)
+    t2 = t1.sqr()
+    repeat(49) { t2 = t2.sqr() } // z^(2^100 − 1)
+    t2 = t2.mul(t1)
+    t3 = t2.sqr()
+    repeat(99) { t3 = t3.sqr() } // z^(2^200 − 1)
+    t2 = t3.mul(t2)
+    t2 = t2.sqr() // z^(2^201 − 2)
+    repeat(49) { t2 = t2.sqr() } // z^(2^250 − 2^50)
+    t1 = t2.mul(t1) // z^(2^250 − 1)
+    t1 = t1.sqr()
+    repeat(4) { t1 = t1.sqr() } // z^(2^255 − 32)
+    return t1.mul(t0) // z^(2^255 − 21) = z^(p−2)
+  }
+
+  /**
    * Conditionally swaps limbs between `this` and [other] in constant time (ref10 `fe_cswap`). When
    * [bit] is 1 the two elements are swapped; when 0 they are left unchanged. Uses the XOR-mask
    * idiom — no data-dependent branch (ADR-0003).
