@@ -1,5 +1,4 @@
-# host: Darwin arm64 jdk21
-# generated: 2026-08-09T16:45:00Z
+# generated: 2026-08-09T18:48:00Z
 # benchmark<TAB>score<TAB>score_error  (AverageTime mode; ns/op for hashes/HMAC, us/op for scalar-mult primitives)
 
 # HMAC_SHA256Benchmark entries — added with ticket 05
@@ -59,3 +58,15 @@ Ed25519Benchmark.verifyValidOneBlock	410.047	10.449
 Ed25519Benchmark.verifyValidSmall	408.361	13.364
 Ed25519Benchmark.verifyValidTwoBlocks	409.033	16.275
 Ed25519Benchmark.verifyWrongMessage	408.998	25.046
+
+# ChaCha20Benchmark entries — added with ticket 11
+ChaCha20Benchmark.decryptEmpty	0.428	2.591
+ChaCha20Benchmark.decryptLarge	3980.804	121.629
+ChaCha20Benchmark.decryptOneBlock	0.499	0.008
+ChaCha20Benchmark.decryptSmall	0.504	0.079
+ChaCha20Benchmark.decryptTwoBlocks	0.726	0.037
+ChaCha20Benchmark.encryptEmpty	0.399	0.012
+ChaCha20Benchmark.encryptLarge	3964.445	222.735
+ChaCha20Benchmark.encryptOneBlock	0.644	0.072
+ChaCha20Benchmark.encryptSmall	0.575	0.032
+ChaCha20Benchmark.encryptTwoBlocks	0.900	0.064
