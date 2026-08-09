@@ -1,6 +1,6 @@
 # host: Darwin arm64 jdk21
-# generated: 2026-08-07T14:30:00Z
-# benchmark<TAB>ns_per_op<TAB>score_error  (AverageTime mode, ns/op)
+# generated: 2026-08-09T16:45:00Z
+# benchmark<TAB>score<TAB>score_error  (AverageTime mode; ns/op for hashes/HMAC, us/op for scalar-mult primitives)
 
 # HMAC_SHA256Benchmark entries — added with ticket 05
 HMAC_SHA256Benchmark.oneShotEmpty	1464.835	667.906
@@ -41,3 +41,21 @@ SHA512Benchmark.oneShotLarge	3350190.525	280306.132
 SHA512Benchmark.oneShotOneBlock	432.314	40.862
 SHA512Benchmark.oneShotSmall	434.442	51.536
 SHA512Benchmark.oneShotTwoBlocks	1222.875	101.682
+
+# Ed25519Benchmark entries — added with ticket 09
+Ed25519Benchmark.keyDerivationAllOnes	204.866	17.270
+Ed25519Benchmark.keyDerivationAllZero	207.903	17.653
+Ed25519Benchmark.keyDerivationKat1	204.364	5.083
+Ed25519Benchmark.keyDerivationKat2	203.833	0.391
+Ed25519Benchmark.signEmpty	409.516	23.969
+Ed25519Benchmark.signLarge	7139.313	826.793
+Ed25519Benchmark.signOneBlock	409.889	9.242
+Ed25519Benchmark.signSmall	409.431	20.091
+Ed25519Benchmark.signTwoBlocks	410.662	20.522
+Ed25519Benchmark.verifyTamperedR	409.895	20.006
+Ed25519Benchmark.verifyValidEmpty	409.813	12.417
+Ed25519Benchmark.verifyValidLarge	3745.448	95.034
+Ed25519Benchmark.verifyValidOneBlock	410.047	10.449
+Ed25519Benchmark.verifyValidSmall	408.361	13.364
+Ed25519Benchmark.verifyValidTwoBlocks	409.033	16.275
+Ed25519Benchmark.verifyWrongMessage	408.998	25.046
