@@ -69,6 +69,9 @@ kotlin {
   // crypto/api) so CI detects ABI drift. Experimental in KGP 2.4.10 — opted in
   // at file top via @OptIn(ExperimentalAbiValidation).
   // Docs: https://kotlinlang.org/docs/gradle-binary-compatibility-validation.html
+  compilerOptions {
+    freeCompilerArgs = listOf("-Xexpect-actual-classes")
+  }
   abiValidation {}
 }
 
