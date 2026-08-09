@@ -42,7 +42,8 @@ internal fun loadWycheproofEd25519(resourcePath: String): List<WycheproofEd25519
   val groups = json["testGroups"] as? List<Any?> ?: emptyList()
   return groups.flatMap { group ->
     val groupMap = group as Map<*, *>
-    val publicKeyHex = ((groupMap["publicKey"] as Map<*, *>?) ?: error("group missing publicKey"))["pk"] as String
+    val publicKeyHex =
+        ((groupMap["publicKey"] as Map<*, *>?) ?: error("group missing publicKey"))["pk"] as String
     val publicKey = hex(publicKeyHex)
     val tests = groupMap["tests"] as? List<Any?> ?: emptyList()
     tests.map { testEntry ->
