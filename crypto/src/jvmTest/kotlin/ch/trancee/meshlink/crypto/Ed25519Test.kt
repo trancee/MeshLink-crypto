@@ -30,13 +30,13 @@ internal class Ed25519Test {
             "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
         )
 
-    val derived = Ed25519.publicKeyFromPrivate(secretKey)
+    val derived = Ed25519PureK.publicKeyFromPrivate(secretKey)
     assertContentEquals(publicKey, derived, "public key must match RFC 8032 TEST 1")
 
-    val signed = Ed25519.sign(secretKey, message)
+    val signed = Ed25519PureK.sign(secretKey, message)
     assertContentEquals(signature, signed, "signature must match RFC 8032 TEST 1")
 
-    assertTrue(Ed25519.verify(publicKey, message, signature), "signature must verify")
+    assertTrue(Ed25519PureK.verify(publicKey, message, signature), "signature must verify")
   }
 
   @Tag("positive")
@@ -51,9 +51,13 @@ internal class Ed25519Test {
             "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00"
         )
 
-    assertContentEquals(publicKey, Ed25519.publicKeyFromPrivate(secretKey), "public key must match")
-    assertContentEquals(signature, Ed25519.sign(secretKey, message), "signature must match")
-    assertTrue(Ed25519.verify(publicKey, message, signature), "signature must verify")
+    assertContentEquals(
+        publicKey,
+        Ed25519PureK.publicKeyFromPrivate(secretKey),
+        "public key must match",
+    )
+    assertContentEquals(signature, Ed25519PureK.sign(secretKey, message), "signature must match")
+    assertTrue(Ed25519PureK.verify(publicKey, message, signature), "signature must verify")
   }
 
   @Tag("positive")
@@ -68,9 +72,13 @@ internal class Ed25519Test {
             "6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a"
         )
 
-    assertContentEquals(publicKey, Ed25519.publicKeyFromPrivate(secretKey), "public key must match")
-    assertContentEquals(signature, Ed25519.sign(secretKey, message), "signature must match")
-    assertTrue(Ed25519.verify(publicKey, message, signature), "signature must verify")
+    assertContentEquals(
+        publicKey,
+        Ed25519PureK.publicKeyFromPrivate(secretKey),
+        "public key must match",
+    )
+    assertContentEquals(signature, Ed25519PureK.sign(secretKey, message), "signature must match")
+    assertTrue(Ed25519PureK.verify(publicKey, message, signature), "signature must verify")
   }
 
   // ------------------------------------------------------------------
@@ -91,10 +99,13 @@ internal class Ed25519Test {
         )
     repeat(16) { seed ->
       val secretKey = ByteArray(32) { (seed * 17 + it * 31).toByte() }
-      val publicKey = Ed25519.publicKeyFromPrivate(secretKey)
+      val publicKey = Ed25519PureK.publicKeyFromPrivate(secretKey)
       messages.forEach { msg ->
-        val signature = Ed25519.sign(secretKey, msg)
-        assertTrue(Ed25519.verify(publicKey, msg, signature), "round-trip must verify (seed=$seed)")
+        val signature = Ed25519PureK.sign(secretKey, msg)
+        assertTrue(
+            Ed25519PureK.verify(publicKey, msg, signature),
+            "round-trip must verify (seed=$seed)",
+        )
       }
     }
   }
@@ -104,12 +115,12 @@ internal class Ed25519Test {
   @Test
   fun `Ed25519 verify rejects tampered message`() {
     val secretKey = hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
-    val publicKey = Ed25519.publicKeyFromPrivate(secretKey)
-    val signature = Ed25519.sign(secretKey, ByteArray(0))
+    val publicKey = Ed25519PureK.publicKeyFromPrivate(secretKey)
+    val signature = Ed25519PureK.sign(secretKey, ByteArray(0))
 
     // Flip a bit in the message (empty → single byte)
     assertFalse(
-        Ed25519.verify(publicKey, byteArrayOf(0x00), signature),
+        Ed25519PureK.verify(publicKey, byteArrayOf(0x00), signature),
         "tampered message must fail",
     )
   }
@@ -119,11 +130,11 @@ internal class Ed25519Test {
   @Test
   fun `Ed25519 verify rejects signature with flipped R bit`() {
     val secretKey = hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
-    val publicKey = Ed25519.publicKeyFromPrivate(secretKey)
-    val signature = Ed25519.sign(secretKey, ByteArray(0)).copyOf()
+    val publicKey = Ed25519PureK.publicKeyFromPrivate(secretKey)
+    val signature = Ed25519PureK.sign(secretKey, ByteArray(0)).copyOf()
     signature[0] = (signature[0].toInt() xor 1).toByte() // flip one bit in R
 
-    assertFalse(Ed25519.verify(publicKey, ByteArray(0), signature), "tampered R must fail")
+    assertFalse(Ed25519PureK.verify(publicKey, ByteArray(0), signature), "tampered R must fail")
   }
 
   // ------------------------------------------------------------------
@@ -134,19 +145,19 @@ internal class Ed25519Test {
   @Tag("boundary")
   @Test
   fun `Ed25519 public key of wrong length is rejected`() {
-    val result = runCatching { Ed25519.verify(ByteArray(31), ByteArray(0), ByteArray(64)) }
+    val result = runCatching { Ed25519PureK.verify(ByteArray(31), ByteArray(0), ByteArray(64)) }
     assertTrue(result.isSuccess, "31-byte public key should return false, not throw")
     // verify returns false for wrong sizes (not an exception)
-    assertFalse(Ed25519.verify(ByteArray(31), ByteArray(0), ByteArray(64)))
+    assertFalse(Ed25519PureK.verify(ByteArray(31), ByteArray(0), ByteArray(64)))
   }
 
   @Tag("positive")
   @Tag("boundary")
   @Test
   fun `Ed25519 signature of wrong length is rejected`() {
-    val result = runCatching { Ed25519.verify(ByteArray(32), ByteArray(0), ByteArray(63)) }
+    val result = runCatching { Ed25519PureK.verify(ByteArray(32), ByteArray(0), ByteArray(63)) }
     assertTrue(result.isSuccess, "63-byte signature should return false, not throw")
-    assertFalse(Ed25519.verify(ByteArray(32), ByteArray(0), ByteArray(63)))
+    assertFalse(Ed25519PureK.verify(ByteArray(32), ByteArray(0), ByteArray(63)))
   }
 
   @Tag("positive")
@@ -157,7 +168,7 @@ internal class Ed25519Test {
     val invalidPublicKey = hex("0100000000000000000000000000000000000000000000000000000000000080")
     val signature = ByteArray(64) // R = 0, S = 0 (canonical since 0 < group order L)
     assertFalse(
-        Ed25519.verify(invalidPublicKey, ByteArray(0), signature),
+        Ed25519PureK.verify(invalidPublicKey, ByteArray(0), signature),
         "verify must reject invalid public key encoding",
     )
   }
@@ -171,7 +182,7 @@ internal class Ed25519Test {
     val identityPublicKey = hex("0100000000000000000000000000000000000000000000000000000000000000")
     val signature = ByteArray(64)
     assertFalse(
-        Ed25519.verify(identityPublicKey, ByteArray(0), signature),
+        Ed25519PureK.verify(identityPublicKey, ByteArray(0), signature),
         "identity point cannot verify any signature",
     )
   }
@@ -191,7 +202,7 @@ internal class Ed25519Test {
 
     valid.forEach { testCase ->
       assertTrue(
-          Ed25519.verify(testCase.publicKey, testCase.msg, testCase.sig),
+          Ed25519PureK.verify(testCase.publicKey, testCase.msg, testCase.sig),
           "tcId=${testCase.tcId} comment=${testCase.comment} result=${testCase.result} flags=${testCase.flags}",
       )
     }
@@ -209,7 +220,7 @@ internal class Ed25519Test {
 
     invalid.forEach { testCase ->
       assertFalse(
-          Ed25519.verify(testCase.publicKey, testCase.msg, testCase.sig),
+          Ed25519PureK.verify(testCase.publicKey, testCase.msg, testCase.sig),
           "tcId=${testCase.tcId} comment=${testCase.comment} flags=${testCase.flags}",
       )
     }

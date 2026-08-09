@@ -51,40 +51,42 @@ class ChaCha20Benchmark {
     twoBlockMessage = ByteArray(128) { 0x42 } // exactly 2 blocks
     largeMessage = ByteArray(1_048_576) { 0x43 } // 1 MiB
 
-    emptyCt = ChaCha20Poly1305.encrypt(katKey, emptyMessage)
-    smallCt = ChaCha20Poly1305.encrypt(katKey, smallMessage)
-    oneBlockCt = ChaCha20Poly1305.encrypt(katKey, oneBlockMessage)
-    twoBlockCt = ChaCha20Poly1305.encrypt(katKey, twoBlockMessage)
-    largeCt = ChaCha20Poly1305.encrypt(katKey, largeMessage)
+    emptyCt = ChaCha20Poly1305PureK.encrypt(katKey, emptyMessage)
+    smallCt = ChaCha20Poly1305PureK.encrypt(katKey, smallMessage)
+    oneBlockCt = ChaCha20Poly1305PureK.encrypt(katKey, oneBlockMessage)
+    twoBlockCt = ChaCha20Poly1305PureK.encrypt(katKey, twoBlockMessage)
+    largeCt = ChaCha20Poly1305PureK.encrypt(katKey, largeMessage)
   }
 
   // ------------------------------------------------------------------
   // Encryption (includes SecureRandom nonce generation)
   // ------------------------------------------------------------------
 
-  @Benchmark fun encryptEmpty(): ByteArray = ChaCha20Poly1305.encrypt(katKey, emptyMessage)
+  @Benchmark fun encryptEmpty(): ByteArray = ChaCha20Poly1305PureK.encrypt(katKey, emptyMessage)
 
-  @Benchmark fun encryptSmall(): ByteArray = ChaCha20Poly1305.encrypt(katKey, smallMessage)
+  @Benchmark fun encryptSmall(): ByteArray = ChaCha20Poly1305PureK.encrypt(katKey, smallMessage)
 
-  @Benchmark fun encryptOneBlock(): ByteArray = ChaCha20Poly1305.encrypt(katKey, oneBlockMessage)
+  @Benchmark
+  fun encryptOneBlock(): ByteArray = ChaCha20Poly1305PureK.encrypt(katKey, oneBlockMessage)
 
-  @Benchmark fun encryptTwoBlocks(): ByteArray = ChaCha20Poly1305.encrypt(katKey, twoBlockMessage)
+  @Benchmark
+  fun encryptTwoBlocks(): ByteArray = ChaCha20Poly1305PureK.encrypt(katKey, twoBlockMessage)
 
-  @Benchmark fun encryptLarge(): ByteArray = ChaCha20Poly1305.encrypt(katKey, largeMessage)
+  @Benchmark fun encryptLarge(): ByteArray = ChaCha20Poly1305PureK.encrypt(katKey, largeMessage)
 
   // ------------------------------------------------------------------
   // Decryption (pre-computed ciphertext, isolates decrypt cost)
   // ------------------------------------------------------------------
 
-  @Benchmark fun decryptEmpty(): ByteArray? = ChaCha20Poly1305.decrypt(katKey, emptyCt)
+  @Benchmark fun decryptEmpty(): ByteArray? = ChaCha20Poly1305PureK.decrypt(katKey, emptyCt)
 
-  @Benchmark fun decryptSmall(): ByteArray? = ChaCha20Poly1305.decrypt(katKey, smallCt)
+  @Benchmark fun decryptSmall(): ByteArray? = ChaCha20Poly1305PureK.decrypt(katKey, smallCt)
 
-  @Benchmark fun decryptOneBlock(): ByteArray? = ChaCha20Poly1305.decrypt(katKey, oneBlockCt)
+  @Benchmark fun decryptOneBlock(): ByteArray? = ChaCha20Poly1305PureK.decrypt(katKey, oneBlockCt)
 
-  @Benchmark fun decryptTwoBlocks(): ByteArray? = ChaCha20Poly1305.decrypt(katKey, twoBlockCt)
+  @Benchmark fun decryptTwoBlocks(): ByteArray? = ChaCha20Poly1305PureK.decrypt(katKey, twoBlockCt)
 
-  @Benchmark fun decryptLarge(): ByteArray? = ChaCha20Poly1305.decrypt(katKey, largeCt)
+  @Benchmark fun decryptLarge(): ByteArray? = ChaCha20Poly1305PureK.decrypt(katKey, largeCt)
 
   // ------------------------------------------------------------------
   // Helpers

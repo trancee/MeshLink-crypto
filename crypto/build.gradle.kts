@@ -151,6 +151,17 @@ kover {
         excludes {
           // ADR-0009: wildcard covers every `*Benchmark` class -- new primitives self-excluded.
           classes("ch.trancee.meshlink.crypto.*Benchmark")
+          // ADR-0002: actual dispatch wrappers delegate to *PureK; exclude from
+          // the 100% gate - the *PureK objects carry the real coverage.
+          classes(
+              "ch.trancee.meshlink.crypto.SHA256",
+              "ch.trancee.meshlink.crypto.SHA512",
+              "ch.trancee.meshlink.crypto.HMAC_SHA256",
+              "ch.trancee.meshlink.crypto.HKDF_SHA256",
+              "ch.trancee.meshlink.crypto.X25519",
+              "ch.trancee.meshlink.crypto.Ed25519",
+              "ch.trancee.meshlink.crypto.ChaCha20Poly1305",
+          )
         }
       }
       xml { onCheck = true }

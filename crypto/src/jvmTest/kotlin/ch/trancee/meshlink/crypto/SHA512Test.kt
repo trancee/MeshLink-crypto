@@ -21,7 +21,7 @@ internal class SHA512Test {
         hex(
             "DDAF35A193617ABACC417349AE20413112E6FA4E89A97EA20A9EEEE64B55D39A2192992A274FC1A836BA3C23A3FEEBBD454D4423643CE80E2A9AC94FA54CA49F"
         ),
-        SHA512.digest("abc".encodeToByteArray()),
+        SHA512PureK.digest("abc".encodeToByteArray()),
     )
   }
 
@@ -34,7 +34,7 @@ internal class SHA512Test {
         hex(
             "E718483D0CE769644E2E42C7BC15B4638E1F98B13B2044285632A803AFA973EBDE0FF244877EA60A4CB0432CE577C31BEB009C5C2C49AA2E4EADB217AD8CC09B"
         ),
-        SHA512.digest(input),
+        SHA512PureK.digest(input),
     )
   }
 
@@ -51,7 +51,7 @@ internal class SHA512Test {
         hex(
             "CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E"
         ),
-        SHA512.digest(ByteArray(0)),
+        SHA512PureK.digest(ByteArray(0)),
     )
   }
 
@@ -60,9 +60,9 @@ internal class SHA512Test {
   @Tag("boundary")
   @Test
   fun `SHA512 single-byte digest differs from empty`() {
-    val empty = SHA512.digest(ByteArray(0))
+    val empty = SHA512PureK.digest(ByteArray(0))
     // 0x42 = arbitrary non-zero byte, distinct from 0x00 (empty)
-    val one = SHA512.digest(byteArrayOf(0x42))
+    val one = SHA512PureK.digest(byteArrayOf(0x42))
     assertFalse(empty.contentEquals(one), "digest must depend on content")
   }
 
@@ -80,7 +80,7 @@ internal class SHA512Test {
         hex(
             "FA9121C7B32B9E01733D034CFC78CBF67F926C7ED83E82200EF86818196921760B4BEFF48404DF811B953828274461673C68D04E297B0EB7B2B4D60FC6B566A2"
         ),
-        SHA512.digest(ByteArray(111) { 0x61 }),
+        SHA512PureK.digest(ByteArray(111) { 0x61 }),
     )
   }
 
@@ -93,7 +93,7 @@ internal class SHA512Test {
         hex(
             "C01D080EFD492776A1C43BD23DD99D0A2E626D481E16782E75D54C2503B5DC32BD05F0F1BA33E568B88FD2D970929B719ECBB152F58F130A407C8830604B70CA"
         ),
-        SHA512.digest(ByteArray(112) { 0x61 }),
+        SHA512PureK.digest(ByteArray(112) { 0x61 }),
     )
   }
 
@@ -106,7 +106,7 @@ internal class SHA512Test {
         hex(
             "55DDD8AC210A6E18BA1EE055AF84C966E0DBFF091C43580AE1BE703BDB85DA31ACF6948CF5BD90C55A20E5450F22FB89BD8D0085E39F85A86CC46ABBCA75E24D"
         ),
-        SHA512.digest(ByteArray(113) { 0x61 }),
+        SHA512PureK.digest(ByteArray(113) { 0x61 }),
     )
   }
 
@@ -119,7 +119,7 @@ internal class SHA512Test {
         hex(
             "828613968B501DC00A97E08C73B118AA8876C26B8AAC93DF128502AB360F91BAB50A51E088769A5C1EFF4782ACE147DCE3642554199876374291F5D921629502"
         ),
-        SHA512.digest(ByteArray(127) { 0x61 }),
+        SHA512PureK.digest(ByteArray(127) { 0x61 }),
     )
   }
 
@@ -132,7 +132,7 @@ internal class SHA512Test {
         hex(
             "B73D1929AA615934E61A871596B3F3B33359F42B8175602E89F7E06E5F658A243667807ED300314B95CACDD579F3E33ABDFBE351909519A846D465C59582F321"
         ),
-        SHA512.digest(ByteArray(128) { 0x61 }),
+        SHA512PureK.digest(ByteArray(128) { 0x61 }),
     )
   }
 
@@ -145,7 +145,7 @@ internal class SHA512Test {
         hex(
             "4F681E0BD53CDA4B5A2041CC8A06F2EABDE44FB16C951FBD5B87702F07AEAB611565B19C47FDE30587177EBB852E3971BBD8D3FD30DA18D71037DFBD98420429"
         ),
-        SHA512.digest(ByteArray(129) { 0x61 }),
+        SHA512PureK.digest(ByteArray(129) { 0x61 }),
     )
   }
 
@@ -158,7 +158,7 @@ internal class SHA512Test {
   @Test
   fun `SHA512 incremental update matches one-shot digest`() {
     val data = ByteArray(200) { (it * 7).toByte() }
-    val oneShot = SHA512.digest(data)
+    val oneShot = SHA512PureK.digest(data)
 
     val hasher = SHA512Hasher()
     // Feed in three uneven chunks to exercise buffering logic.
@@ -173,7 +173,7 @@ internal class SHA512Test {
   @Test
   fun `SHA512 incremental update with defaults matches one-shot`() {
     val data = ByteArray(300) { (it * 13).toByte() }
-    val oneShot = SHA512.digest(data)
+    val oneShot = SHA512PureK.digest(data)
 
     val hasher = SHA512Hasher()
     // Defaults: offset = 0, length = data.size
@@ -187,7 +187,7 @@ internal class SHA512Test {
   fun `SHA512 incremental update with partial offset matches one-shot`() {
     val data = ByteArray(200) { (it * 3).toByte() }
     val slice = data.copyOfRange(40, 150)
-    val oneShot = SHA512.digest(slice)
+    val oneShot = SHA512PureK.digest(slice)
 
     val hasher = SHA512Hasher()
     hasher.update(data, 40, 110)
@@ -203,7 +203,7 @@ internal class SHA512Test {
     val b = ByteArray(128) { 0x62 }
     val c = byteArrayOf(0x63)
     val data = a + b + c
-    val oneShot = SHA512.digest(data)
+    val oneShot = SHA512PureK.digest(data)
 
     val hasher = SHA512Hasher()
     hasher.update(a, 0, a.size)
@@ -218,7 +218,7 @@ internal class SHA512Test {
   fun `SHA512 digest over multi-update with byte-at-a-time feeding`() {
     // Feed one byte at a time — exercises maximal buffering paths in processBlock.
     val data = ByteArray(130) { (it * 5).toByte() }
-    val oneShot = SHA512.digest(data)
+    val oneShot = SHA512PureK.digest(data)
 
     val hasher = SHA512Hasher()
     data.forEachIndexed { i, _ -> hasher.update(data, i, 1) }
@@ -248,7 +248,7 @@ internal class SHA512Test {
             ),
         iterations = 100,
     ) {
-      SHA512.digest(it)
+      SHA512PureK.digest(it)
     }
     assertEquals(6, harness.samples().size, "one sample per varied input")
     assertTrue(

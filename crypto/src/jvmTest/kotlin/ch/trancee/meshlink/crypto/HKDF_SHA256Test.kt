@@ -27,7 +27,7 @@ internal class HKDF_SHA256Test {
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertContentEquals(
         hex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"),
-        HKDF_SHA256.digest(ikm, salt, info, 42),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 42),
     )
   }
 
@@ -70,7 +70,7 @@ internal class HKDF_SHA256Test {
                 "cc30c58179ec3e87c14c01d5c1f3434f" +
                 "1d87"
         ),
-        HKDF_SHA256.digest(ikm, salt, info, 82),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 82),
     )
   }
 
@@ -87,7 +87,7 @@ internal class HKDF_SHA256Test {
     val info = ByteArray(0)
     assertContentEquals(
         hex("8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"),
-        HKDF_SHA256.digest(ikm, salt, info, 42),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 42),
     )
   }
 
@@ -104,7 +104,7 @@ internal class HKDF_SHA256Test {
     val salt = hex("000102030405060708090a0b0c")
     assertContentEquals(
         hex("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5"),
-        HKDF_SHA256.extract(ikm, salt),
+        HKDF_SHA256PureK.extract(ikm, salt),
     )
   }
 
@@ -116,7 +116,7 @@ internal class HKDF_SHA256Test {
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertContentEquals(
         hex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"),
-        HKDF_SHA256.expand(prk, info, 42),
+        HKDF_SHA256PureK.expand(prk, info, 42),
     )
   }
 
@@ -136,7 +136,12 @@ internal class HKDF_SHA256Test {
     valid.forEach { testCase ->
       assertContentEquals(
           testCase.okm,
-          HKDF_SHA256.digest(testCase.ikm, testCase.salt, testCase.info, testCase.outputLength),
+          HKDF_SHA256PureK.digest(
+              testCase.ikm,
+              testCase.salt,
+              testCase.info,
+              testCase.outputLength,
+          ),
           "tcId=${testCase.tcId} ikmLen=${testCase.ikm.size} saltLen=${testCase.salt.size} infoLen=${testCase.info.size} outputLength=${testCase.outputLength}",
       )
     }
@@ -153,7 +158,7 @@ internal class HKDF_SHA256Test {
 
     invalid.forEach { testCase ->
       assertFailsWith<IllegalArgumentException> {
-        HKDF_SHA256.digest(testCase.ikm, testCase.salt, testCase.info, testCase.outputLength)
+        HKDF_SHA256PureK.digest(testCase.ikm, testCase.salt, testCase.info, testCase.outputLength)
       }
     }
   }
@@ -169,7 +174,7 @@ internal class HKDF_SHA256Test {
     val ikm = hex("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b")
     val salt = hex("000102030405060708090a0b0c")
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
-    assertContentEquals(byteArrayOf(), HKDF_SHA256.digest(ikm, salt, info, 0))
+    assertContentEquals(byteArrayOf(), HKDF_SHA256PureK.digest(ikm, salt, info, 0))
   }
 
   @Tag("positive")
@@ -179,7 +184,7 @@ internal class HKDF_SHA256Test {
     val ikm = hex("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b")
     val salt = hex("000102030405060708090a0b0c")
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
-    assertContentEquals(hex("3c"), HKDF_SHA256.digest(ikm, salt, info, 1))
+    assertContentEquals(hex("3c"), HKDF_SHA256PureK.digest(ikm, salt, info, 1))
   }
 
   @Tag("positive")
@@ -191,7 +196,7 @@ internal class HKDF_SHA256Test {
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertContentEquals(
         hex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf"),
-        HKDF_SHA256.digest(ikm, salt, info, 32),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 32),
     )
   }
 
@@ -204,7 +209,7 @@ internal class HKDF_SHA256Test {
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertContentEquals(
         hex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34"),
-        HKDF_SHA256.digest(ikm, salt, info, 33),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 33),
     )
   }
 
@@ -220,7 +225,7 @@ internal class HKDF_SHA256Test {
             "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf" +
                 "34007208d5b887185865b4b0a85a993b89b9b65683d60f0106d28fff039d0b6f"
         ),
-        HKDF_SHA256.digest(ikm, salt, info, 64),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 64),
     )
   }
 
@@ -231,7 +236,7 @@ internal class HKDF_SHA256Test {
     val ikm = hex("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b")
     val salt = hex("000102030405060708090a0b0c")
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
-    val output = HKDF_SHA256.digest(ikm, salt, info, 8160)
+    val output = HKDF_SHA256PureK.digest(ikm, salt, info, 8160)
     assertEquals(8160, output.size, "max output must be 255 * HashLen = 8160 bytes")
     // First 32 bytes match the one-block output.
     assertContentEquals(
@@ -253,7 +258,7 @@ internal class HKDF_SHA256Test {
     val salt = hex("000102030405060708090a0b0c")
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertFailsWith<IllegalArgumentException> {
-      HKDF_SHA256.digest(ikm, salt, info, 8161)
+      HKDF_SHA256PureK.digest(ikm, salt, info, 8161)
     }
   }
 
@@ -266,7 +271,7 @@ internal class HKDF_SHA256Test {
     val salt = hex("000102030405060708090a0b0c")
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertFailsWith<IllegalArgumentException> {
-      HKDF_SHA256.digest(ikm, salt, info, -1)
+      HKDF_SHA256PureK.digest(ikm, salt, info, -1)
     }
   }
 
@@ -284,7 +289,7 @@ internal class HKDF_SHA256Test {
     val info = hex("f0f1f2f3f4f5f6f7f8f9")
     assertContentEquals(
         hex("4dd449ba1911c57d79603e7e902452f79601b5e4d7b235ce0e11a7789a177660"),
-        HKDF_SHA256.digest(ikm, salt, info, 32),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 32),
     )
   }
 
@@ -302,7 +307,7 @@ internal class HKDF_SHA256Test {
             "abbafb13f5c1bc489d4203135817956dd521b39e3bd61d1cc85cef884d1f8e2e" +
                 "2ca9c19f23df620dd394b45cb724b6a13b65f2be0e062b21837ac04ce8b9c037"
         ),
-        HKDF_SHA256.digest(ikm, salt, info, 64),
+        HKDF_SHA256PureK.digest(ikm, salt, info, 64),
     )
   }
 
@@ -330,7 +335,7 @@ internal class HKDF_SHA256Test {
       val ikm = ByteArray(input.size + 1) { 0x0b }
       val salt = ByteArray(16) { 0x00 }
       val info = ByteArray(0)
-      HKDF_SHA256.digest(ikm, salt, info, 32)
+      HKDF_SHA256PureK.digest(ikm, salt, info, 32)
     }
     assertEquals(4, harness.samples().size, "one sample per varied input")
     assertTrue(

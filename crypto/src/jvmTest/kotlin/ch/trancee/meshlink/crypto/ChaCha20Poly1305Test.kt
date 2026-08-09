@@ -69,7 +69,7 @@ internal class ChaCha20Poly1305Test {
     val expectedTag = hex("1ae10b594f09e26a7e902ecbd0600691")
 
     // Encrypt with explicit nonce + AAD must produce the expected ciphertext || tag.
-    val ctWithTag = ChaCha20Poly1305.encryptWithNonce(key, nonce, aad, plaintext)
+    val ctWithTag = ChaCha20Poly1305PureK.encryptWithNonce(key, nonce, aad, plaintext)
     assertContentEquals(
         expectedCt + expectedTag,
         ctWithTag,
@@ -77,12 +77,13 @@ internal class ChaCha20Poly1305Test {
     )
 
     // Decrypt must reproduce the original plaintext.
-    val decrypted = ChaCha20Poly1305.decryptWithNonce(key, nonce, aad, expectedCt + expectedTag)
+    val decrypted =
+        ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, aad, expectedCt + expectedTag)
     assertContentEquals(plaintext, decrypted, "RFC 8439 §2.8 decrypt must match")
 
     // Public encrypt/decrypt round-trip with internal nonce.
-    val sealed = ChaCha20Poly1305.encrypt(key, plaintext)
-    val recovered = ChaCha20Poly1305.decrypt(key, sealed)
+    val sealed = ChaCha20Poly1305PureK.encrypt(key, plaintext)
+    val recovered = ChaCha20Poly1305PureK.decrypt(key, sealed)
     assertContentEquals(plaintext, recovered, "public encrypt/decrypt round-trip")
   }
 
@@ -98,13 +99,13 @@ internal class ChaCha20Poly1305Test {
     val nonce = hex("070000004041424344454647")
     val aad = hex("50515253c0c1c2c3c4c5c6c7")
     val plaintext = hex("4c616469657320616e642047656e746c656d656e")
-    val ctWithTag = ChaCha20Poly1305.encryptWithNonce(key, nonce, aad, plaintext)
+    val ctWithTag = ChaCha20Poly1305PureK.encryptWithNonce(key, nonce, aad, plaintext)
 
     // Flip one bit in the tag (last byte).
     val tampered = ctWithTag.copyOf()
     tampered[tampered.size - 1] = (tampered[tampered.size - 1].toInt() xor 1).toByte()
     assertNull(
-        ChaCha20Poly1305.decryptWithNonce(key, nonce, aad, tampered),
+        ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, aad, tampered),
         "flipped tag must return null",
     )
   }
@@ -116,13 +117,13 @@ internal class ChaCha20Poly1305Test {
     val key = hex("808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f")
     val nonce = hex("070000004041424344454647")
     val plaintext = hex("4c616469657320616e642047656e746c656d656e")
-    val ctWithTag = ChaCha20Poly1305.encryptWithNonce(key, nonce, ByteArray(0), plaintext)
+    val ctWithTag = ChaCha20Poly1305PureK.encryptWithNonce(key, nonce, ByteArray(0), plaintext)
 
     // Flip one bit in the ciphertext (first encrypted byte).
     val tampered = ctWithTag.copyOf()
     tampered[0] = (tampered[0].toInt() xor 0x01).toByte()
     assertNull(
-        ChaCha20Poly1305.decryptWithNonce(key, nonce, ByteArray(0), tampered),
+        ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, ByteArray(0), tampered),
         "flipped ciphertext bit must fail MAC verification",
     )
   }
@@ -135,10 +136,10 @@ internal class ChaCha20Poly1305Test {
     val wrongKey = hex("0000000000000000000000000000000000000000000000000000000000000000")
     val nonce = hex("070000004041424344454647")
     val plaintext = hex("4c616469657320")
-    val ctWithTag = ChaCha20Poly1305.encryptWithNonce(key, nonce, ByteArray(0), plaintext)
+    val ctWithTag = ChaCha20Poly1305PureK.encryptWithNonce(key, nonce, ByteArray(0), plaintext)
 
     assertNull(
-        ChaCha20Poly1305.decryptWithNonce(wrongKey, nonce, ByteArray(0), ctWithTag),
+        ChaCha20Poly1305PureK.decryptWithNonce(wrongKey, nonce, ByteArray(0), ctWithTag),
         "wrong key must fail MAC verification",
     )
   }
@@ -152,9 +153,9 @@ internal class ChaCha20Poly1305Test {
   @Test
   fun `ChaCha20-Poly1305 empty message round-trip`() {
     val key = ByteArray(32) { (it * 7).toByte() }
-    val ct = ChaCha20Poly1305.encrypt(key, ByteArray(0))
+    val ct = ChaCha20Poly1305PureK.encrypt(key, ByteArray(0))
     assertEquals(28, ct.size, "empty message → 12-byte nonce + 16-byte tag")
-    val plaintext = ChaCha20Poly1305.decrypt(key, ct)
+    val plaintext = ChaCha20Poly1305PureK.decrypt(key, ct)
     assertNotNull(plaintext, "empty-message decrypt must not return null")
     assertEquals(0, plaintext.size)
   }
@@ -166,10 +167,13 @@ internal class ChaCha20Poly1305Test {
     val key = ByteArray(32) { (it * 7).toByte() }
     // 12-byte nonce + less than 16-byte tag → too short.
     assertNull(
-        ChaCha20Poly1305.decrypt(key, ByteArray(27)),
+        ChaCha20Poly1305PureK.decrypt(key, ByteArray(27)),
         "too-short ciphertext must return null",
     )
-    assertNull(ChaCha20Poly1305.decrypt(key, ByteArray(0)), "empty ciphertext must return null")
+    assertNull(
+        ChaCha20Poly1305PureK.decrypt(key, ByteArray(0)),
+        "empty ciphertext must return null",
+    )
   }
 
   @Tag("positive")
@@ -189,8 +193,8 @@ internal class ChaCha20Poly1305Test {
         )
     repeat(8) { seed ->
       messages.forEach { msg ->
-        val ct = ChaCha20Poly1305.encrypt(key, msg)
-        val pt = ChaCha20Poly1305.decrypt(key, ct)
+        val ct = ChaCha20Poly1305PureK.encrypt(key, msg)
+        val pt = ChaCha20Poly1305PureK.decrypt(key, ct)
         assertNotNull(pt, "decrypt must succeed for seed=$seed msgLen=${msg.size}")
         assertContentEquals(msg, pt, "round-trip must preserve data (seed=$seed)")
       }
@@ -205,8 +209,8 @@ internal class ChaCha20Poly1305Test {
     val nonce = ByteArray(12) { (it + 1).toByte() }
     val aad = "associated data for testing".encodeToByteArray()
     val plaintext = ByteArray(50) { (it + 10).toByte() }
-    val ctWithTag = ChaCha20Poly1305.encryptWithNonce(key, nonce, aad, plaintext)
-    val recovered = ChaCha20Poly1305.decryptWithNonce(key, nonce, aad, ctWithTag)
+    val ctWithTag = ChaCha20Poly1305PureK.encryptWithNonce(key, nonce, aad, plaintext)
+    val recovered = ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, aad, ctWithTag)
     assertContentEquals(plaintext, recovered, "AAD round-trip must preserve plaintext")
   }
 
@@ -219,9 +223,9 @@ internal class ChaCha20Poly1305Test {
     val aad1 = "associated data for testing".encodeToByteArray()
     val aad2 = "tampered associated data!!".encodeToByteArray()
     val plaintext = ByteArray(50) { (it + 10).toByte() }
-    val ctWithTag = ChaCha20Poly1305.encryptWithNonce(key, nonce, aad1, plaintext)
+    val ctWithTag = ChaCha20Poly1305PureK.encryptWithNonce(key, nonce, aad1, plaintext)
     assertNull(
-        ChaCha20Poly1305.decryptWithNonce(key, nonce, aad2, ctWithTag),
+        ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, aad2, ctWithTag),
         "mismatched AAD must fail authentication",
     )
   }
@@ -237,7 +241,9 @@ internal class ChaCha20Poly1305Test {
     val key31 = ByteArray(31)
     val nonce = ByteArray(12) { (it + 1).toByte() }
     val msg = "hi".encodeToByteArray()
-    val result = runCatching { ChaCha20Poly1305.encryptWithNonce(key31, nonce, ByteArray(0), msg) }
+    val result = runCatching {
+      ChaCha20Poly1305PureK.encryptWithNonce(key31, nonce, ByteArray(0), msg)
+    }
     assertTrue(result.isFailure, "31-byte key must throw")
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)
   }
@@ -249,7 +255,9 @@ internal class ChaCha20Poly1305Test {
     val key = ByteArray(32) { (it * 7).toByte() }
     val nonce11 = ByteArray(11)
     val msg = "hi".encodeToByteArray()
-    val result = runCatching { ChaCha20Poly1305.encryptWithNonce(key, nonce11, ByteArray(0), msg) }
+    val result = runCatching {
+      ChaCha20Poly1305PureK.encryptWithNonce(key, nonce11, ByteArray(0), msg)
+    }
     assertTrue(result.isFailure, "11-byte nonce must throw")
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)
   }
@@ -270,7 +278,7 @@ internal class ChaCha20Poly1305Test {
 
     valid.forEach { tc ->
       val ctWithTag = tc.ciphertext + tc.tag
-      val plaintext = ChaCha20Poly1305.decryptWithNonce(tc.key, tc.nonce, tc.aad, ctWithTag)
+      val plaintext = ChaCha20Poly1305PureK.decryptWithNonce(tc.key, tc.nonce, tc.aad, ctWithTag)
       assertContentEquals(
           tc.plaintext,
           plaintext,
@@ -295,7 +303,7 @@ internal class ChaCha20Poly1305Test {
 
     invalid.forEach { tc ->
       val ctWithTag = tc.ciphertext + tc.tag
-      val plaintext = ChaCha20Poly1305.decryptWithNonce(tc.key, tc.nonce, tc.aad, ctWithTag)
+      val plaintext = ChaCha20Poly1305PureK.decryptWithNonce(tc.key, tc.nonce, tc.aad, ctWithTag)
       assertNull(
           plaintext,
           "tcId=${tc.tcId} comment=${tc.comment} flags=${tc.flags} must fail",
@@ -393,7 +401,7 @@ internal class ChaCha20Poly1305Test {
   @Tag("boundary")
   @Test
   fun `ChaCha20Poly1305 encrypt rejects wrong key length`() {
-    val result = runCatching { ChaCha20Poly1305.encrypt(ByteArray(31), ByteArray(10)) }
+    val result = runCatching { ChaCha20Poly1305PureK.encrypt(ByteArray(31), ByteArray(10)) }
     assertTrue(result.isFailure, "31-byte key must throw")
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)
   }
@@ -402,7 +410,7 @@ internal class ChaCha20Poly1305Test {
   @Tag("boundary")
   @Test
   fun `ChaCha20Poly1305 decrypt rejects wrong key length`() {
-    val result = runCatching { ChaCha20Poly1305.decrypt(ByteArray(31), ByteArray(28)) }
+    val result = runCatching { ChaCha20Poly1305PureK.decrypt(ByteArray(31), ByteArray(28)) }
     assertTrue(result.isFailure, "31-byte key must throw")
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)
   }
@@ -414,11 +422,11 @@ internal class ChaCha20Poly1305Test {
     val key = ByteArray(32) { (it * 7).toByte() }
     val nonce = ByteArray(12) { (it + 1).toByte() }
     assertNull(
-        ChaCha20Poly1305.decryptWithNonce(key, nonce, ByteArray(0), ByteArray(15)),
+        ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, ByteArray(0), ByteArray(15)),
         "ciphertextWithTag shorter than TAG_SIZE must return null",
     )
     assertNull(
-        ChaCha20Poly1305.decryptWithNonce(key, nonce, ByteArray(0), ByteArray(0)),
+        ChaCha20Poly1305PureK.decryptWithNonce(key, nonce, ByteArray(0), ByteArray(0)),
         "empty ciphertextWithTag must return null",
     )
   }
@@ -429,7 +437,7 @@ internal class ChaCha20Poly1305Test {
   fun `ChaCha20Poly1305 decryptWithNonce rejects wrong key length`() {
     val nonce = ByteArray(12) { (it + 1).toByte() }
     val result = runCatching {
-      ChaCha20Poly1305.decryptWithNonce(ByteArray(31), nonce, ByteArray(0), ByteArray(32))
+      ChaCha20Poly1305PureK.decryptWithNonce(ByteArray(31), nonce, ByteArray(0), ByteArray(32))
     }
     assertTrue(result.isFailure, "31-byte key must throw")
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)
@@ -441,7 +449,7 @@ internal class ChaCha20Poly1305Test {
   fun `ChaCha20Poly1305 decryptWithNonce rejects wrong nonce length`() {
     val key = ByteArray(32) { (it * 7).toByte() }
     val result = runCatching {
-      ChaCha20Poly1305.decryptWithNonce(key, ByteArray(11), ByteArray(0), ByteArray(32))
+      ChaCha20Poly1305PureK.decryptWithNonce(key, ByteArray(11), ByteArray(0), ByteArray(32))
     }
     assertTrue(result.isFailure, "11-byte nonce must throw")
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)

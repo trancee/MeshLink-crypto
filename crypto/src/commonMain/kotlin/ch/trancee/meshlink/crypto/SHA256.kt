@@ -109,7 +109,7 @@ private val sha256H0 =
  * annotation on [digest] lets the `:crypto-detekt-rules` `ConstantTimeRule` statically reject any
  * data-dependent `[if]`/`[when]` or secret-indexed array access in this file.
  */
-public object SHA256 {
+internal object SHA256PureK {
 
   /**
    * Computes the SHA-256 digest of [message].

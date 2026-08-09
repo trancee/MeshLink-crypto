@@ -13,7 +13,7 @@ package ch.trancee.meshlink.crypto
 // - Point decoding (pointFromBytes) is var-time but only consumes public data.
 // ---------------------------------------------------------------------------
 
-internal object Ed25519 {
+internal object Ed25519PureK {
 
   // ── Constants (32-byte LE) ────────────────────────────────────────────────
 
@@ -1013,7 +1013,7 @@ internal object Ed25519 {
 
   /** Derives the 32-byte Ed25519 public key from a 32-byte secret key (RFC 8032 §5.1.2). */
   fun publicKeyFromPrivate(secretKey: ByteArray): ByteArray {
-    val h = SHA512.digest(secretKey)
+    val h = SHA512PureK.digest(secretKey)
     h[0] = (h[0].toInt() and 0xF8).toByte()
     h[31] = (h[31].toInt() and 0x7F).toByte()
     h[31] = (h[31].toInt() or 0x40).toByte()
@@ -1022,7 +1022,7 @@ internal object Ed25519 {
 
   /** Signs [message] with [secretKey], producing a 64-byte Ed25519 signature (RFC 8032 §5.1.5). */
   fun sign(@Secret secretKey: ByteArray, message: ByteArray): ByteArray {
-    val h = SHA512.digest(secretKey)
+    val h = SHA512PureK.digest(secretKey)
     h[0] = (h[0].toInt() and 0xF8).toByte()
     h[31] = (h[31].toInt() and 0x7F).toByte()
     h[31] = (h[31].toInt() or 0x40).toByte()

@@ -43,31 +43,31 @@ class HMAC_SHA256Benchmark {
 
   // ---- one-shot digest (no key normalisation) ----
 
-  @Benchmark fun oneShotEmpty(): ByteArray = HMAC_SHA256.digest(shortKey, empty)
+  @Benchmark fun oneShotEmpty(): ByteArray = HMAC_SHA256PureK.digest(shortKey, empty)
 
-  @Benchmark fun oneShotSmall(): ByteArray = HMAC_SHA256.digest(shortKey, small)
+  @Benchmark fun oneShotSmall(): ByteArray = HMAC_SHA256PureK.digest(shortKey, small)
 
-  @Benchmark fun oneShotOneBlock(): ByteArray = HMAC_SHA256.digest(shortKey, oneBlock)
+  @Benchmark fun oneShotOneBlock(): ByteArray = HMAC_SHA256PureK.digest(shortKey, oneBlock)
 
-  @Benchmark fun oneShotTwoBlocks(): ByteArray = HMAC_SHA256.digest(shortKey, twoBlocks)
+  @Benchmark fun oneShotTwoBlocks(): ByteArray = HMAC_SHA256PureK.digest(shortKey, twoBlocks)
 
-  @Benchmark fun oneShotLarge(): ByteArray = HMAC_SHA256.digest(shortKey, large)
+  @Benchmark fun oneShotLarge(): ByteArray = HMAC_SHA256PureK.digest(shortKey, large)
 
   // ---- one-shot digest (key normalisation: key > block size) ----
 
-  @Benchmark fun oneShotLongKey(): ByteArray = HMAC_SHA256.digest(longKey, small)
+  @Benchmark fun oneShotLongKey(): ByteArray = HMAC_SHA256PureK.digest(longKey, small)
 
   // ---- verify (digest + constant-time compare) ----
 
   @Benchmark
   fun verifySmall(): Boolean {
-    val tag = HMAC_SHA256.digest(shortKey, small)
-    return HMAC_SHA256.verify(shortKey, small, tag)
+    val tag = HMAC_SHA256PureK.digest(shortKey, small)
+    return HMAC_SHA256PureK.verify(shortKey, small, tag)
   }
 
   @Benchmark
   fun verifyLarge(): Boolean {
-    val tag = HMAC_SHA256.digest(shortKey, large)
-    return HMAC_SHA256.verify(shortKey, large, tag)
+    val tag = HMAC_SHA256PureK.digest(shortKey, large)
+    return HMAC_SHA256PureK.verify(shortKey, large, tag)
   }
 }

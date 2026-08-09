@@ -21,7 +21,7 @@ import kotlin.time.TimeSource
  * TimingHarness().measure(
  *   label = "SHA-256",
  *   inputs = wycheproofTcInputs,
- *   block = { SHA256.digest(it) },
+ *   block = { SHA256PureK.digest(it) },
  * )
  * ```
  */

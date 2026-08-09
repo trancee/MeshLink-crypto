@@ -24,7 +24,7 @@ internal class X25519Test {
     val scalar = hex("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
     val u = hex("e6db6867583030db3594c1a424b15f7c726624ec26b3353b10a903a6d0ab1c4c")
     val expected = hex("c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552")
-    assertContentEquals(expected, X25519.compute(scalar, u))
+    assertContentEquals(expected, X25519PureK.compute(scalar, u))
   }
 
   @Tag("positive")
@@ -34,7 +34,7 @@ internal class X25519Test {
     val scalar = hex("4b66e9d4d1b4673c5ad22691957d6af5c11b6421e0ea01d42ca4169e7918ba0d")
     val u = hex("e5210f12786811d3f4b7959d0538ae2c31dbe7106fc03c3efc4cd549c715a493")
     val expected = hex("95cbde9476e8907d7aade45cb4b873f88b595a68799fa152e6f8f7647aac7957")
-    assertContentEquals(expected, X25519.compute(scalar, u))
+    assertContentEquals(expected, X25519PureK.compute(scalar, u))
   }
 
   // ------------------------------------------------------------------
@@ -58,10 +58,10 @@ internal class X25519Test {
 
     // u=9 is the base-point u-coordinate (encoded as 0x09 followed by 31 zero bytes).
     val base = hex("0900000000000000000000000000000000000000000000000000000000000000")
-    assertContentEquals(kA, X25519.compute(a, base), "Alice's public key must match")
-    assertContentEquals(kB, X25519.compute(b, base), "Bob's public key must match")
-    assertContentEquals(expected, X25519.compute(a, kB), "Alice's shared secret must match")
-    assertContentEquals(expected, X25519.compute(b, kA), "Bob's shared secret must match")
+    assertContentEquals(kA, X25519PureK.compute(a, base), "Alice's public key must match")
+    assertContentEquals(kB, X25519PureK.compute(b, base), "Bob's public key must match")
+    assertContentEquals(expected, X25519PureK.compute(a, kB), "Alice's shared secret must match")
+    assertContentEquals(expected, X25519PureK.compute(b, kA), "Bob's shared secret must match")
   }
 
   // ------------------------------------------------------------------
@@ -80,7 +80,7 @@ internal class X25519Test {
     val expected = hex("2fe57da347cd62431528daac5fbb290730fff684afc4cfc2ed90995f58cb3b74")
     assertContentEquals(
         expected,
-        X25519.compute(scalar, u),
+        X25519PureK.compute(scalar, u),
         "clamped all-zero scalar must produce expected non-zero output",
     )
   }
@@ -91,7 +91,7 @@ internal class X25519Test {
   fun `X25519 all-zero u-coordinate produces all-zero output`() {
     val scalar = hex("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
     val u = ByteArray(32)
-    val result = X25519.compute(scalar, u)
+    val result = X25519PureK.compute(scalar, u)
     assertContentEquals(ByteArray(32), result, "all-zero u-coordinate must produce all-zero output")
   }
 
@@ -102,7 +102,7 @@ internal class X25519Test {
     val scalar = ByteArray(32) { 0x00 }
     scalar[0] = 0x09.toByte()
     val u = hex("0900000000000000000000000000000000000000000000000000000000000000")
-    val result = X25519.compute(scalar, u)
+    val result = X25519PureK.compute(scalar, u)
     assertTrue(result.any { it != 0.toByte() }, "X25519(9, 9) must not be all-zero")
   }
 
@@ -117,11 +117,11 @@ internal class X25519Test {
     val a = hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a")
     val b = hex("5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb")
     val base = hex("0900000000000000000000000000000000000000000000000000000000000000")
-    val kA = X25519.compute(a, base)
-    val kB = X25519.compute(b, base)
+    val kA = X25519PureK.compute(a, base)
+    val kB = X25519PureK.compute(b, base)
     assertContentEquals(
-        X25519.compute(a, kB),
-        X25519.compute(b, kA),
+        X25519PureK.compute(a, kB),
+        X25519PureK.compute(b, kA),
         "ECDH commutativity must hold: X25519(a, X25519(b,9)) == X25519(b, X25519(a,9))",
     )
   }
@@ -142,7 +142,7 @@ internal class X25519Test {
     valid.forEach { testCase ->
       assertContentEquals(
           testCase.shared,
-          X25519.compute(testCase.private, testCase.public),
+          X25519PureK.compute(testCase.private, testCase.public),
           "tcId=${testCase.tcId} comment=${testCase.comment}",
       )
     }
@@ -161,7 +161,7 @@ internal class X25519Test {
     acceptable.forEach { testCase ->
       assertContentEquals(
           testCase.shared,
-          X25519.compute(testCase.private, testCase.public),
+          X25519PureK.compute(testCase.private, testCase.public),
           "tcId=${testCase.tcId} comment=${testCase.comment}",
       )
     }
@@ -187,7 +187,7 @@ internal class X25519Test {
   fun `X25519 short scalar is rejected`() {
     val scalar = ByteArray(31)
     val u = ByteArray(32)
-    val result = runCatching { X25519.compute(scalar, u) }
+    val result = runCatching { X25519PureK.compute(scalar, u) }
     assertTrue(result.isFailure, "31-byte scalar must be rejected")
   }
 
@@ -198,7 +198,7 @@ internal class X25519Test {
   fun `X25519 short u-coordinate is rejected`() {
     val scalar = ByteArray(32)
     val u = ByteArray(31)
-    val result = runCatching { X25519.compute(scalar, u) }
+    val result = runCatching { X25519PureK.compute(scalar, u) }
     assertTrue(result.isFailure, "31-byte u-coordinate must be rejected")
   }
 
@@ -209,7 +209,7 @@ internal class X25519Test {
   fun `X25519 long scalar is rejected`() {
     val scalar = ByteArray(33)
     val u = ByteArray(32)
-    val result = runCatching { X25519.compute(scalar, u) }
+    val result = runCatching { X25519PureK.compute(scalar, u) }
     assertTrue(result.isFailure, "33-byte scalar must be rejected")
   }
 
@@ -220,7 +220,7 @@ internal class X25519Test {
   fun `X25519 long u-coordinate is rejected`() {
     val scalar = ByteArray(32)
     val u = ByteArray(33)
-    val result = runCatching { X25519.compute(scalar, u) }
+    val result = runCatching { X25519PureK.compute(scalar, u) }
     assertTrue(result.isFailure, "33-byte u-coordinate must be rejected")
   }
 
@@ -247,7 +247,7 @@ internal class X25519Test {
     ) { input ->
       val u = ByteArray(32) { 0x00 }
       u[0] = 0x09.toByte()
-      X25519.compute(input, u)
+      X25519PureK.compute(input, u)
     }
     assertEquals(4, harness.samples().size, "one sample per varied input")
     assertTrue(

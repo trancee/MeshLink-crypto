@@ -26,7 +26,7 @@ internal class HMAC_SHA256Test {
     val msg = "Hi There".encodeToByteArray()
     assertContentEquals(
         hex("B0344C61D8DB38535CA8AFCEAF0BF12B881DC200C9833DA726E9376C2E32CFF7"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -38,7 +38,7 @@ internal class HMAC_SHA256Test {
     val msg = "what do ya want for nothing?".encodeToByteArray()
     assertContentEquals(
         hex("5BDCC146BF60754E6A042426089575C75A003F089D2739839DEC58B964EC3843"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -50,7 +50,7 @@ internal class HMAC_SHA256Test {
     val msg = ByteArray(100) { 0xdd.toByte() }
     assertContentEquals(
         hex("0598ED470243A1A01FB354BDA6A05843DE5EC8514468B0229805C302E325155B"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -62,7 +62,7 @@ internal class HMAC_SHA256Test {
     val msg = ByteArray(50) { 0xcd.toByte() }
     assertContentEquals(
         hex("82558A389A443C0EA4CC819899F2083A85F0FAA3E578F8077A2E3FF46729665B"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -80,7 +80,7 @@ internal class HMAC_SHA256Test {
     assertTrue(valid.isNotEmpty(), "Wycheproof resource must contain valid vectors")
 
     valid.forEach { testCase ->
-      val computed = HMAC_SHA256.digest(testCase.key, testCase.msg)
+      val computed = HMAC_SHA256PureK.digest(testCase.key, testCase.msg)
       // Full 32-byte tags compare directly; 16-byte truncated tags compare prefix.
       val expectedLength = testCase.tag.size
       assertContentEquals(
@@ -102,7 +102,7 @@ internal class HMAC_SHA256Test {
 
     fullTagValid.forEach { testCase ->
       assertTrue(
-          HMAC_SHA256.verify(testCase.key, testCase.msg, testCase.tag),
+          HMAC_SHA256PureK.verify(testCase.key, testCase.msg, testCase.tag),
           "tcId=${testCase.tcId} verify should accept correct full-length tag",
       )
     }
@@ -119,7 +119,7 @@ internal class HMAC_SHA256Test {
 
     invalid.forEach { testCase ->
       assertFalse(
-          HMAC_SHA256.verify(testCase.key, testCase.msg, testCase.tag),
+          HMAC_SHA256PureK.verify(testCase.key, testCase.msg, testCase.tag),
           "tcId=${testCase.tcId} verify must reject modified/truncated tag",
       )
     }
@@ -139,7 +139,7 @@ internal class HMAC_SHA256Test {
     val msg = ByteArray(0)
     assertContentEquals(
         hex("B613679A0814D9EC772F95D778C35FC5FF1697C493715653C6C712144292C5AD"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -153,7 +153,7 @@ internal class HMAC_SHA256Test {
     val msg = "test".encodeToByteArray()
     assertContentEquals(
         hex("48335CCA4DCE044BF7E203EA2C0CB598C4070BFD03B329D95021E07495E68E6B"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -167,7 +167,7 @@ internal class HMAC_SHA256Test {
     val msg = "data".encodeToByteArray()
     assertContentEquals(
         hex("DE28139C725C5B6A71F7C9D48AFB8C6ED9F4AD09DF8B7994D0D7BA6723D6DD8F"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -180,7 +180,7 @@ internal class HMAC_SHA256Test {
     val msg = "msg".encodeToByteArray()
     assertContentEquals(
         hex("88EC2DA49AC6D7D71199DED8261B45B03567A627290B90A1A6F8BD929664B5F4"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -196,7 +196,7 @@ internal class HMAC_SHA256Test {
     val key = ByteArray(20) { 0x0b }
     assertContentEquals(
         hex("999A901219F032CD497CADB5E6051E97B6A29AB297BD6AE722BD6062A2F59542"),
-        HMAC_SHA256.digest(key, ByteArray(0)),
+        HMAC_SHA256PureK.digest(key, ByteArray(0)),
     )
   }
 
@@ -209,7 +209,7 @@ internal class HMAC_SHA256Test {
     val msg = ByteArray(64) { 0x61 }
     assertContentEquals(
         hex("CCA2C75CDA09B876194A5E9076F0B37416042BD8E8D36F48ABEAD99753E62A64"),
-        HMAC_SHA256.digest(key, msg),
+        HMAC_SHA256PureK.digest(key, msg),
     )
   }
 
@@ -224,8 +224,8 @@ internal class HMAC_SHA256Test {
   fun `HMAC SHA-256 verify accepts a correct tag`() {
     val key = ByteArray(20) { 0x0b }
     val msg = "Hi There".encodeToByteArray()
-    val tag = HMAC_SHA256.digest(key, msg)
-    assertTrue(HMAC_SHA256.verify(key, msg, tag), "correct tag must verify")
+    val tag = HMAC_SHA256PureK.digest(key, msg)
+    assertTrue(HMAC_SHA256PureK.verify(key, msg, tag), "correct tag must verify")
   }
 
   @Tag("positive")
@@ -235,8 +235,9 @@ internal class HMAC_SHA256Test {
   fun `HMAC SHA-256 verify rejects a single-bit-flipped tag`() {
     val key = ByteArray(20) { 0x0b }
     val msg = "Hi There".encodeToByteArray()
-    val tag = HMAC_SHA256.digest(key, msg).apply { this[0] = (this[0].toInt() xor 0x01).toByte() }
-    assertFalse(HMAC_SHA256.verify(key, msg, tag), "flipped tag must not verify")
+    val tag =
+        HMAC_SHA256PureK.digest(key, msg).apply { this[0] = (this[0].toInt() xor 0x01).toByte() }
+    assertFalse(HMAC_SHA256PureK.verify(key, msg, tag), "flipped tag must not verify")
   }
 
   @Tag("positive")
@@ -246,8 +247,8 @@ internal class HMAC_SHA256Test {
   fun `HMAC SHA-256 verify rejects a truncated tag`() {
     val key = ByteArray(20) { 0x0b }
     val msg = "Hi There".encodeToByteArray()
-    val tag = HMAC_SHA256.digest(key, msg).copyOfRange(0, 16) // truncate to 16 bytes
-    assertFalse(HMAC_SHA256.verify(key, msg, tag), "truncated tag must not verify")
+    val tag = HMAC_SHA256PureK.digest(key, msg).copyOfRange(0, 16) // truncate to 16 bytes
+    assertFalse(HMAC_SHA256PureK.verify(key, msg, tag), "truncated tag must not verify")
   }
 
   @Tag("positive")
@@ -257,8 +258,8 @@ internal class HMAC_SHA256Test {
   fun `HMAC SHA-256 verify rejects an extended tag`() {
     val key = ByteArray(20) { 0x0b }
     val msg = "Hi There".encodeToByteArray()
-    val tag = HMAC_SHA256.digest(key, msg) + byteArrayOf(0x00, 0x00, 0x00)
-    assertFalse(HMAC_SHA256.verify(key, msg, tag), "extended tag must not verify")
+    val tag = HMAC_SHA256PureK.digest(key, msg) + byteArrayOf(0x00, 0x00, 0x00)
+    assertFalse(HMAC_SHA256PureK.verify(key, msg, tag), "extended tag must not verify")
   }
 
   @Tag("positive")
@@ -269,7 +270,7 @@ internal class HMAC_SHA256Test {
     val key = ByteArray(20) { 0x0b }
     val msg = "Hi There".encodeToByteArray()
     assertFalse(
-        HMAC_SHA256.verify(key, msg, ByteArray(0)),
+        HMAC_SHA256PureK.verify(key, msg, ByteArray(0)),
         "empty tag must not verify",
     )
   }
@@ -296,7 +297,7 @@ internal class HMAC_SHA256Test {
         iterations = 100,
     ) { input ->
       val key = ByteArray(20) { 0x0b }
-      HMAC_SHA256.digest(key, input)
+      HMAC_SHA256PureK.digest(key, input)
     }
     assertEquals(4, harness.samples().size, "one sample per varied input")
     assertTrue(

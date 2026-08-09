@@ -60,11 +60,11 @@ class Ed25519Benchmark {
     twoBlockMessage = ByteArray(256) { (it % 251).toByte() }
     largeMessage = ByteArray(1_048_576) { 0x61 }
 
-    sigEmpty = Ed25519.sign(katSecretKey1, emptyMessage)
-    sigSmall = Ed25519.sign(katSecretKey1, smallMessage)
-    sigOneBlock = Ed25519.sign(katSecretKey1, oneBlockMessage)
-    sigTwoBlocks = Ed25519.sign(katSecretKey1, twoBlockMessage)
-    sigLarge = Ed25519.sign(katSecretKey1, largeMessage)
+    sigEmpty = Ed25519PureK.sign(katSecretKey1, emptyMessage)
+    sigSmall = Ed25519PureK.sign(katSecretKey1, smallMessage)
+    sigOneBlock = Ed25519PureK.sign(katSecretKey1, oneBlockMessage)
+    sigTwoBlocks = Ed25519PureK.sign(katSecretKey1, twoBlockMessage)
+    sigLarge = Ed25519PureK.sign(katSecretKey1, largeMessage)
 
     tamperedSig = sigEmpty.copyOf()
     tamperedSig[0] = (tamperedSig[0].toInt() xor 1).toByte()
@@ -78,53 +78,60 @@ class Ed25519Benchmark {
   // carry-propagation edge cases (ADR-0001).
   // ------------------------------------------------------------------
 
-  @Benchmark fun keyDerivationKat1(): ByteArray = Ed25519.publicKeyFromPrivate(katSecretKey1)
+  @Benchmark fun keyDerivationKat1(): ByteArray = Ed25519PureK.publicKeyFromPrivate(katSecretKey1)
 
-  @Benchmark fun keyDerivationKat2(): ByteArray = Ed25519.publicKeyFromPrivate(katSecretKey2)
+  @Benchmark fun keyDerivationKat2(): ByteArray = Ed25519PureK.publicKeyFromPrivate(katSecretKey2)
 
-  @Benchmark fun keyDerivationAllZero(): ByteArray = Ed25519.publicKeyFromPrivate(allZeroSecretKey)
+  @Benchmark
+  fun keyDerivationAllZero(): ByteArray = Ed25519PureK.publicKeyFromPrivate(allZeroSecretKey)
 
-  @Benchmark fun keyDerivationAllOnes(): ByteArray = Ed25519.publicKeyFromPrivate(allOnesSecretKey)
+  @Benchmark
+  fun keyDerivationAllOnes(): ByteArray = Ed25519PureK.publicKeyFromPrivate(allOnesSecretKey)
 
   // ------------------------------------------------------------------
   // Signing (sign) at SHA-512 block-size boundaries
   // ------------------------------------------------------------------
 
-  @Benchmark fun signEmpty(): ByteArray = Ed25519.sign(katSecretKey1, emptyMessage)
+  @Benchmark fun signEmpty(): ByteArray = Ed25519PureK.sign(katSecretKey1, emptyMessage)
 
-  @Benchmark fun signSmall(): ByteArray = Ed25519.sign(katSecretKey1, smallMessage)
+  @Benchmark fun signSmall(): ByteArray = Ed25519PureK.sign(katSecretKey1, smallMessage)
 
-  @Benchmark fun signOneBlock(): ByteArray = Ed25519.sign(katSecretKey1, oneBlockMessage)
+  @Benchmark fun signOneBlock(): ByteArray = Ed25519PureK.sign(katSecretKey1, oneBlockMessage)
 
-  @Benchmark fun signTwoBlocks(): ByteArray = Ed25519.sign(katSecretKey1, twoBlockMessage)
+  @Benchmark fun signTwoBlocks(): ByteArray = Ed25519PureK.sign(katSecretKey1, twoBlockMessage)
 
-  @Benchmark fun signLarge(): ByteArray = Ed25519.sign(katSecretKey1, largeMessage)
+  @Benchmark fun signLarge(): ByteArray = Ed25519PureK.sign(katSecretKey1, largeMessage)
 
   // ------------------------------------------------------------------
   // Verification (verify) at SHA-512 block-size boundaries
   // ------------------------------------------------------------------
 
-  @Benchmark fun verifyValidEmpty(): Boolean = Ed25519.verify(katPublicKey1, emptyMessage, sigEmpty)
-
-  @Benchmark fun verifyValidSmall(): Boolean = Ed25519.verify(katPublicKey1, smallMessage, sigSmall)
+  @Benchmark
+  fun verifyValidEmpty(): Boolean = Ed25519PureK.verify(katPublicKey1, emptyMessage, sigEmpty)
 
   @Benchmark
-  fun verifyValidOneBlock(): Boolean = Ed25519.verify(katPublicKey1, oneBlockMessage, sigOneBlock)
+  fun verifyValidSmall(): Boolean = Ed25519PureK.verify(katPublicKey1, smallMessage, sigSmall)
 
   @Benchmark
-  fun verifyValidTwoBlocks(): Boolean = Ed25519.verify(katPublicKey1, twoBlockMessage, sigTwoBlocks)
+  fun verifyValidOneBlock(): Boolean =
+      Ed25519PureK.verify(katPublicKey1, oneBlockMessage, sigOneBlock)
 
-  @Benchmark fun verifyValidLarge(): Boolean = Ed25519.verify(katPublicKey1, largeMessage, sigLarge)
+  @Benchmark
+  fun verifyValidTwoBlocks(): Boolean =
+      Ed25519PureK.verify(katPublicKey1, twoBlockMessage, sigTwoBlocks)
+
+  @Benchmark
+  fun verifyValidLarge(): Boolean = Ed25519PureK.verify(katPublicKey1, largeMessage, sigLarge)
 
   // ------------------------------------------------------------------
   // Rejection paths (verify returns false without throwing)
   // ------------------------------------------------------------------
 
   @Benchmark
-  fun verifyTamperedR(): Boolean = Ed25519.verify(katPublicKey1, emptyMessage, tamperedSig)
+  fun verifyTamperedR(): Boolean = Ed25519PureK.verify(katPublicKey1, emptyMessage, tamperedSig)
 
   @Benchmark
-  fun verifyWrongMessage(): Boolean = Ed25519.verify(katPublicKey1, smallMessage, sigEmpty)
+  fun verifyWrongMessage(): Boolean = Ed25519PureK.verify(katPublicKey1, smallMessage, sigEmpty)
 
   // ------------------------------------------------------------------
   // Helpers

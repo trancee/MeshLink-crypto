@@ -37,19 +37,19 @@ class X25519Benchmark {
 
   // ---- RFC 7748 KAT vectors ----
 
-  @Benchmark fun katVector1(): ByteArray = X25519.compute(katScalar1, katU1)
+  @Benchmark fun katVector1(): ByteArray = X25519PureK.compute(katScalar1, katU1)
 
-  @Benchmark fun katVector2(): ByteArray = X25519.compute(katScalar2, katU2)
+  @Benchmark fun katVector2(): ByteArray = X25519PureK.compute(katScalar2, katU2)
 
   // ---- Base-point multiplication (public key derivation) ----
 
-  @Benchmark fun basePointMultiplication(): ByteArray = X25519.compute(katScalar1, basePointU)
+  @Benchmark fun basePointMultiplication(): ByteArray = X25519PureK.compute(katScalar1, basePointU)
 
   // ---- Edge cases ----
 
-  @Benchmark fun allZeroScalar(): ByteArray = X25519.compute(allZeroScalar, katU1)
+  @Benchmark fun allZeroScalar(): ByteArray = X25519PureK.compute(allZeroScalar, katU1)
 
-  @Benchmark fun allOnesScalar(): ByteArray = X25519.compute(allOnes, katU1)
+  @Benchmark fun allOnesScalar(): ByteArray = X25519PureK.compute(allOnes, katU1)
 
   // ------------------------------------------------------------------
   // Helpers

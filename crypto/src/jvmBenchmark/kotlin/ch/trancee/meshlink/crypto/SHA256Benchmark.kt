@@ -35,15 +35,15 @@ class SHA256Benchmark {
 
   // ---- one-shot digest ----
 
-  @Benchmark fun oneShotEmpty(): ByteArray = SHA256.digest(empty)
+  @Benchmark fun oneShotEmpty(): ByteArray = SHA256PureK.digest(empty)
 
-  @Benchmark fun oneShotSmall(): ByteArray = SHA256.digest(small)
+  @Benchmark fun oneShotSmall(): ByteArray = SHA256PureK.digest(small)
 
-  @Benchmark fun oneShotOneBlock(): ByteArray = SHA256.digest(oneBlock)
+  @Benchmark fun oneShotOneBlock(): ByteArray = SHA256PureK.digest(oneBlock)
 
-  @Benchmark fun oneShotTwoBlocks(): ByteArray = SHA256.digest(twoBlocks)
+  @Benchmark fun oneShotTwoBlocks(): ByteArray = SHA256PureK.digest(twoBlocks)
 
-  @Benchmark fun oneShotLarge(): ByteArray = SHA256.digest(large)
+  @Benchmark fun oneShotLarge(): ByteArray = SHA256PureK.digest(large)
 
   // ---- incremental digest ----
 

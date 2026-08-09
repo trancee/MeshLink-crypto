@@ -33,15 +33,15 @@ class SHA512Benchmark {
 
   // ---- one-shot digest ----
 
-  @Benchmark fun oneShotEmpty(): ByteArray = SHA512.digest(empty)
+  @Benchmark fun oneShotEmpty(): ByteArray = SHA512PureK.digest(empty)
 
-  @Benchmark fun oneShotSmall(): ByteArray = SHA512.digest(small)
+  @Benchmark fun oneShotSmall(): ByteArray = SHA512PureK.digest(small)
 
-  @Benchmark fun oneShotOneBlock(): ByteArray = SHA512.digest(oneBlock)
+  @Benchmark fun oneShotOneBlock(): ByteArray = SHA512PureK.digest(oneBlock)
 
-  @Benchmark fun oneShotTwoBlocks(): ByteArray = SHA512.digest(twoBlocks)
+  @Benchmark fun oneShotTwoBlocks(): ByteArray = SHA512PureK.digest(twoBlocks)
 
-  @Benchmark fun oneShotLarge(): ByteArray = SHA512.digest(large)
+  @Benchmark fun oneShotLarge(): ByteArray = SHA512PureK.digest(large)
 
   // ---- incremental digest ----
 

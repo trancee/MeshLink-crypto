@@ -20,7 +20,7 @@ package ch.trancee.meshlink.crypto
  * - `verify` compares every byte unconditionally (no early exit) via a bitwise-OR accumulator, so a
  *   mismatched byte never short-circuits.
  */
-internal object HMAC_SHA256 {
+internal object HMAC_SHA256PureK {
 
   /** SHA-256 block size in bytes (RFC 6234 §5.1). */
   private const val BLOCK_SIZE = 64
@@ -42,7 +42,7 @@ internal object HMAC_SHA256 {
   fun digest(@Secret key: ByteArray, @Secret message: ByteArray): ByteArray {
     // Key normalization — key length is public, not secret content.
     val byteCount = key.size
-    val normalizedKey = if (byteCount > BLOCK_SIZE) SHA256.digest(key) else key
+    val normalizedKey = if (byteCount > BLOCK_SIZE) SHA256PureK.digest(key) else key
 
     // Build K ⊕ ipad and K ⊕ opad, zero-padded to block size.
     // Initialise every byte with the pad constant (0x36 / 0x5c); zero-padded

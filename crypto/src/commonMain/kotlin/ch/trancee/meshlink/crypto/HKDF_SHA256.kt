@@ -20,7 +20,7 @@ import kotlin.math.min
  * - The expand loop count is derived from [outputLength] (public), not from secret material.
  * - [HMAC_SHA256] compression is fixed-round per ticket 05.
  */
-internal object HKDF_SHA256 {
+internal object HKDF_SHA256PureK {
 
   /** SHA-256 output length in bytes (RFC 6234 §5.1). */
   private const val HASH_LENGTH = 32
@@ -56,7 +56,7 @@ internal object HKDF_SHA256 {
    */
   fun extract(@Secret ikm: ByteArray, salt: ByteArray): ByteArray {
     val saltBytes = if (salt.isEmpty()) ByteArray(HASH_LENGTH) else salt
-    return HMAC_SHA256.digest(saltBytes, ikm)
+    return HMAC_SHA256PureK.digest(saltBytes, ikm)
   }
 
   /**
@@ -79,7 +79,7 @@ internal object HKDF_SHA256 {
     var previousBlock = ByteArray(0)
     for (blockNumber in 1..blockCount) {
       val message = previousBlock + info + byteArrayOf(blockNumber.toByte())
-      previousBlock = HMAC_SHA256.digest(prk, message)
+      previousBlock = HMAC_SHA256PureK.digest(prk, message)
       val startOffset = (blockNumber - 1) * HASH_LENGTH
       val copyLength = min(HASH_LENGTH, outputLength - startOffset)
       previousBlock.copyInto(output, startOffset, 0, copyLength)

@@ -7,7 +7,7 @@
  * (64-byte hex), `flags`, and `result`.
  *
  * For verification-only vectors (`EddsaVerify`), invalid cases may carry the `msg`
- * and `sig` fields but no secret key. The library's `Ed25519.verify` is tested against
+ * and `sig` fields but no secret key. The library's `Ed25519PureK.verify` is tested against
  * `valid` results (must accept) and `invalid` results (must reject).
  */
 package ch.trancee.meshlink.crypto

@@ -128,7 +128,7 @@ private val sha512H0 =
  * annotation on [digest] lets the `:crypto-detekt-rules` `ConstantTimeRule` statically reject any
  * data-dependent `[if]`/`[when]` or secret-indexed array access in this file.
  */
-internal object SHA512 {
+internal object SHA512PureK {
 
   /**
    * Computes the SHA-512 digest of [message].

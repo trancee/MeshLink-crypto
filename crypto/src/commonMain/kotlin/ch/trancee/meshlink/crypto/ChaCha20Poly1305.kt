@@ -22,7 +22,7 @@
 package ch.trancee.meshlink.crypto
 
 /** ChaCha20-Poly1305 AEAD (RFC 8439 §2.8) with internal nonce (ADR-0005). */
-internal object ChaCha20Poly1305 {
+internal object ChaCha20Poly1305PureK {
 
   /** Key size in bytes (32 = 256 bits). */
   internal const val KEY_SIZE: Int = 32

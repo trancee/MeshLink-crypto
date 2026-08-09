@@ -55,38 +55,42 @@ class HKDF_SHA256Benchmark {
   // ---- small IKM x short output (warm path) ----
 
   @Benchmark
-  fun smallIkmShortOutput(): ByteArray = HKDF_SHA256.digest(smallIkm, smallSalt, smallInfo, 32)
+  fun smallIkmShortOutput(): ByteArray = HKDF_SHA256PureK.digest(smallIkm, smallSalt, smallInfo, 32)
 
   // ---- boundary: exactly one SHA-256 block of IKM ----
 
   @Benchmark
-  fun oneBlockIkmShortOutput(): ByteArray = HKDF_SHA256.digest(oneBlock, smallSalt, smallInfo, 32)
+  fun oneBlockIkmShortOutput(): ByteArray =
+      HKDF_SHA256PureK.digest(oneBlock, smallSalt, smallInfo, 32)
 
   // ---- boundary: IKM spans two SHA-256 blocks ----
 
   @Benchmark
-  fun twoBlockIkmShortOutput(): ByteArray = HKDF_SHA256.digest(twoBlocks, smallSalt, smallInfo, 32)
+  fun twoBlockIkmShortOutput(): ByteArray =
+      HKDF_SHA256PureK.digest(twoBlocks, smallSalt, smallInfo, 32)
 
   // ---- large IKM ----
 
   @Benchmark
-  fun largeIkmShortOutput(): ByteArray = HKDF_SHA256.digest(large, smallSalt, smallInfo, 32)
+  fun largeIkmShortOutput(): ByteArray = HKDF_SHA256PureK.digest(large, smallSalt, smallInfo, 32)
 
   // ---- output spanning multiple expand blocks ----
 
   @Benchmark
-  fun smallIkmLongOutput(): ByteArray = HKDF_SHA256.digest(smallIkm, smallSalt, smallInfo, 64)
+  fun smallIkmLongOutput(): ByteArray = HKDF_SHA256PureK.digest(smallIkm, smallSalt, smallInfo, 64)
 
   @Benchmark
-  fun smallIkmMaxOutput(): ByteArray = HKDF_SHA256.digest(smallIkm, smallSalt, smallInfo, 8160)
+  fun smallIkmMaxOutput(): ByteArray = HKDF_SHA256PureK.digest(smallIkm, smallSalt, smallInfo, 8160)
 
   // ---- empty salt (exercises HashLen-zeros default path) ----
 
   @Benchmark
-  fun emptySaltShortOutput(): ByteArray = HKDF_SHA256.digest(smallIkm, emptySalt, emptyInfo, 32)
+  fun emptySaltShortOutput(): ByteArray =
+      HKDF_SHA256PureK.digest(smallIkm, emptySalt, emptyInfo, 32)
 
   // ---- empty IKM (exercises zero-length input path) ----
 
   @Benchmark
-  fun emptyIkmShortOutput(): ByteArray = HKDF_SHA256.digest(ByteArray(0), smallSalt, smallInfo, 32)
+  fun emptyIkmShortOutput(): ByteArray =
+      HKDF_SHA256PureK.digest(ByteArray(0), smallSalt, smallInfo, 32)
 }

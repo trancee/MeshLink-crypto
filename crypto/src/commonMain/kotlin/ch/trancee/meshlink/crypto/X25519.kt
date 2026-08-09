@@ -27,7 +27,7 @@ package ch.trancee.meshlink.crypto
  *   operations; only the cswap mask varies.
  * - The inversion addition chain is fixed (public exponent).
  */
-internal object X25519 {
+internal object X25519PureK {
 
   /** Curve constant a24 = (486662 − 2) / 4 = 121665 (RFC 7748 §4.1). */
   private val A24: FieldElement =
