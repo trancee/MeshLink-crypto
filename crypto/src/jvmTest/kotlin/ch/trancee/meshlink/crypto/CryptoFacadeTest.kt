@@ -1,0 +1,516 @@
+/*
+ * Tests for the public API facade (ADR-0005).
+ *
+ * Coverage:
+ * - KeyHandle close() wipes secret bytes
+ * - Hasher sha256/sha512 produce correct output (KAT + PureK interop)
+ * - All facade methods route through dispatch objects (native-or-pure-K)
+ * - AEAD nonce is internally generated (caller never sees it)
+ */
+package ch.trancee.meshlink.crypto
+
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
+
+class CryptoFacadeTest {
+
+  // ------------------------------------------------------------------
+  // KeyHandle close() wipes secret bytes
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `SecretKey close wipes backing bytes`() {
+    val handle = SecretKey(ByteArray(32) { 0x42.toByte() })
+    val before = handle.bytes
+    assertContentEquals(ByteArray(32) { 0x42.toByte() }, before)
+    handle.close()
+    assertTrue(handle.bytes.all { it == 0.toByte() })
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `PrivateKey close wipes backing bytes`() {
+    val handle = PrivateKey(ByteArray(32) { 0xAB.toByte() })
+    handle.close()
+    assertTrue(handle.bytes.all { it == 0.toByte() })
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `PublicKey close wipes backing bytes`() {
+    val handle = PublicKey(ByteArray(32) { 0xCD.toByte() })
+    handle.close()
+    assertTrue(handle.bytes.all { it == 0.toByte() })
+  }
+
+  // ------------------------------------------------------------------
+  // Hasher sha256 — known-answer test (FIPS 180-4)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("kats")
+  fun `Hasher sha256 ABC matches FIPS 180-4`() {
+    val result = Hasher.sha256("abc".encodeToByteArray())
+    assertTrue(result.isSuccess, "sha256 must not throw")
+    assertContentEquals(
+        hex("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"),
+        result.getOrThrow(),
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Hasher sha256 matches PureK interop`() {
+    val input = "The quick brown fox jumps over the lazy dog".encodeToByteArray()
+    val facade = Hasher.sha256(input).getOrThrow()
+    assertContentEquals(SHA256PureK.digest(input), facade)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Hasher sha512 matches PureK interop`() {
+    val input = "The quick brown fox jumps over the lazy dog".encodeToByteArray()
+    val facade = Hasher.sha512(input).getOrThrow()
+    assertContentEquals(SHA512PureK.digest(input), facade)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Hasher sha256 returns 32-byte digest`() {
+    assertEquals(32, Hasher.sha256("abc".encodeToByteArray()).getOrThrow().size)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Hasher sha512 returns 64-byte digest`() {
+    assertEquals(64, Hasher.sha512("abc".encodeToByteArray()).getOrThrow().size)
+  }
+
+  // ------------------------------------------------------------------
+  // Authenticator (HMAC-SHA256)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Authenticator hmacSha256 round-trips with verify`() {
+    val keyBytes = ByteArray(32) { (it + 1).toByte() }
+    val message = "authenticated message".encodeToByteArray()
+    val tag = Authenticator.hmacSha256(SecretKey(keyBytes.copyOf()), message).getOrThrow()
+    assertTrue(
+        Authenticator.verify(SecretKey(keyBytes.copyOf()), message, tag).getOrThrow(),
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Authenticator verify rejects wrong tag`() {
+    val key = SecretKey(ByteArray(32) { 0x01 })
+    val message = "data".encodeToByteArray()
+    val wrongTag = ByteArray(32) { 0xFF.toByte() }
+    assertFalse(Authenticator.verify(key, message, wrongTag).getOrThrow())
+  }
+
+  // ------------------------------------------------------------------
+  // Kdf (HKDF-SHA256)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Kdf hkdfSha256 matches PureK interop`() {
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt-value".encodeToByteArray()
+    val info = "info-string".encodeToByteArray()
+    assertContentEquals(
+        HKDF_SHA256PureK.digest(ikm, salt, info, 32),
+        Kdf.hkdfSha256(ikm, salt, info, 32).getOrThrow(),
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Kdf extract matches PureK interop`() {
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt-value".encodeToByteArray()
+    assertContentEquals(
+        HKDF_SHA256PureK.extract(ikm, salt),
+        Kdf.extract(ikm, salt).getOrThrow(),
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Kdf expand matches PureK interop`() {
+    val ikm = "ikm-value".encodeToByteArray()
+    val salt = "salt-value".encodeToByteArray()
+    val info = "info-string".encodeToByteArray()
+    val prk = HKDF_SHA256PureK.extract(ikm, salt)
+    assertContentEquals(
+        HKDF_SHA256PureK.expand(prk, info, 48),
+        Kdf.expand(prk, info, 48).getOrThrow(),
+    )
+  }
+
+  // ------------------------------------------------------------------
+  // KeyExchange (X25519)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("kats")
+  fun `KeyExchange x25519 Alice-Bob matches RFC 7748 Section 6p1`() {
+    val aliceSecret = hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a")
+    val bobPublic = hex("de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f")
+    val expected = hex("4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742")
+    assertContentEquals(
+        expected,
+        KeyExchange.x25519(PrivateKey(aliceSecret), PublicKey(bobPublic)).getOrThrow(),
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `KeyExchange x25519 matches PureK interop`() {
+    val scalar = ByteArray(32) { (it + 1).toByte() }
+    val u = ByteArray(32) { 0x02 }
+    assertContentEquals(
+        X25519PureK.compute(scalar, u),
+        KeyExchange.x25519(PrivateKey(scalar.copyOf()), PublicKey(u.copyOf())).getOrThrow(),
+    )
+  }
+
+  // ------------------------------------------------------------------
+  // Signer (Ed25519)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("kats")
+  fun `Signer ed25519 sign matches RFC 8032 Section 7p1 TEST 1`() {
+    val secretKey = hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+    val publicKey = hex("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+    val message = ByteArray(0)
+    val signature =
+        hex(
+            "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b",
+        )
+    assertContentEquals(
+        signature,
+        Signer.ed25519Sign(PrivateKey(secretKey), message).getOrThrow(),
+    )
+    assertTrue(
+        Signer.ed25519Verify(PublicKey(publicKey), message, signature).getOrThrow(),
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Signer ed25519 verify rejects invalid signature`() {
+    val secretKey = hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+    val publicKey = Ed25519PureK.publicKeyFromPrivate(secretKey)
+    val message = "message".encodeToByteArray()
+    val wrongSig = ByteArray(64) { 0xFF.toByte() }
+    assertFalse(
+        Signer.ed25519Verify(PublicKey(publicKey), message, wrongSig).getOrThrow(),
+    )
+  }
+
+  // ------------------------------------------------------------------
+  // Aead (ChaCha20-Poly1305)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Aead chacha20Poly1305 encrypt then decrypt round-trips`() {
+    val keyBytes = ByteArray(32) { (it + 1).toByte() }
+    val plaintext = "secret message".encodeToByteArray()
+    val ciphertext =
+        Aead.chacha20Poly1305Encrypt(SecretKey(keyBytes.copyOf()), plaintext).getOrThrow()
+    // Output layout: nonce(12) || ciphertext || tag(16)
+    assertEquals(12 + plaintext.size + 16, ciphertext.size)
+    val decrypted =
+        Aead.chacha20Poly1305Decrypt(SecretKey(keyBytes.copyOf()), ciphertext).getOrThrow()
+    assertNotNull(decrypted)
+    assertContentEquals(plaintext, decrypted)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Aead chacha20Poly1305 decrypt returns null on tampered ciphertext`() {
+    val keyBytes = ByteArray(32) { (it + 1).toByte() }
+    val plaintext = "secret message".encodeToByteArray()
+    var ct = Aead.chacha20Poly1305Encrypt(SecretKey(keyBytes.copyOf()), plaintext).getOrThrow()
+    // Flip a byte to break authentication
+    ct = ct.copyOf()
+    ct[12] = (ct[12].toInt() xor 0x01).toByte()
+    val decrypted = Aead.chacha20Poly1305Decrypt(SecretKey(keyBytes.copyOf()), ct).getOrThrow()
+    assertNull(decrypted)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Aead chacha20Poly1305 generates non-zero internal nonce`() {
+    val key = SecretKey(ByteArray(32) { (it + 1).toByte() })
+    val plaintext = "test".encodeToByteArray()
+    val ct = Aead.chacha20Poly1305Encrypt(key, plaintext).getOrThrow()
+    // Nonce is the first 12 bytes — must be non-zero (CSPRNG)
+    val nonce = ct.copyOfRange(0, 12)
+    assertTrue(nonce.any { it != 0.toByte() }, "nonce must not be all-zero")
+    // Decrypt with the nonce prepended in the ciphertext
+    val decrypted = Aead.chacha20Poly1305Decrypt(key, ct).getOrThrow()
+    assertNotNull(decrypted)
+    assertContentEquals(plaintext, decrypted)
+  }
+
+  // ------------------------------------------------------------------
+  // Wycheproof vectors — facade dispatch (ADR-0003 + ADR-0005)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("wycheproof")
+  fun `Kdf hkdfSha256 Wycheproof valid vectors - facade matches OKM`() {
+    // Arrange
+    val vectors = loadWycheproofHkdf("/wycheproof/hkdf_sha256_test.json")
+    val valid = vectors.filter { it.result == "valid" }
+    assertTrue(valid.isNotEmpty(), "Wycheproof HKDF must contain valid vectors")
+
+    // Act + Assert
+    valid.forEach { tc ->
+      val okm = Kdf.hkdfSha256(tc.ikm, tc.salt, tc.info, tc.outputLength).getOrThrow()
+      assertContentEquals(
+          tc.okm,
+          okm,
+          "tcId=${tc.tcId} ikmLen=${tc.ikm.size} okmLen=${tc.okm.size}",
+      )
+    }
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("wycheproof")
+  fun `Authenticator hmacSha256 Wycheproof valid vectors - facade matches tag`() {
+    // Arrange
+    val vectors = loadWycheproof("/wycheproof/hmac_sha256_test.json")
+    val valid = vectors.filter { it.result == "valid" }
+    assertTrue(valid.isNotEmpty(), "Wycheproof HMAC must contain valid vectors")
+
+    // Act + Assert
+    valid.forEach { tc ->
+      val tag = Authenticator.hmacSha256(SecretKey(tc.key.copyOf()), tc.msg).getOrThrow()
+      // Full 32-byte tags compare directly; truncated tags compare prefix.
+      assertContentEquals(
+          tc.tag,
+          tag.copyOfRange(0, tc.tag.size),
+          "tcId=${tc.tcId} keyLen=${tc.key.size} msgLen=${tc.msg.size} tagLen=${tc.tag.size}",
+      )
+    }
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("wycheproof")
+  fun `KeyExchange x25519 Wycheproof valid vectors - facade matches shared secret`() {
+    // Arrange
+    val vectors = loadWycheproofX25519("/wycheproof/x25519_test.json")
+    val valid = vectors.filter { it.result == "valid" }
+    assertTrue(valid.isNotEmpty(), "Wycheproof X25519 must contain valid vectors")
+
+    // Act + Assert
+    valid.forEach { tc ->
+      val shared =
+          KeyExchange.x25519(PrivateKey(tc.private.copyOf()), PublicKey(tc.public.copyOf()))
+              .getOrThrow()
+      assertContentEquals(
+          tc.shared,
+          shared,
+          "tcId=${tc.tcId} comment=${tc.comment}",
+      )
+    }
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  @Tag("wycheproof")
+  fun `Signer ed25519 Wycheproof valid vectors - facade verifies signatures`() {
+    // Arrange
+    val vectors = loadWycheproofEd25519("/wycheproof/ed25519_test.json")
+    val valid = vectors.filter { it.result == "valid" }
+    assertTrue(valid.isNotEmpty(), "Wycheproof Ed25519 must contain valid vectors")
+
+    // Act + Assert
+    valid.forEach { tc ->
+      val accepted =
+          Signer.ed25519Verify(PublicKey(tc.publicKey.copyOf()), tc.msg, tc.sig).getOrThrow()
+      assertTrue(accepted, "tcId=${tc.tcId} must verify")
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Edge cases — boundaries, empty input, max output
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("edge-case")
+  fun `Hasher sha256 empty input matches FIPS 180-4`() {
+    // Arrange
+    val input = ByteArray(0)
+
+    // Act
+    val digest = Hasher.sha256(input).getOrThrow()
+
+    // Assert
+    assertContentEquals(
+        hex("E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"),
+        digest,
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("edge-case")
+  fun `Authenticator hmacSha256 empty key and message - computed known answer`() {
+    // Arrange
+    val key = SecretKey(ByteArray(0))
+    val message = ByteArray(0)
+
+    // Act
+    val tag = Authenticator.hmacSha256(key, message).getOrThrow()
+
+    // Assert
+    assertContentEquals(
+        hex("B613679A0814D9EC772F95D778C35FC5FF1697C493715653C6C712144292C5AD"),
+        tag,
+    )
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("edge-case")
+  fun `Kdf hkdfSha256 zero output length returns empty OKM`() {
+    // Arrange
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt-value".encodeToByteArray()
+    val info = "info-string".encodeToByteArray()
+
+    // Act
+    val okm = Kdf.hkdfSha256(ikm, salt, info, 0).getOrThrow()
+
+    // Assert
+    assertEquals(0, okm.size)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("edge-case")
+  fun `Kdf hkdfSha256 max output length (8160 bytes) succeeds`() {
+    // Arrange — 255 * 32 = 8160 per RFC 5869 §2.3
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt-value".encodeToByteArray()
+    val info = "info-string".encodeToByteArray()
+    val maxLen = 255 * 32
+
+    // Act
+    val okm = Kdf.hkdfSha256(ikm, salt, info, maxLen).getOrThrow()
+
+    // Assert
+    assertEquals(maxLen, okm.size)
+    assertContentEquals(
+        HKDF_SHA256PureK.digest(ikm, salt, info, maxLen),
+        okm,
+    )
+  }
+
+  @Test
+  @Tag("edge-case")
+  @Tag("negative")
+  fun `Kdf hkdfSha256 exceeds max output length throws IllegalArgumentException`() {
+    // Arrange — 8161 > 8160 (255 * 32) violates RFC 5869 §2.3
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt-value".encodeToByteArray()
+    val info = "info-string".encodeToByteArray()
+
+    // Act + Assert
+    assertFailsWith<IllegalArgumentException> {
+      Kdf.hkdfSha256(ikm, salt, info, 8161).getOrThrow()
+    }
+  }
+
+  @Test
+  @Tag("edge-case")
+  @Tag("negative")
+  fun `Kdf expand negative output length throws IllegalArgumentException`() {
+    // Arrange
+    val prk = ByteArray(32) { 0x01 }
+    val info = "info".encodeToByteArray()
+
+    // Act + Assert
+    assertFailsWith<IllegalArgumentException> {
+      Kdf.expand(prk, info, -1).getOrThrow()
+    }
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("edge-case")
+  fun `Aead chacha20Poly1305 decrypt with too-short ciphertext returns null`() {
+    // Arrange — minimum valid output is nonce(12) + tag(16) = 28 bytes
+    val key = SecretKey(ByteArray(32) { (it + 1).toByte() })
+    val tooShort = ByteArray(20) { 0x00 }
+
+    // Act
+    val result = Aead.chacha20Poly1305Decrypt(key, tooShort)
+
+    // Assert — truncated ciphertext is treated as auth failure (null), not a throw
+    assertTrue(result.isSuccess)
+    assertNull(result.getOrThrow())
+  }
+
+  @Test
+  @Tag("edge-case")
+  @Tag("negative")
+  fun `Aead chacha20Poly1305 decrypt with wrong-size key fails`() {
+    // Arrange — key must be 32 bytes; 16-byte key triggers require() failure
+    val key = SecretKey(ByteArray(16) { 0x01 })
+    val ciphertext = ByteArray(28) { 0x00 }
+
+    // Act
+    val result = Aead.chacha20Poly1305Decrypt(key, ciphertext)
+
+    // Assert — malformed key input throws, wrapped as Result.failure
+    assertTrue(result.isFailure)
+  }
+}

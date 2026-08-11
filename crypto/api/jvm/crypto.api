@@ -1,9 +1,74 @@
-public final class ch/trancee/meshlink/crypto/SHA256 {
-	public static final field INSTANCE Lch/trancee/meshlink/crypto/SHA256;
-	public final fun digest ([B)[B
+public final class ch/trancee/meshlink/crypto/Aead {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Aead;
+	public final fun chacha20Poly1305Decrypt-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun chacha20Poly1305Encrypt-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+}
+
+public final class ch/trancee/meshlink/crypto/Authenticator {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Authenticator;
+	public final fun hmacSha256-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun verify-0E7RQCE (Lch/trancee/meshlink/crypto/SecretKey;[B[B)Ljava/lang/Object;
+}
+
+public abstract interface class ch/trancee/meshlink/crypto/CryptoProvider {
+	public abstract fun chacha20Poly1305Decrypt ([B[B[B[B)[B
+	public abstract fun chacha20Poly1305Encrypt ([B[B[B[B)[B
+	public abstract fun ed25519PublicKeyFromPrivate ([B)[B
+	public abstract fun ed25519Sign ([B[B)[B
+	public abstract fun ed25519Verify ([B[B[B)Ljava/lang/Boolean;
+	public abstract fun supportsChaCha20Poly1305 ()Z
+	public abstract fun supportsEd25519 ()Z
+	public abstract fun supportsX25519 ()Z
+	public abstract fun x25519 ([B[B)[B
+}
+
+public final class ch/trancee/meshlink/crypto/CryptoProviderKt {
+	public static final fun setCryptoProvider (Lch/trancee/meshlink/crypto/CryptoProvider;)V
+}
+
+public final class ch/trancee/meshlink/crypto/Hasher {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Hasher;
+	public final fun sha256-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sha512-IoAF18A ([B)Ljava/lang/Object;
+}
+
+public final class ch/trancee/meshlink/crypto/Kdf {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Kdf;
+	public final fun expand-0E7RQCE ([B[BI)Ljava/lang/Object;
+	public final fun extract-gIAlu-s ([B[B)Ljava/lang/Object;
+	public final fun hkdfSha256-BWLJW6A ([B[B[BI)Ljava/lang/Object;
+}
+
+public final class ch/trancee/meshlink/crypto/KeyExchange {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/KeyExchange;
+	public final fun x25519-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;Lch/trancee/meshlink/crypto/PublicKey;)Ljava/lang/Object;
+}
+
+public final class ch/trancee/meshlink/crypto/PrivateKey : java/lang/AutoCloseable {
+	public fun <init> ([B)V
+	public fun close ()V
+	public final fun getBytes ()[B
+}
+
+public final class ch/trancee/meshlink/crypto/PublicKey : java/lang/AutoCloseable {
+	public fun <init> ([B)V
+	public fun close ()V
+	public final fun getBytes ()[B
 }
 
 public abstract interface annotation class ch/trancee/meshlink/crypto/Secret : java/lang/annotation/Annotation {
+}
+
+public final class ch/trancee/meshlink/crypto/SecretKey : java/lang/AutoCloseable {
+	public fun <init> ([B)V
+	public fun close ()V
+	public final fun getBytes ()[B
+}
+
+public final class ch/trancee/meshlink/crypto/Signer {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Signer;
+	public final fun ed25519Sign-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;[B)Ljava/lang/Object;
+	public final fun ed25519Verify-0E7RQCE (Lch/trancee/meshlink/crypto/PublicKey;[B[B)Ljava/lang/Object;
 }
 
 public final class ch/trancee/meshlink/crypto/VersionKt {

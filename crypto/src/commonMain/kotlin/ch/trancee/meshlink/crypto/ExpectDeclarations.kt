@@ -13,7 +13,7 @@ package ch.trancee.meshlink.crypto
  *
  * Dispatch entry point — native provider when available, otherwise [SHA256PureK].
  */
-public expect object SHA256 {
+internal expect object SHA256 {
   fun digest(@Secret message: ByteArray): ByteArray
 }
 
@@ -40,9 +40,9 @@ internal expect object HMAC_SHA256 {
 /**
  * HKDF-SHA256 (RFC 5869).
  *
- * Dispatch entry point — native provider when available, otherwise [HKDF_SHA256PureK]. Note: no
- * standard JCA HKDF API exists on JVM or Android; the JVM/Android actuals delegate directly to
- * [HKDF_SHA256PureK].
+ * Dispatch entry point — native HMAC (platform JCA/CCHmac) when available, otherwise
+ * [HKDF_SHA256PureK]. No standard HKDF API exists on minSdk 21 / JDK 21 / any Android API level
+ * (javax.crypto.KDF is JDK 25+); HKDF is built on the platform HMAC primitive in CryptoBridge.kt.
  */
 internal expect object HKDF_SHA256 {
   fun digest(

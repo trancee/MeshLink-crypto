@@ -164,6 +164,8 @@ kover {
               "ch.trancee.meshlink.crypto.X25519",
               "ch.trancee.meshlink.crypto.Ed25519",
               "ch.trancee.meshlink.crypto.ChaCha20Poly1305",
+              "ch.trancee.meshlink.crypto.CryptoProviderKt",
+              "ch.trancee.meshlink.crypto.CryptoBridgeKt",
           )
         }
       }
