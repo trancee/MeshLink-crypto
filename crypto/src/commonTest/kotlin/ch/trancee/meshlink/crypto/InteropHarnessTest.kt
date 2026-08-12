@@ -3,8 +3,10 @@
  * produce identical output to their *PureK counterparts. When a native
  * provider backend is wired into an actual, these tests catch any divergence.
  *
- * Source set: commonTest (ADR-0003, seam 3) — runs on JVM, Android, and iOS.
- * iOS execution is disabled by build.gradle.kts; tests still compile.
+ * Source set: commonTest — runs on JVM, Android, and iOS.  iOS execution
+ * is disabled by build.gradle.kts; tests still compile.
+ * Spec: issue 11 "Native fallback dispatch (+ interop harness)" — native
+ * result == pure-K result on each target.
  */
 package ch.trancee.meshlink.crypto
 
