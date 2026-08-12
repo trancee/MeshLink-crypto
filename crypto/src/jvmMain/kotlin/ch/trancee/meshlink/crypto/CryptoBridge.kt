@@ -22,6 +22,7 @@ package ch.trancee.meshlink.crypto
 import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 import java.security.Signature
 import java.security.spec.NamedParameterSpec
 import java.security.spec.PKCS8EncodedKeySpec
@@ -66,6 +67,24 @@ private const val X509_PREFIX_LEN = 12
 private const val KEY_LEN = 32
 
 // ---------------------------------------------------------------------------
+// Native availability cache — avoids repeated NoSuchAlgorithmException
+// throws on platforms where the JCA algorithm is unavailable (e.g. Android
+// API < 29 for X25519/Ed25519/ChaCha20-Poly1305). Set once on the first
+// failure; the cryptoProvider check above always takes priority regardless.
+// ---------------------------------------------------------------------------
+@Volatile private var x25519Fallback: Boolean = false
+
+@Volatile private var ed25519Fallback: Boolean = false
+
+@Volatile private var chacha20Poly1305Fallback: Boolean = false
+
+@Volatile private var sha256Fallback: Boolean = false
+
+@Volatile private var sha512Fallback: Boolean = false
+
+@Volatile private var hmacSha256Fallback: Boolean = false
+
+// ---------------------------------------------------------------------------
 // Public entry points (called by the thin JVM/Android actuals)
 // ---------------------------------------------------------------------------
 
@@ -74,6 +93,7 @@ internal fun x25519Native(scalar: ByteArray, u: ByteArray): ByteArray? {
   if (provider?.supportsX25519() == true) {
     return provider.x25519(scalar, u)
   }
+  if (x25519Fallback) return null
   return try {
     val keyFactory = KeyFactory.getInstance("X25519")
     val privateKey =
@@ -86,6 +106,9 @@ internal fun x25519Native(scalar: ByteArray, u: ByteArray): ByteArray? {
     keyAgreement.init(privateKey)
     keyAgreement.doPhase(publicKey, true)
     keyAgreement.generateSecret()
+  } catch (e: NoSuchAlgorithmException) {
+    x25519Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
@@ -96,11 +119,15 @@ internal fun ed25519PublicKeyFromPrivateNative(secretKey: ByteArray): ByteArray?
   if (provider?.supportsEd25519() == true) {
     return provider.ed25519PublicKeyFromPrivate(secretKey)
   }
+  if (ed25519Fallback) return null
   return try {
     val keyFactory = KeyFactory.getInstance("Ed25519")
     val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(buildPkcs8Private(secretKey)))
     val x509Spec = keyFactory.getKeySpec(privateKey, X509EncodedKeySpec::class.java)
     x509Spec.encoded.copyOfRange(X509_PREFIX_LEN, X509_PREFIX_LEN + KEY_LEN)
+  } catch (e: NoSuchAlgorithmException) {
+    ed25519Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
@@ -111,6 +138,7 @@ internal fun ed25519SignNative(secretKey: ByteArray, message: ByteArray): ByteAr
   if (provider?.supportsEd25519() == true) {
     return provider.ed25519Sign(secretKey, message)
   }
+  if (ed25519Fallback) return null
   return try {
     val keyFactory = KeyFactory.getInstance("Ed25519")
     val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(buildPkcs8Private(secretKey)))
@@ -118,6 +146,9 @@ internal fun ed25519SignNative(secretKey: ByteArray, message: ByteArray): ByteAr
     signature.initSign(privateKey)
     signature.update(message)
     signature.sign()
+  } catch (e: NoSuchAlgorithmException) {
+    ed25519Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
@@ -132,6 +163,7 @@ internal fun ed25519VerifyNative(
   if (provider?.supportsEd25519() == true) {
     return provider.ed25519Verify(publicKey, message, signature)
   }
+  if (ed25519Fallback) return null
   return try {
     val keyFactory = KeyFactory.getInstance("Ed25519")
     val publicKeySpec = X509EncodedKeySpec(buildX509Public(publicKey))
@@ -140,6 +172,9 @@ internal fun ed25519VerifyNative(
     sig.initVerify(pubKey)
     sig.update(message)
     sig.verify(signature)
+  } catch (e: NoSuchAlgorithmException) {
+    ed25519Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
@@ -155,17 +190,21 @@ internal fun chacha20Poly1305EncryptWithNonceNative(
   if (provider?.supportsChaCha20Poly1305() == true) {
     return provider.chacha20Poly1305Encrypt(key, nonce, aad, plaintext)
   }
-  require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
-    "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
-  }
-  require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
-    "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
-  }
+  if (chacha20Poly1305Fallback) return null
   return try {
+    require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
+      "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
+    }
+    require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
+      "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
+    }
     val cipher = Cipher.getInstance("ChaCha20-Poly1305")
     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "ChaCha20"), IvParameterSpec(nonce))
     if (aad.isNotEmpty()) cipher.updateAAD(aad)
     cipher.doFinal(plaintext)
+  } catch (e: NoSuchAlgorithmException) {
+    chacha20Poly1305Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
@@ -181,18 +220,20 @@ internal fun chacha20Poly1305DecryptWithNonceNative(
   if (provider?.supportsChaCha20Poly1305() == true) {
     return provider.chacha20Poly1305Decrypt(key, nonce, aad, ciphertextWithTag)
   }
-  require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
-    "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
-  }
-  require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
-    "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
-  }
+  if (chacha20Poly1305Fallback) return null
   return try {
+    require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
+      "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
+    }
+    require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
+      "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
+    }
     val cipher = Cipher.getInstance("ChaCha20-Poly1305")
     cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "ChaCha20"), IvParameterSpec(nonce))
     if (aad.isNotEmpty()) cipher.updateAAD(aad)
     cipher.doFinal(ciphertextWithTag)
-  } catch (e: javax.crypto.AEADBadTagException) {
+  } catch (e: NoSuchAlgorithmException) {
+    chacha20Poly1305Fallback = true
     null
   } catch (e: Exception) {
     null
@@ -215,26 +256,38 @@ internal fun chacha20Poly1305DecryptNative(key: ByteArray, ciphertext: ByteArray
 }
 
 internal fun sha256Native(message: ByteArray): ByteArray? {
+  if (sha256Fallback) return null
   return try {
     MessageDigest.getInstance("SHA-256").digest(message)
+  } catch (e: NoSuchAlgorithmException) {
+    sha256Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
 }
 
 internal fun sha512Native(message: ByteArray): ByteArray? {
+  if (sha512Fallback) return null
   return try {
     MessageDigest.getInstance("SHA-512").digest(message)
+  } catch (e: NoSuchAlgorithmException) {
+    sha512Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
 }
 
 internal fun hmacSha256Native(key: ByteArray, message: ByteArray): ByteArray? {
+  if (hmacSha256Fallback) return null
   return try {
     val mac = Mac.getInstance("HmacSHA256")
     mac.init(SecretKeySpec(key, "HmacSHA256"))
     mac.doFinal(message)
+  } catch (e: NoSuchAlgorithmException) {
+    hmacSha256Fallback = true
+    null
   } catch (e: Exception) {
     null
   }
@@ -245,6 +298,7 @@ internal fun hmacSha256VerifyNative(
     message: ByteArray,
     tag: ByteArray,
 ): Boolean? {
+  if (hmacSha256Fallback) return null
   return try {
     val mac = Mac.getInstance("HmacSHA256")
     mac.init(SecretKeySpec(key, "HmacSHA256"))
@@ -255,6 +309,9 @@ internal fun hmacSha256VerifyNative(
       difference = difference or (computed[index].toInt() xor tag[index].toInt())
     }
     difference == 0
+  } catch (e: NoSuchAlgorithmException) {
+    hmacSha256Fallback = true
+    null
   } catch (e: Exception) {
     null
   }

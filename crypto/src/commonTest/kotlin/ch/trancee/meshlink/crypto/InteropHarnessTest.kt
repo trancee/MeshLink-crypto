@@ -2,33 +2,32 @@
  * Interop harness: verifies that dispatch objects (SHA256, X25519, etc.)
  * produce identical output to their *PureK counterparts. When a native
  * provider backend is wired into an actual, these tests catch any divergence.
+ *
+ * Source set: commonTest (ADR-0003, seam 3) — runs on JVM, Android, and iOS.
+ * iOS execution is disabled by build.gradle.kts; tests still compile.
  */
 package ch.trancee.meshlink.crypto
 
+import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.junit.jupiter.api.Tag
-import org.junit.jupiter.api.Test
 
 class InteropHarnessTest {
 
   @Test
-  @Tag("interop")
   fun sha256_matchesPureK() {
     val input = "abc".encodeToByteArray()
     assertContentEquals(SHA256PureK.digest(input), SHA256.digest(input))
   }
 
   @Test
-  @Tag("interop")
   fun sha512_matchesPureK() {
     val input = "abc".encodeToByteArray()
     assertContentEquals(SHA512PureK.digest(input), SHA512.digest(input))
   }
 
   @Test
-  @Tag("interop")
   fun hmacSha256_digest_matchesPureK() {
     val key = "key".encodeToByteArray()
     val msg = "The quick brown fox jumps over the lazy dog".encodeToByteArray()
@@ -36,7 +35,6 @@ class InteropHarnessTest {
   }
 
   @Test
-  @Tag("interop")
   fun hmacSha256_verify_matchesPureK() {
     val key = "key".encodeToByteArray()
     val msg = "The quick brown fox".encodeToByteArray()
@@ -45,7 +43,6 @@ class InteropHarnessTest {
   }
 
   @Test
-  @Tag("interop")
   fun hkdfSha256_matchesPureK() {
     val ikm = "input-key-material".encodeToByteArray()
     val salt = "salt-value".encodeToByteArray()
@@ -61,7 +58,6 @@ class InteropHarnessTest {
   }
 
   @Test
-  @Tag("interop")
   fun x25519_matchesPureK() {
     val scalar = ByteArray(32) { (it + 1).toByte() }
     val u = ByteArray(32) { 0x02 }
@@ -69,7 +65,6 @@ class InteropHarnessTest {
   }
 
   @Test
-  @Tag("interop")
   fun ed25519_matchesPureK() {
     val secretKey = ByteArray(32) { (it + 1).toByte() }
     val message = "test message".encodeToByteArray()
@@ -87,7 +82,6 @@ class InteropHarnessTest {
   }
 
   @Test
-  @Tag("interop")
   fun chacha20Poly1305_matchesPureK() {
     val key = ByteArray(32) { (it + 1).toByte() }
     val nonce = ByteArray(12) { 0x01 }
