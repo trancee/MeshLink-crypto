@@ -94,6 +94,7 @@ tasks
 tasks.named<org.gradle.api.tasks.testing.Test>("jvmTest") {
   useJUnitPlatform {
     // includeTags("positive", "critical-path")
+    // includeTags("timing")  // opt-in: timing variance assertions (ADR-0003 §4)
   }
 }
 

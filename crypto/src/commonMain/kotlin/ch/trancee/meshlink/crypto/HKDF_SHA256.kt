@@ -78,7 +78,7 @@ internal object HKDF_SHA256PureK {
     val output = ByteArray(outputLength)
     var previousBlock = ByteArray(0)
     for (blockNumber in 1..blockCount) {
-      val message = previousBlock + info + byteArrayOf(blockNumber.toByte())
+      val message = buildExpandMessage(previousBlock, info, blockNumber)
       previousBlock = HMAC_SHA256PureK.digest(prk, message)
       val startOffset = (blockNumber - 1) * HASH_LENGTH
       val copyLength = min(HASH_LENGTH, outputLength - startOffset)
@@ -86,4 +86,20 @@ internal object HKDF_SHA256PureK {
     }
     return output
   }
+
+  /**
+   * Builds the HMAC input for one HKDF-Expand block (RFC 5869 §2.3).
+   *
+   * T(i) = HMAC(H, T(i-1) | info | 2^{8i}).
+   *
+   * @param previousBlock the previous HMAC output (empty ByteArray for T(0)).
+   * @param info the non-secret context and application-specific information.
+   * @param blockNumber the 1-based block index (i).
+   * @return the concatenated message for the next HMAC computation.
+   */
+  private fun buildExpandMessage(
+      previousBlock: ByteArray,
+      info: ByteArray,
+      blockNumber: Int,
+  ): ByteArray = previousBlock + info + byteArrayOf(blockNumber.toByte())
 }

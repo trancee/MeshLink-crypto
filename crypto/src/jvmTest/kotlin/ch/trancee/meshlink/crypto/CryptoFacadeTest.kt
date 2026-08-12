@@ -513,4 +513,179 @@ class CryptoFacadeTest {
     // Assert — malformed key input throws, wrapped as Result.failure
     assertTrue(result.isFailure)
   }
+
+  // ------------------------------------------------------------------
+  // Unified Crypto facade delegation tests (Candidate #5)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade sha256 delegates to Hasher`() {
+    val input = "abc".encodeToByteArray()
+    val expected = Hasher.sha256(input).getOrThrow()
+    val actual = Crypto.sha256(input).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade sha512 delegates to Hasher`() {
+    val input = "abc".encodeToByteArray()
+    val expected = Hasher.sha512(input).getOrThrow()
+    val actual = Crypto.sha512(input).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade hmacSha256 delegates to Authenticator`() {
+    val key = SecretKey(ByteArray(32) { (it + 1).toByte() })
+    val message = "test-message".encodeToByteArray()
+    val expected = Authenticator.hmacSha256(key, message).getOrThrow()
+    val actual = Crypto.hmacSha256(key, message).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade verifyHmacSha256 delegates to Authenticator`() {
+    val key = SecretKey(ByteArray(32) { (it + 1).toByte() })
+    val message = "test-message".encodeToByteArray()
+    val tag = Authenticator.hmacSha256(key, message).getOrThrow()
+    assertTrue(Crypto.verifyHmacSha256(key, message, tag).getOrThrow())
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade hkdfSha256 delegates to Kdf`() {
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt".encodeToByteArray()
+    val info = "info".encodeToByteArray()
+    val expected = Kdf.hkdfSha256(ikm, salt, info, 64).getOrThrow()
+    val actual = Crypto.hkdfSha256(ikm, salt, info, 64).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade extract delegates to Kdf`() {
+    val ikm = "input-key-material".encodeToByteArray()
+    val salt = "salt".encodeToByteArray()
+    val expected = Kdf.extract(ikm, salt).getOrThrow()
+    val actual = Crypto.extract(ikm, salt).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade expand delegates to Kdf`() {
+    val prk = ByteArray(32) { 0x01 }
+    val info = "info".encodeToByteArray()
+    val expected = Kdf.expand(prk, info, 64).getOrThrow()
+    val actual = Crypto.expand(prk, info, 64).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade x25519 delegates to KeyExchange`() {
+    val scalar = ByteArray(32) { 0x01 }
+    val u = ByteArray(32) { 0x02 }
+    val expected = KeyExchange.x25519(PrivateKey(scalar), PublicKey(u)).getOrThrow()
+    val actual = Crypto.x25519(PrivateKey(scalar), PublicKey(u)).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade ed25519Sign delegates to Signer`() {
+    val secretKey = ByteArray(32) { 0x01 }
+    val message = "test-message".encodeToByteArray()
+    val expected = Signer.ed25519Sign(PrivateKey(secretKey), message).getOrThrow()
+    val actual = Crypto.ed25519Sign(PrivateKey(secretKey), message).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade ed25519Verify delegates to Signer`() {
+    val secretKey = ByteArray(32) { 0x01 }
+    val publicKey = Ed25519PureK.publicKeyFromPrivate(secretKey)
+    val message = "test-message".encodeToByteArray()
+    val signature = Signer.ed25519Sign(PrivateKey(secretKey), message).getOrThrow()
+    assertTrue(Crypto.ed25519Verify(PublicKey(publicKey), message, signature).getOrThrow())
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade chacha20Poly1305Encrypt delegates to Aead`() {
+    val key = SecretKey(ByteArray(32) { (it + 1).toByte() })
+    val message = "test-message".encodeToByteArray()
+    val ciphertext = Crypto.chacha20Poly1305Encrypt(key, message).getOrThrow()
+    val plaintext = Aead.chacha20Poly1305Decrypt(key, ciphertext).getOrThrow()
+    assertContentEquals(message, plaintext)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade chacha20Poly1305Decrypt delegates to Aead`() {
+    val key = SecretKey(ByteArray(32) { (it + 1).toByte() })
+    val message = "test-message".encodeToByteArray()
+    val ciphertext = Aead.chacha20Poly1305Encrypt(key, message).getOrThrow()
+    val expected = Aead.chacha20Poly1305Decrypt(key, ciphertext).getOrThrow()
+    val actual = Crypto.chacha20Poly1305Decrypt(key, ciphertext).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  // ------------------------------------------------------------------
+  // Candidate #2: require() fail-fast tests (wrong key/nonce sizes)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("edge-case")
+  @Tag("negative")
+  fun `Crypto chacha20Poly1305Encrypt with wrong-size key fails fast`() {
+    // Arrange — key must be 32 bytes; 16-byte key triggers require() failure
+    val key = SecretKey(ByteArray(16) { 0x01 })
+    val message = "test".encodeToByteArray()
+
+    // Act
+    val result = Crypto.chacha20Poly1305Encrypt(key, message)
+
+    // Assert — fail-fast: IllegalArgumentException wrapped as Result.failure
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> {
+      result.getOrThrow()
+    }
+  }
+
+  @Test
+  @Tag("edge-case")
+  @Tag("negative")
+  fun `Crypto chacha20Poly1305Decrypt with wrong-size key fails fast`() {
+    // Arrange — key must be 32 bytes; 16-byte key triggers require() failure
+    val key = SecretKey(ByteArray(16) { 0x01 })
+    val ciphertext = ByteArray(28) { 0x00 }
+
+    // Act
+    val result = Crypto.chacha20Poly1305Decrypt(key, ciphertext)
+
+    // Assert — fail-fast: IllegalArgumentException wrapped as Result.failure
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> {
+      result.getOrThrow()
+    }
+  }
 }

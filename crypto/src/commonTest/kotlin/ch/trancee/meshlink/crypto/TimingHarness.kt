@@ -67,4 +67,48 @@ class TimingHarness {
   fun reset() {
     samples.clear()
   }
+
+  /**
+   * Asserts that timing variance across all recorded samples for [label] is within [maxRatio] of
+   * the median duration — a coarse constant-time violation detector (ADR-0003 §4).
+   *
+   * Computes max(median) / min(median) across distinct input sizes. A ratio within [maxRatio] is
+   * necessary (but not sufficient) for constant-time: it does not prove constant-time execution,
+   * but a ratio exceeding [maxRatio] indicates input-dependent timing leakage.
+   *
+   * Default threshold of 3.0 accommodates typical CI jitter (JIT warmup, GC pauses, OS scheduling)
+   * on JVM/Android while flagging obvious timing leaks (e.g. secret- dependent branches causing 3×+
+   * slowdown for some inputs).
+   *
+   * @param label Human-readable name of the operation under test.
+   * @param maxRatio Maximum allowed ratio of longest to shortest median sample duration.
+   * @return The observed max-ratio for inspection.
+   * @throws AssertionError if the ratio exceeds [maxRatio] or fewer than 2 samples exist.
+   */
+  fun assertConstantTime(label: String, maxRatio: Double = 3.0): Double {
+    val matching = samples.filter { it.label == label }
+    require(matching.size >= 2) {
+      "Need at least 2 samples with label '$label' to assert constant-time"
+    }
+    val medianNanos =
+        matching
+            .map { it.totalDuration.inWholeNanoseconds }
+            .sorted()
+            .let { sorted ->
+              if (sorted.size % 2 == 0) {
+                (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2.0
+              } else {
+                sorted[sorted.size / 2].toDouble()
+              }
+            }
+    val maxNanos = matching.maxOf { it.totalDuration.inWholeNanoseconds }
+    val ratio = maxNanos.toDouble() / medianNanos
+    if (ratio > maxRatio) {
+      throw AssertionError(
+          "Timing variance for '$label' exceeds constant-time bound: " +
+              "max=$maxNanos ns, median=$medianNanos ns, ratio=$ratio > $maxRatio"
+      )
+    }
+    return ratio
+  }
 }

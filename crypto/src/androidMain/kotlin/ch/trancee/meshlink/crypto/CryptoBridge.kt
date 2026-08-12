@@ -186,13 +186,13 @@ internal fun chacha20Poly1305EncryptWithNonceNative(
     return provider.chacha20Poly1305Encrypt(key, nonce, aad, plaintext)
   }
   if (chacha20Poly1305Fallback) return null
+  require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
+    "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
+  }
+  require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
+    "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
+  }
   return try {
-    require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
-      "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
-    }
-    require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
-      "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
-    }
     val cipher = Cipher.getInstance("ChaCha20-Poly1305")
     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "ChaCha20"), IvParameterSpec(nonce))
     if (aad.isNotEmpty()) cipher.updateAAD(aad)
@@ -216,13 +216,13 @@ internal fun chacha20Poly1305DecryptWithNonceNative(
     return provider.chacha20Poly1305Decrypt(key, nonce, aad, ciphertextWithTag)
   }
   if (chacha20Poly1305Fallback) return null
+  require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
+    "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
+  }
+  require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
+    "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
+  }
   return try {
-    require(key.size == ChaCha20Poly1305PureK.KEY_SIZE) {
-      "key must be ${ChaCha20Poly1305PureK.KEY_SIZE} bytes"
-    }
-    require(nonce.size == ChaCha20Poly1305PureK.NONCE_SIZE) {
-      "nonce must be ${ChaCha20Poly1305PureK.NONCE_SIZE} bytes"
-    }
     val cipher = Cipher.getInstance("ChaCha20-Poly1305")
     cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "ChaCha20"), IvParameterSpec(nonce))
     if (aad.isNotEmpty()) cipher.updateAAD(aad)
@@ -345,7 +345,7 @@ internal fun hkdfSha256ExpandNative(
     val output = ByteArray(outputLength)
     var previousBlock = ByteArray(0)
     for (blockNumber in 1..blockCount) {
-      val message = previousBlock + info + byteArrayOf(blockNumber.toByte())
+      val message = buildExpandMessage(previousBlock, info, blockNumber)
       previousBlock = hmacSha256Native(prk, message) ?: return null
       val startOffset = (blockNumber - 1) * hashLength
       val copyLength = minOf(hashLength, outputLength - startOffset)
@@ -356,6 +356,16 @@ internal fun hkdfSha256ExpandNative(
     null
   }
 }
+
+// ---------------------------------------------------------------------------
+// HKDF-Expand block message construction (RFC 5869 §2.3: T(i) = HMAC(H, T(i-1) | info | 2^{8i}))
+// ---------------------------------------------------------------------------
+
+private fun buildExpandMessage(
+    previousBlock: ByteArray,
+    info: ByteArray,
+    blockNumber: Int,
+): ByteArray = previousBlock + info + byteArrayOf(blockNumber.toByte())
 
 // ---------------------------------------------------------------------------
 // Ed25519 ASN.1 encoding helpers

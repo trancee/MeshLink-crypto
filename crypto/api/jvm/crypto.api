@@ -10,6 +10,22 @@ public final class ch/trancee/meshlink/crypto/Authenticator {
 	public final fun verify-0E7RQCE (Lch/trancee/meshlink/crypto/SecretKey;[B[B)Ljava/lang/Object;
 }
 
+public final class ch/trancee/meshlink/crypto/Crypto {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Crypto;
+	public final fun chacha20Poly1305Decrypt-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun chacha20Poly1305Encrypt-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun ed25519Sign-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;[B)Ljava/lang/Object;
+	public final fun ed25519Verify-0E7RQCE (Lch/trancee/meshlink/crypto/PublicKey;[B[B)Ljava/lang/Object;
+	public final fun expand-0E7RQCE ([B[BI)Ljava/lang/Object;
+	public final fun extract-gIAlu-s ([B[B)Ljava/lang/Object;
+	public final fun hkdfSha256-BWLJW6A ([B[B[BI)Ljava/lang/Object;
+	public final fun hmacSha256-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun sha256-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sha512-IoAF18A ([B)Ljava/lang/Object;
+	public final fun verifyHmacSha256-0E7RQCE (Lch/trancee/meshlink/crypto/SecretKey;[B[B)Ljava/lang/Object;
+	public final fun x25519-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;Lch/trancee/meshlink/crypto/PublicKey;)Ljava/lang/Object;
+}
+
 public abstract interface class ch/trancee/meshlink/crypto/CryptoProvider {
 	public abstract fun chacha20Poly1305Decrypt ([B[B[B[B)[B
 	public abstract fun chacha20Poly1305Encrypt ([B[B[B[B)[B

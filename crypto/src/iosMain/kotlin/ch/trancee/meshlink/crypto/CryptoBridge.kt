@@ -297,7 +297,7 @@ internal fun hkdfSha256ExpandNative(
     val output = ByteArray(outputLength)
     var previousBlock = ByteArray(0)
     for (blockNumber in 1..blockCount) {
-      val message = previousBlock + info + byteArrayOf(blockNumber.toByte())
+      val message = buildExpandMessage(previousBlock, info, blockNumber)
       previousBlock = hmacSha256Native(prk, message) ?: return null
       val startOffset = (blockNumber - 1) * hashLength
       val copyLength = minOf(hashLength, outputLength - startOffset)
@@ -308,6 +308,16 @@ internal fun hkdfSha256ExpandNative(
     null
   }
 }
+
+// ---------------------------------------------------------------------------
+// HKDF-Expand block message construction (RFC 5869 §2.3: T(i) = HMAC(H, T(i-1) | info | 2^{8i}))
+// ---------------------------------------------------------------------------
+
+private fun buildExpandMessage(
+    previousBlock: ByteArray,
+    info: ByteArray,
+    blockNumber: Int,
+): ByteArray = previousBlock + info + byteArrayOf(blockNumber.toByte())
 
 // ---------------------------------------------------------------------------
 // X25519 — SecKeyCopyKeyExchangeResult (Security.framework, iOS 14+)
