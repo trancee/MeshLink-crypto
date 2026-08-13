@@ -1,6 +1,6 @@
 # MeshLink-crypto
 
-MeshLink-crypto provides seven RFC-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider.
+MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for Kotlin Multiplatform, with per-primitive native fallback.
 
 ## What it is
 
