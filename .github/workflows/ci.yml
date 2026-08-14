@@ -43,7 +43,17 @@ jobs:
         # API 28 — last before API 29 (same JCA availability as 21)
         # API 29 — first with native X25519/Ed25519/ChaCha20-Poly1305 in JCA
         # API 37 — latest stable (current default compileSdk)
-        compile_sdk: ["21", "28", "29", "37"]
+        # Each entry maps to the correct sdkmanager package name:
+        # older platforms use "platforms;android-XX", API 37+ uses ".0" suffix
+        include:
+          - compile_sdk: "21"
+            platform_package: "platforms;android-21"
+          - compile_sdk: "28"
+            platform_package: "platforms;android-28"
+          - compile_sdk: "29"
+            platform_package: "platforms;android-29"
+          - compile_sdk: "37"
+            platform_package: "platforms;android-37.0"
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -61,7 +71,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
       - name: Install Android SDK packages
         run: |
-          sdkmanager --channel=3 "platforms;android-${{ matrix.compile_sdk }}.0" "build-tools;37.0.0"
+          sdkmanager --channel=3 "${{ matrix.platform_package }}" "build-tools;37.0.0"
       - name: Compile Android + run JVM tests (compileSdk=${{ matrix.compile_sdk }})
         run: |
           ./gradlew :crypto:compileAndroidMain :crypto:jvmTest -PcompileSdkOverride=${{ matrix.compile_sdk }} --no-daemon --parallel
