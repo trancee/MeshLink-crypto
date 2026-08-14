@@ -150,4 +150,20 @@ internal class DispatchVerificationTest {
         "tampered ciphertext must not decrypt",
     )
   }
+
+  // ------------------------------------------------------------------
+  // Dispatch path logging (for CI summary visibility, ADR-0003 seam 3)
+  // Determines whether the CryptoProvider was injected or the native
+  // path is active, and emits a marker line captured in JUnit XML
+  // <system-out> for ci-summary.py to parse.
+  // ------------------------------------------------------------------
+  @Test
+  fun dispatch_reportsActivePath() {
+    val providerType = if (cryptoProvider != null) "CryptoProvider" else "none(default)"
+    println(
+        "DISPATCH_INFO: provider=$providerType, " +
+            "path=${if (cryptoProvider != null) "CryptoProvider" else "native"}, " +
+            "fallback=PureK"
+    )
+  }
 }

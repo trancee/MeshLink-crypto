@@ -30,13 +30,50 @@ def parse_testsuite(path):
         return None
 
 
-def friendly_label(suite_dir):
-    """Map Gradle test-result directory names to friendly platform labels."""
+def parse_dispatch_info(path):
+    """Extract the DISPATCH_INFO line from a JUnit XML's <system-out>.
+
+    The DispatchVerificationTest emits a marker line like:
+      DISPATCH_INFO: provider=none(default), path=native, fallback=PureK
+    This is captured in the JUnit XML's <system-out> element for CI visibility.
+    """
+    try:
+        root = ET.parse(path).getroot()
+        ts = root if root.tag == "testsuite" else root.find("testsuite")
+        if ts is None:
+            return None
+        so = ts.find("system-out")
+        if so is not None and so.text:
+            for line in so.text.strip().splitlines():
+                if line.startswith("DISPATCH_INFO:"):
+                    return line
+    except Exception:
+        pass
+    return None
+
+
+def friendly_label(suite_dir, dispatch_info=None):
+    """Map Gradle test-result directory names to friendly platform labels.
+
+    If dispatch_info is available, append the active crypto path.
+    """
     if suite_dir == "jvmTest":
-        return "JVM"
-    if suite_dir == "iosSimulatorArm64Test":
-        return "iOS Simulator (arm64)"
-    return suite_dir.replace("Test", "")
+        base = "JVM"
+    elif suite_dir == "iosSimulatorArm64Test":
+        base = "iOS Simulator (arm64)"
+    else:
+        base = suite_dir.replace("Test", "")
+    if dispatch_info:
+        # Extract just the path= part from "DISPATCH_INFO: provider=..., path=..., fallback=..."
+        parts = dict(p.strip().split("=", 1) for p in dispatch_info.replace("DISPATCH_INFO: ", "").split(", "))
+        path_type = parts.get("path", "unknown")
+        if path_type == "native":
+            if suite_dir == "jvmTest":
+                path_type = "native (JCA)"
+            elif suite_dir == "iosSimulatorArm64Test":
+                path_type = "native (Darwin)"
+        return f"{base} ({path_type})"
+    return base
 
 
 def main():
@@ -90,7 +127,7 @@ def main():
             for name, m, cv in sorted(missed_classes):
                 lines.append(f"| {name} | {m} | {cv} |")
         else:
-            lines.append("_100% branch coverage — no missed branches_")
+            lines.append("_No missed branches_")
         lines.append("")
 
     # --- JUnit test results ---
@@ -98,6 +135,8 @@ def main():
     if test_files:
         total_t = total_f = total_s = 0
         failures = []
+        # Collect dispatch info per source set directory
+        dispatch_per_dir = {}
         for f in test_files:
             result = parse_testsuite(f)
             if result is None:
@@ -108,12 +147,17 @@ def main():
             total_s += sk
             if fa > 0:
                 failures.append(name)
+            # Parse dispatch info
+            info = parse_dispatch_info(f)
+            suite_dir = os.path.basename(os.path.dirname(f))
+            if info and suite_dir not in dispatch_per_dir:
+                dispatch_per_dir[suite_dir] = info
 
         passed = total_t - total_f - total_s
 
         lines.append("## Test Results Summary")
         lines.append("")
-        lines.append("| Platform | Tests | Passed | Failed | Skipped |")
+        lines.append("| Platform (dispatch) | Tests | Passed | Failed | Skipped |")
         lines.append("|---|---|---|---|---|")
 
         # Per-source-set breakdown
@@ -133,10 +177,19 @@ def main():
                 s_f += fa
                 s_s += sk
             s_p = s_t - s_f - s_s
-            label = friendly_label(suite_dir)
+            label = friendly_label(suite_dir, dispatch_per_dir.get(suite_dir))
             lines.append(f"| {label} | {s_t} | {s_p} | {s_f} | {s_s} |")
 
         lines.append(f"| **Total** | **{total_t}** | **{passed}** | **{total_f}** | **{total_s}** |")
+        if dispatch_per_dir:
+            lines.append("")
+            lines.append("### Crypto dispatch path")
+            lines.append("")
+            for suite_dir, info in sorted(dispatch_per_dir.items()):
+                label = friendly_label(suite_dir, None)
+                # Strip "DISPATCH_INFO: " prefix for display
+                detail = info.replace("DISPATCH_INFO: ", "").strip()
+                lines.append(f"- **{label}**: `{detail}`")
         if failures:
             lines.append("")
             lines.append(f"**Failed suites:** {', '.join(failures)}")
