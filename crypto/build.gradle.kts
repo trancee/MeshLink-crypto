@@ -1,5 +1,7 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class)
 
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
   alias(libs.plugins.androidLibrary)
@@ -9,11 +11,13 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.kotlinxBenchmark)
   alias(libs.plugins.kotlinAllOpen)
+  id("maven-publish")
+  id("signing")
 }
 
 group = "ch.trancee.meshlink"
 
-version = "0.1.0-SNAPSHOT"
+version = libs.versions.library.get()
 
 kotlin {
   jvmToolchain(21)
@@ -235,3 +239,63 @@ spotless {
 
 // Dokka (ticket 01): KDoc generation from the start. Apply-only; Dokka derives the
 // module name from the project and creates the `dokkaGenerate` task.
+
+// Publishing configuration for Maven Central.
+// KMP auto-registers MavenPublication per target. Configure shared POM metadata
+// and PGP signing. Credentials read from Gradle properties (set locally via
+// ~/.gradle/gradle.properties or in CI via -P flags).
+publishing {
+  publications.withType<MavenPublication> {
+    pom {
+      name.set("MeshLink-crypto")
+      description.set(
+          "Pure-Kotlin, constant-time cryptographic primitives for Kotlin Multiplatform," +
+              " with per-primitive native fallback."
+      )
+      url.set("https://github.com/trancee/MeshLink-crypto")
+      licenses {
+        license {
+          name.set("Apache License, Version 2.0")
+          url.set("https://www.apache.org/licenses/LICENSE-2.0")
+        }
+      }
+      developers {
+        developer {
+          id.set("trancee")
+          name.set("Trancee")
+          url.set("https://github.com/trancee")
+        }
+      }
+      scm {
+        connection.set("scm:git:git://github.com/trancee/MeshLink-crypto.git")
+        developerConnection.set("scm:git:ssh://github.com/trancee/MeshLink-crypto.git")
+        url.set("https://github.com/trancee/MeshLink-crypto")
+      }
+    }
+  }
+
+  // Maven Central repository: credentials from Gradle properties (-P flags in CI).
+  repositories {
+    maven {
+      name = "MavenCentral"
+      url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+      credentials {
+        username = findProperty("MAVEN_CENTRAL_USERNAME") as String? ?: ""
+        password = findProperty("MAVEN_CENTRAL_PASSWORD") as String? ?: ""
+      }
+    }
+  }
+}
+
+// Signing: PGP-sign all published artifacts.
+// In CI, SIGNING_KEY_ID / SIGNING_KEY / SIGNING_KEY_PASSWORD are passed as -P flags.
+// Locally, set them in ~/.gradle/gradle.properties.
+signing {
+  val signingKeyId: String? = findProperty("signingKeyId") as String?
+  val signingKey: String? = findProperty("signingKey") as String?
+  val signingPassword: String? = findProperty("signingKeyPassword") as String?
+  if (signingKey != null && signingKeyId != null) {
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    sign(publishing.publications)
+  }
+}

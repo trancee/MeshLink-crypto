@@ -11,6 +11,10 @@ local.properties
 
 # Logs
 *.log
+.env
+.env.*
+!*.env.example
+local.properties
 
 # Detekt baseline XMLs (generated per-source-set by detektBaseline* tasks)
 crypto/detekt-baseline-*.xml

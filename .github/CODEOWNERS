@@ -4,7 +4,7 @@
 # constitution. See CONSTITUTION.md Quality Gates and Governance.
 
 # Crypto, routing, and wire-format code
-/meshlink/src/*/kotlin/ch/trancee/meshlink/crypto/ @trancee
+/crypto/src/*/kotlin/ch/trancee/meshlink/crypto/ @trancee
 
 # CI and git-hook enforcement — protect the gates themselves
 /.github/workflows/ @trancee
