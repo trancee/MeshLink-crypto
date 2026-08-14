@@ -32,7 +32,10 @@ internal object Ed25519PureK {
   private val BASE_POINT_BYTES: ByteArray =
       hexToBytes("5866666666666666666666666666666666666666666666666666666666666666")
 
-  /** Identity point (0,1) encoding: 0x01 || 0x00*31. verify() rejects this encoding to prevent signature forgery (CVE-2023-38490). */
+  /**
+   * Identity point (0,1) encoding: 0x01 || 0x00*31. verify() rejects this encoding to prevent
+   * signature forgery (CVE-2023-38490).
+   */
   private val IDENTITY_POINT_ENCODING: ByteArray =
       hexToBytes("0100000000000000000000000000000000000000000000000000000000000000")
 
@@ -975,7 +978,7 @@ internal object Ed25519PureK {
       // Ref10 ge_frombytes step 2: re-check curve equation after SQRTM1 multiply.
       val check2 = x.sqr().mul(v).sub(u)
       if (check2.toBytes().any { it != 0.toByte() }) {
-        return null  // Point is not on the curve
+        return null // Point is not on the curve
       }
     }
 
@@ -1055,14 +1058,18 @@ internal object Ed25519PureK {
 
     return rB + s
   }
-  /** Returns true if [publicKey] encodes the Ed25519 identity point (0,1) — a signature forgery vector. */
+
+  /**
+   * Returns true if [publicKey] encodes the Ed25519 identity point (0,1) — a signature forgery
+   * vector.
+   */
   internal fun isIdentityPoint(publicKey: ByteArray): Boolean =
       publicKey.size == 32 && publicKey.contentEquals(IDENTITY_POINT_ENCODING)
 
-
   /** Returns true if the S component of [signature] equals zero — a degenerate signature vector. */
   internal fun isZeroS(signature: ByteArray): Boolean =
-      signature.size == SIGNATURE_SIZE && signature.copyOfRange(32, SIGNATURE_SIZE).all { it == 0.toByte() }
+      signature.size == SIGNATURE_SIZE &&
+          signature.copyOfRange(32, SIGNATURE_SIZE).all { it == 0.toByte() }
 
   /**
    * Verifies [signature] on [message] against [publicKey] (RFC 8032 §5.1.6).
@@ -1085,7 +1092,8 @@ internal object Ed25519PureK {
     // Reject the identity point (0,1) — prevents signature forgery (CVE-2023-38490 in Go).
     // With A=identity, S=0, R=identity, verification holds for any message without the private key.
     if (isIdentityPoint(publicKey)) return false
-    // Reject degenerate signature with S=0 (prevents small-order R attacks — CVE-2023-38490 variant).
+    // Reject degenerate signature with S=0 (prevents small-order R attacks — CVE-2023-38490
+    // variant).
     if (isZeroS(signature)) return false
     val negA = a.negate()
     val sb = scalarMultBase(s)

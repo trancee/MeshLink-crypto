@@ -13,7 +13,9 @@ internal actual object X25519 {
   actual fun compute(@Secret scalar: ByteArray, @Secret u: ByteArray): ByteArray {
     val result = x25519Native(scalar, u) ?: X25519PureK.compute(scalar, u)
     if (X25519PureK.isAllZeroSharedSecret(result)) {
-      throw IllegalArgumentException("X25519 shared secret is all-zero — rejecting low-order point (RFC 7748 §6.1)")
+      throw IllegalArgumentException(
+          "X25519 shared secret is all-zero — rejecting low-order point (RFC 7748 §6.1)"
+      )
     }
     return result
   }

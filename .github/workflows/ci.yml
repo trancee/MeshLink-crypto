@@ -26,5 +26,5 @@ jobs:
         with:
           api-level: 37
           build-tools: 37.0.0
-      - name: Check (detekt + kover + abiValidation + spotless + tests)
+      - name: Check (detekt + kover + abiValidation + spotless + JVM tests + iOS tests)
         run: ./gradlew check

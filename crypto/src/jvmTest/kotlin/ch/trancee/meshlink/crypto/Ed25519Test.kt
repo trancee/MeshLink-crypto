@@ -160,6 +160,31 @@ internal class Ed25519Test {
     assertFalse(Ed25519PureK.verify(ByteArray(32), ByteArray(0), ByteArray(63)))
   }
 
+  // ------------------------------------------------------------------
+  // isIdentityPoint / isZeroS — wrong-size input short-circuit
+  // (covers the public-key / signature size == false branch in the && guard)
+  // ------------------------------------------------------------------
+
+  @Tag("positive")
+  @Tag("boundary")
+  @Test
+  fun `Ed25519PureK isIdentityPoint returns false for wrong-sized public key`() {
+    // The facade (JVM Ed25519.verify) calls isIdentityPoint on raw user input.
+    // A non-32-byte key must short-circuit on size == 32 being false, not crash.
+    assertFalse(Ed25519PureK.isIdentityPoint(ByteArray(31)))
+    assertFalse(Ed25519PureK.isIdentityPoint(ByteArray(33)))
+  }
+
+  @Tag("positive")
+  @Tag("boundary")
+  @Test
+  fun `Ed25519PureK isZeroS returns false for wrong-sized signature`() {
+    // The facade (JVM Ed25519.verify) calls isZeroS on raw user input.
+    // A non-64-byte signature must short-circuit on size == SIGNATURE_SIZE being false.
+    assertFalse(Ed25519PureK.isZeroS(ByteArray(63)))
+    assertFalse(Ed25519PureK.isZeroS(ByteArray(65)))
+  }
+
   @Tag("positive")
   @Tag("security")
   @Test

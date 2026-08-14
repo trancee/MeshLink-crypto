@@ -8,10 +8,9 @@ import kotlin.test.assertTrue
 /**
  * Regression test: Non-curve point rejection in Ed25519 pointFromBytes.
  *
- * ref10's decode_point verifies the curve equation after the SQRTM1
- * multiplication. Points where neither x nor x*sqrt(-1) satisfies the curve
- * equation must be rejected. Without this recheck, an attacker could craft
- * points not on the curve, potentially leaking key material.
+ * ref10's decode_point verifies the curve equation after the SQRTM1 multiplication. Points where
+ * neither x nor x*sqrt(-1) satisfies the curve equation must be rejected. Without this recheck, an
+ * attacker could craft points not on the curve, potentially leaking key material.
  */
 internal class PocNonCurvePointTest {
 

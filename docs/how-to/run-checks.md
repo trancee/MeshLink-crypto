@@ -61,7 +61,7 @@ Any code change to a pure-Kotlin primitive requires a before/after benchmark com
 ## Run the constant-time lint only
 
 ```bash
-./gradlew :crypto:detektMainKmpSourceSet --rerun --no-build-cache
+./gradlew :crypto:detektCommonMainSourceSet --rerun --no-build-cache
 ```
 
 This runs the `ConstantTimeRule` on `commonMain`. It flags any data-dependent branch or secret-indexed access in `@Secret`-annotated code.

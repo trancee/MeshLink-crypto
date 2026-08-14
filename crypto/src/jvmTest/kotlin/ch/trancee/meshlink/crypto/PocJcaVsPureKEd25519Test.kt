@@ -5,14 +5,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Regression test: Confirms that the JCA Ed25519 path itself accepts the
- * identity-point forgery (no fix inside JCA), but that the facade now rejects
- * it via pre-dispatch identity-point check, and PureK rejects it.
+ * Regression test: Confirms that the JCA Ed25519 path itself accepts the identity-point forgery (no
+ * fix inside JCA), but that the facade now rejects it via pre-dispatch identity-point check, and
+ * PureK rejects it.
  *
- * Previously the broad catch(e: Exception) { null } in ed25519VerifyNative would
- * mask JCA rejections and fall back to the vulnerable PureK path. Now the catch
- * is narrowed to NoSuchAlgorithmException, and the facade blocks identity-point
- * public keys before any native call.
+ * Previously the broad catch(e: Exception) { null } in ed25519VerifyNative would mask JCA
+ * rejections and fall back to the vulnerable PureK path. Now the catch is narrowed to
+ * NoSuchAlgorithmException, and the facade blocks identity-point public keys before any native
+ * call.
  */
 internal class PocJcaVsPureKEd25519Test {
 

@@ -1,17 +1,14 @@
 package ch.trancee.meshlink.crypto
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertContentEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 /**
  * PoC: Verify HKDF-Expand with blockNumber > 127 (byte truncation concern).
  *
- * RFC 5869 §2.3: T(i) = HMAC(H, T(i-1) | info | 2^{8i}).
- * blockNumber.toByte() for i=128..255 produces signed bytes (-128..-1),
- * but the raw 8 bits are 128..255 — correct per RFC 5869.
+ * RFC 5869 §2.3: T(i) = HMAC(H, T(i-1) | info | 2^{8i}). blockNumber.toByte() for i=128..255
+ * produces signed bytes (-128..-1), but the raw 8 bits are 128..255 — correct per RFC 5869.
  */
 internal class PocHkdfByteTruncationTest {
 
@@ -25,11 +22,17 @@ internal class PocHkdfByteTruncationTest {
     val pureKResult = HKDF_SHA256PureK.digest(ikm, salt, info, outputLength)
     val nativeResult = hkdfSha256Native(ikm, salt, info, outputLength)
 
-    println("PureK output (first 16): ${pureKResult.take(16).joinToString("") { "%02x".format(it) }}")
+    println(
+        "PureK output (first 16): ${pureKResult.take(16).joinToString("") { "%02x".format(it) }}"
+    )
     println("Native output is null: ${nativeResult == null}")
 
     if (nativeResult != null) {
-      assertContentEquals(pureKResult, nativeResult, "Native HKDF must match PureK for large blocks")
+      assertContentEquals(
+          pureKResult,
+          nativeResult,
+          "Native HKDF must match PureK for large blocks",
+      )
     }
     println("All $outputLength bytes match between PureK and native")
   }

@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 
@@ -93,12 +94,13 @@ internal class X25519Test {
   fun `X25519 all-zero u-coordinate is rejected per RFC 7748 Section 6p1`() {
     val scalar = hex("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
     val u = ByteArray(32)
-    val exception = assertFailsWith<IllegalArgumentException> {
-      X25519PureK.compute(scalar, u)
-    }
+    val exception =
+        assertFailsWith<IllegalArgumentException> {
+          X25519PureK.compute(scalar, u)
+        }
     assertTrue(
-      exception.message?.contains("all-zero") == true,
-      "X25519 with u=0 must reject all-zero shared secret per RFC 7748 §6.1",
+        exception.message?.contains("all-zero") == true,
+        "X25519 with u=0 must reject all-zero shared secret per RFC 7748 §6.1",
     )
   }
 
@@ -236,6 +238,17 @@ internal class X25519Test {
     val u = ByteArray(33)
     val result = runCatching { X25519PureK.compute(scalar, u) }
     assertTrue(result.isFailure, "33-byte u-coordinate must be rejected")
+  }
+
+  @Tag("positive")
+  @Tag("boundary")
+  @Test
+  fun `X25519PureK isAllZeroSharedSecret returns false for wrong-sized secret`() {
+    // The JVM actual X25519.compute calls isAllZeroSharedSecret on the result of
+    // x25519Native/pureK, which is always 32 bytes. But the guard's size == 32
+    // check must still be safe for any input — covers the false short-circuit branch.
+    assertFalse(X25519PureK.isAllZeroSharedSecret(ByteArray(31)))
+    assertFalse(X25519PureK.isAllZeroSharedSecret(ByteArray(33)))
   }
 
   // ------------------------------------------------------------------

@@ -7,9 +7,8 @@ import kotlin.test.assertTrue
 /**
  * Regression test: X25519 all-zero shared secret (RFC 7748 §6.1).
  *
- * Low-order points (u=0, u=1, etc.) produce all-zero shared secrets that an
- * attacker can predict. Per RFC 7748 §6.1, implementations must reject the
- * all-zero result and treat it as an error.
+ * Low-order points (u=0, u=1, etc.) produce all-zero shared secrets that an attacker can predict.
+ * Per RFC 7748 §6.1, implementations must reject the all-zero result and treat it as an error.
  */
 internal class PocX25519AllZeroTest {
 
@@ -18,9 +17,10 @@ internal class PocX25519AllZeroTest {
     val scalar = hex("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
     val zeroU = ByteArray(32) { 0x00 }
 
-    val exception = assertFailsWith<IllegalArgumentException> {
-      X25519PureK.compute(scalar, zeroU)
-    }
+    val exception =
+        assertFailsWith<IllegalArgumentException> {
+          X25519PureK.compute(scalar, zeroU)
+        }
     assertTrue(
         exception.message?.contains("all-zero") == true,
         "PureK must reject all-zero shared secret per RFC 7748 §6.1",
@@ -33,9 +33,10 @@ internal class PocX25519AllZeroTest {
     val u1 = ByteArray(32) { 0x00 }
     u1[0] = 0x01
 
-    val exception = assertFailsWith<IllegalArgumentException> {
-      X25519PureK.compute(scalar, u1)
-    }
+    val exception =
+        assertFailsWith<IllegalArgumentException> {
+          X25519PureK.compute(scalar, u1)
+        }
     assertTrue(
         exception.message?.contains("all-zero") == true,
         "PureK must reject all-zero shared secret from u=1 per RFC 7748 §6.1",

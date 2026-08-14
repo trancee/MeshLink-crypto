@@ -44,7 +44,6 @@ kotlin {
   }
 
   iosArm64()
-  iosX64()
   iosSimulatorArm64()
 
   sourceSets {
@@ -75,22 +74,30 @@ kotlin {
   abiValidation {}
 }
 
-// iOS (native) tests require a running simulator/device to execute; disable
-// *execution* (not compilation) so `:check` is green on any host. iOS binaries
-// still compile (metadata + KLib) and feed the abiValidation gate, and the common
-// test suite still runs on the JVM (covered by kover). (ADR-0007 / ticket 01.)
+// iOS (native) tests require a running simulator/device to execute. On macOS we enable
+// the arm64 iOS simulator test (iosSimulatorArm64Test) to validate native dispatch
+// interop (ADR-0002) via InteropHarnessTest (commonTest, which uses kotlin.test —
+// multiplatform, no JUnit 5 tags needed). The legacy iosX64 target (x86_64 simulator)
+// has been removed: Apple Silicon ci runners (macos-latest) use arm64 simulators,
+// and x86_64 simulators require manual Rosetta setup. Physical-device tests
+// (iosArm64Test) remain disabled — they need a connected iOS device. On non-macOS
+// hosts all iOS tests are disabled so `:check` is green for local development.
+// iOS binaries still compile (metadata + KLib) and feed the abiValidation gate;
+// the pure-K path is covered by the JVM suite + kover. (ADR-0007 / ticket 01.)
 tasks
     .matching {
       it.name.startsWith("ios") && it.name.endsWith("Test")
     }
     .configureEach {
-      enabled = false
+      val isMacOs = System.getProperty("os.name").lowercase().contains("mac")
+      enabled = isMacOs && name == "iosSimulatorArm64Test"
     }
 
 // JUnit 5 trait-tag filter (ADR-0003, seam 3). Tests carry @Tag annotations.
-// NOTE: tests live in jvmTest (not commonTest) to enable JUnit 5 @Tag.
-// If iOS test execution is re-enabled, move tests back or use expect/actual.
-// Uncomment for CI gating:
+// NOTE: tests live in jvmTest (not commonTest) to enable JUnit 5 @Tag. The jvmTest
+// suite covers the pure-K path with full kover coverage on JVM. iOS tests (below)
+// now run on macOS via InteropHarnessTest in commonTest, which uses kotlin.test
+// (multiplatform) and compares native dispatch vs pure-K on each platform.
 tasks.named<org.gradle.api.tasks.testing.Test>("jvmTest") {
   useJUnitPlatform {
     // includeTags("positive", "critical-path")

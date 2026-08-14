@@ -5,14 +5,13 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Regression test: Confirms the facade X25519 now rejects all-zero shared
- * secrets from low-order points (u=0, u=1) regardless of which path computes
- * the result.
+ * Regression test: Confirms the facade X25519 now rejects all-zero shared secrets from low-order
+ * points (u=0, u=1) regardless of which path computes the result.
  *
- * With narrowed catch blocks in x25519Native, JCA's InvalidKeyException for low-order
- * points is caught and the PureK fallback computes the result, throwing IllegalArgumentException
- * for all-zero output. If a CryptoProvider throws InvalidKeyException directly, that
- * also propagates as a valid rejection. Both are valid per RFC 7748 §6.1.
+ * With narrowed catch blocks in x25519Native, JCA's InvalidKeyException for low-order points is
+ * caught and the PureK fallback computes the result, throwing IllegalArgumentException for all-zero
+ * output. If a CryptoProvider throws InvalidKeyException directly, that also propagates as a valid
+ * rejection. Both are valid per RFC 7748 §6.1.
  */
 internal class PocX25519NativePathTest {
 

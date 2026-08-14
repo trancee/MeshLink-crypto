@@ -6,8 +6,8 @@ import kotlin.test.assertFalse
 /**
  * Regression test: Identity-point public key forgery (CVE-2023-38490).
  *
- * With A = identity point (0,1), an attacker forges a valid signature with S=0
- * and R = identity encoding. verify() must now reject this.
+ * With A = identity point (0,1), an attacker forges a valid signature with S=0 and R = identity
+ * encoding. verify() must now reject this.
  */
 internal class PocIdentityPointForgeryTest {
 
