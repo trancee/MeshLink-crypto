@@ -25,7 +25,7 @@ jobs:
         uses: android-actions/setup-android@v4
       - name: Install Android SDK packages
         run: |
-          sdkmanager --channel=3 "platforms;android-37" "build-tools;37.0.0"
+          sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0"
       - name: Check (detekt + kover + abiValidation + spotless + JVM tests + iOS tests)
         run: ./gradlew check
       - name: Generate coverage + test summary (inline in GitHub Actions summary)
