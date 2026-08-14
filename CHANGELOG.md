@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gradle version catalog version property (`libs.versions.library`)
 - `.github/workflows/publish.yml` — release workflow targeting Maven Central
 - `.env.example` — template for local Maven Central + GPG signing credentials
+- `DispatchVerificationTest` in `commonTest` — RFC KAT dispatch verification via public API
+- CI matrix job (`android-matrix`) — compiles Android target across API levels 21, 28, 29, 37 in parallel on `ubuntu-latest`
 
 ### Fixed
 - `.gitignore` now excludes `.env` and `.env.*` — prevents credential leaks

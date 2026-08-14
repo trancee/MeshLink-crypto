@@ -17,15 +17,16 @@ plugins {
 
 group = "ch.trancee.meshlink"
 
+// Version comes from the version catalog (libs.versions TOML); not hardcoded.
 version = libs.versions.library.get()
 
 kotlin {
   jvmToolchain(21)
 
   // JVM target.
-  // Separate 'benchmark' compilation for JMH microbenchmarks (kotlinx-benchmark guide:
-  // "Setting Up a Separate Source Set for Benchmarks"). associateWith links the
-  // benchmark compilation to 'main' so benchmark code can access library internals.
+  // Separate 'benchmark' compilation for JMH microbenchmarks (kotlinx-benchmark
+  // guide: "Setting Up a Separate Source Set for Benchmarks"). associateWith links
+  // the benchmark compilation to 'main' so benchmark code can access internals.
   jvm {
     val jvmTarget = this
     compilations {
@@ -41,7 +42,9 @@ kotlin {
   // https://developer.android.com/kotlin/multiplatform/plugin
   android {
     namespace = "ch.trancee.meshlink.crypto"
-    compileSdk = 37
+    // compileSdk is overridable via -PcompileSdkOverride=<api> for CI matrix
+    // testing across Android API levels (ADR-0007). Default: 37 (latest stable).
+    compileSdk = (findProperty("compileSdkOverride") as? String)?.toIntOrNull() ?: 37
     minSdk = 21
     // targetSdk omitted: library module — AGP 9.x deprecated targetSdk in a
     // library default config; the consuming app sets the rollout target (ADR-0007).
@@ -99,9 +102,10 @@ tasks
 
 // JUnit 5 trait-tag filter (ADR-0003, seam 3). Tests carry @Tag annotations.
 // NOTE: tests live in jvmTest (not commonTest) to enable JUnit 5 @Tag. The jvmTest
-// suite covers the pure-K path with full kover coverage on JVM. iOS tests (below)
-// now run on macOS via InteropHarnessTest in commonTest, which uses kotlin.test
+// suite covers the pure-K path with full kover coverage on JVM. iOS tests (above)
+// run on macOS via InteropHarnessTest in commonTest, which uses kotlin.test
 // (multiplatform) and compares native dispatch vs pure-K on each platform.
+// DispatchVerificationTest (commonTest) verifies public API produces RFC KAT results.
 tasks.named<org.gradle.api.tasks.testing.Test>("jvmTest") {
   useJUnitPlatform {
     // includeTags("positive", "critical-path")
@@ -161,13 +165,15 @@ kover {
   reports {
     total {
       // Exclude benchmark code from coverage: benchmarks are dev-only tooling
-      // (ADR-0005) and have no tests. Including them would drop coverage below the 100% gate.
+      // (ADR-0005) and have no tests. Including them would drop coverage below the
+      // 100% gate.
       filters {
         excludes {
-          // ADR-0009: wildcard covers every `*Benchmark` class -- new primitives self-excluded.
+          // ADR-0009: wildcard covers every `*Benchmark` class — new primitives
+          // self-excluded.
           classes("ch.trancee.meshlink.crypto.*Benchmark")
           // ADR-0002: actual dispatch wrappers delegate to *PureK; exclude from
-          // the 100% gate - the *PureK objects carry the real coverage.
+          // the 100% gate — the *PureK objects carry the real coverage.
           classes(
               "ch.trancee.meshlink.crypto.SHA256",
               "ch.trancee.meshlink.crypto.SHA512",
@@ -210,7 +216,8 @@ allOpen {
 
 // kotlinx-benchmark (ticket 03): JMH-backed microbenchmarks for JVM.
 // The target name must match the source set name ('jvmBenchmark') when using
-// a separate compilation — see the plugin's "Separate source set for benchmarks" guide.
+// a separate compilation — see the plugin's "Separate source set for benchmarks"
+// guide.
 benchmark {
   configurations {
     named("main") {
@@ -243,7 +250,7 @@ spotless {
 // Publishing configuration for Maven Central.
 // KMP auto-registers MavenPublication per target. Configure shared POM metadata
 // and PGP signing. Credentials read from Gradle properties (set locally via
-// ~/.gradle/gradle.properties or in CI via -P flags).
+// ~/.gradle/gradle/properties or in CI via -P flags).
 publishing {
   publications.withType<MavenPublication> {
     pom {
