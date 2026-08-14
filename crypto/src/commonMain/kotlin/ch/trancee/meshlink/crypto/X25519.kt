@@ -42,6 +42,10 @@ internal object X25519PureK {
           }
       )
 
+  /** Returns true if [secret] is the all-zero 32-byte value — a weak X25519 shared secret (RFC 7748 §6.1). */
+  internal fun isAllZeroSharedSecret(secret: ByteArray): Boolean =
+      secret.size == 32 && secret.all { it == 0.toByte() }
+
   /**
    * Computes X25519(scalar, u) per RFC 7748 §5 (Montgomery ladder).
    *
@@ -98,7 +102,14 @@ internal object X25519PureK {
 
     // Return x_2 * z_2^(p−2) (Fermat's little theorem).
     val inverse = invert(z2)
-    return x2.mul(inverse).normalize().toBytes()
+    val result = x2.mul(inverse).normalize().toBytes()
+    // RFC 7748 §6.1: abort if the shared secret is all-zero (u=0 is a low-order point
+    // producing the all-zero shared secret). An attacker who supplies u=0 knows the
+    // shared secret and can decrypt all session traffic.
+    if (result.all { it == 0.toByte() }) {
+        throw IllegalArgumentException("X25519 shared secret is all-zero — rejecting low-order point (RFC 7748 §6.1)")
+    }
+    return result
   }
 
   /**

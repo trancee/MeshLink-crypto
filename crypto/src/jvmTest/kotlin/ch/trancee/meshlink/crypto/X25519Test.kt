@@ -3,6 +3,7 @@ package ch.trancee.meshlink.crypto
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 
@@ -87,12 +88,18 @@ internal class X25519Test {
 
   @Tag("positive")
   @Tag("edge-case")
+  @Tag("security")
   @Test
-  fun `X25519 all-zero u-coordinate produces all-zero output`() {
+  fun `X25519 all-zero u-coordinate is rejected per RFC 7748 Section 6p1`() {
     val scalar = hex("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
     val u = ByteArray(32)
-    val result = X25519PureK.compute(scalar, u)
-    assertContentEquals(ByteArray(32), result, "all-zero u-coordinate must produce all-zero output")
+    val exception = assertFailsWith<IllegalArgumentException> {
+      X25519PureK.compute(scalar, u)
+    }
+    assertTrue(
+      exception.message?.contains("all-zero") == true,
+      "X25519 with u=0 must reject all-zero shared secret per RFC 7748 §6.1",
+    )
   }
 
   @Tag("positive")
@@ -153,17 +160,24 @@ internal class X25519Test {
   @Tag("wycheproof")
   @Tag("security")
   @Test
-  fun `X25519 Wycheproof acceptable vectors - shared secret matches`() {
+  fun `X25519 Wycheproof acceptable vectors - shared secret matches or is rejected`() {
     val vectors = loadWycheproofX25519("/wycheproof/x25519_test.json")
     val acceptable = vectors.filter { it.result == "acceptable" }
     assertTrue(acceptable.isNotEmpty(), "Wycheproof resource must contain acceptable vectors")
 
     acceptable.forEach { testCase ->
-      assertContentEquals(
-          testCase.shared,
-          X25519PureK.compute(testCase.private, testCase.public),
-          "tcId=${testCase.tcId} comment=${testCase.comment}",
-      )
+      if (testCase.shared.all { it == 0.toByte() }) {
+        // RFC 7748 §6.1: all-zero shared secrets must be rejected
+        assertFailsWith<IllegalArgumentException> {
+          X25519PureK.compute(testCase.private, testCase.public)
+        }
+      } else {
+        assertContentEquals(
+            testCase.shared,
+            X25519PureK.compute(testCase.private, testCase.public),
+            "tcId=${testCase.tcId} comment=${testCase.comment}",
+        )
+      }
     }
   }
 

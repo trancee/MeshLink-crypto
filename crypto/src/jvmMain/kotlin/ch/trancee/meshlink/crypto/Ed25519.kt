@@ -21,6 +21,7 @@ internal actual object Ed25519 {
       ed25519SignNative(secretKey, message) ?: Ed25519PureK.sign(secretKey, message)
 
   actual fun verify(publicKey: ByteArray, message: ByteArray, signature: ByteArray): Boolean =
-      ed25519VerifyNative(publicKey, message, signature)
+      if (Ed25519PureK.isIdentityPoint(publicKey) || Ed25519PureK.isZeroS(signature)) false
+      else ed25519VerifyNative(publicKey, message, signature)
           ?: Ed25519PureK.verify(publicKey, message, signature)
 }

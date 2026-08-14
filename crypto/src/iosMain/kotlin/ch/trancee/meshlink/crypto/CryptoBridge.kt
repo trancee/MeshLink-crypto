@@ -47,6 +47,7 @@ import platform.CoreFoundation.CFDictionaryCreateMutable
 import platform.CoreFoundation.CFDictionarySetValue
 import platform.CoreFoundation.CFIndexVar
 import platform.CoreFoundation.CFNumberCreate
+import platform.CoreFoundation.CFRelease
 import platform.CoreFoundation.CFStringCreateWithCString
 import platform.CoreFoundation.CFStringRef
 import platform.CoreFoundation.kCFNumberCFIndexType
@@ -328,7 +329,10 @@ private fun x25519SecKey(
     u: ByteArray,
 ): ByteArray? {
   val privateKey = secKeyFromBytes(scalar, kSecAttrKeyTypeX25519CF, true) ?: return null
-  val peerPublicKey = secKeyFromBytes(u, kSecAttrKeyTypeX25519CF, false) ?: return null
+  val peerPublicKey = secKeyFromBytes(u, kSecAttrKeyTypeX25519CF, false) ?: run {
+    CFRelease(privateKey)
+    return null
+  }
   val shared =
       SecKeyCopyKeyExchangeResult(
           privateKey,
@@ -336,8 +340,16 @@ private fun x25519SecKey(
           peerPublicKey,
           null,
           null,
-      ) ?: return null
-  return cfDataToBytes(shared)
+      ) ?: run {
+    CFRelease(peerPublicKey)
+    CFRelease(privateKey)
+    return null
+  }
+  val result = cfDataToBytes(shared)
+  CFRelease(shared)
+  CFRelease(peerPublicKey)
+  CFRelease(privateKey)
+  return result
 }
 
 // ---------------------------------------------------------------------------
@@ -347,21 +359,44 @@ private fun x25519SecKey(
 
 private fun ed25519PublicKeyFromPrivateSecKey(secretKey: ByteArray): ByteArray? {
   val privateKey = secKeyFromBytes(secretKey, kSecAttrKeyTypeEd25519CF, true) ?: return null
-  val publicKey = SecKeyCopyPublicKey(privateKey) ?: return null
-  return cfDataToBytes(SecKeyCopyExternalRepresentation(publicKey, null))
+  val publicKey = SecKeyCopyPublicKey(privateKey) ?: run {
+    CFRelease(privateKey)
+    return null
+  }
+  val extRep = SecKeyCopyExternalRepresentation(publicKey, null) ?: run {
+    CFRelease(publicKey)
+    CFRelease(privateKey)
+    return null
+  }
+  val result = cfDataToBytes(extRep)
+  CFRelease(extRep)
+  CFRelease(publicKey)
+  CFRelease(privateKey)
+  return result
 }
 
 private fun ed25519SignSecKey(secretKey: ByteArray, message: ByteArray): ByteArray? {
   val privateKey = secKeyFromBytes(secretKey, kSecAttrKeyTypeEd25519CF, true) ?: return null
-  val msgData = dataToCFData(message) ?: return null
+  val msgData = dataToCFData(message) ?: run {
+    CFRelease(privateKey)
+    return null
+  }
   val signature =
       SecKeyCreateSignature(
           privateKey,
           kSecKeyAlgorithmEdDSASignatureMessage,
           msgData,
           null,
-      ) ?: return null
-  return cfDataToBytes(signature)
+      ) ?: run {
+    CFRelease(msgData)
+    CFRelease(privateKey)
+    return null
+  }
+  val result = cfDataToBytes(signature)
+  CFRelease(signature)
+  CFRelease(msgData)
+  CFRelease(privateKey)
+  return result
 }
 
 private fun ed25519VerifySecKey(
@@ -370,20 +405,32 @@ private fun ed25519VerifySecKey(
     signature: ByteArray,
 ): Boolean? {
   val pubKey = secKeyFromBytes(publicKey, kSecAttrKeyTypeEd25519CF, false) ?: return null
-  val msgData = dataToCFData(message) ?: return null
-  val sigData = dataToCFData(signature) ?: return null
-  return SecKeyVerifySignature(
+  val msgData = dataToCFData(message) ?: run {
+    CFRelease(pubKey)
+    return null
+  }
+  val sigData = dataToCFData(signature) ?: run {
+    CFRelease(msgData)
+    CFRelease(pubKey)
+    return null
+  }
+  val result = SecKeyVerifySignature(
       pubKey,
       kSecKeyAlgorithmEdDSASignatureMessage,
       msgData,
       sigData,
       null,
   )
+  CFRelease(sigData)
+  CFRelease(msgData)
+  CFRelease(pubKey)
+  return result
 }
 
 // ---------------------------------------------------------------------------
 // SecKey helpers — create SecKeyRef from raw bytes
 // ---------------------------------------------------------------------------
+
 
 private fun secKeyFromBytes(
     rawKey: ByteArray,
@@ -391,11 +438,11 @@ private fun secKeyFromBytes(
     isPrivate: Boolean,
 ): SecKeyRef? {
   val keyData = dataToCFData(rawKey) ?: return null
-
   // Null callbacks: CFDictionary does not retain/release its contents.
-  // Our keys (CFStrings, CFNumber) are already retained elsewhere.
-  val attrs = CFDictionaryCreateMutable(null, 0, null, null) ?: return null
-
+  val attrs = CFDictionaryCreateMutable(null, 0, null, null) ?: run {
+    CFRelease(keyData)
+    return null
+  }
   CFDictionarySetValue(attrs, kSecAttrKeyType, keyType)
   CFDictionarySetValue(
       attrs,
@@ -406,10 +453,16 @@ private fun secKeyFromBytes(
     val sizeVar = alloc<CFIndexVar>()
     sizeVar.value = 256L
     val sizeNum = CFNumberCreate(null, kCFNumberCFIndexType, sizeVar.ptr)
-    CFDictionarySetValue(attrs, kSecAttrKeySizeInBits, sizeNum)
+    if (sizeNum != null) {
+      CFDictionarySetValue(attrs, kSecAttrKeySizeInBits, sizeNum)
+      CFRelease(sizeNum)  // Dictionary has null callbacks; safe to release after add
+    }
   }
-
-  return SecKeyCreateWithData(keyData, attrs, null)
+  val secKey = SecKeyCreateWithData(keyData, attrs, null)
+  // SecKeyCreateWithData copies the key data and attributes; safe to release.
+  CFRelease(keyData)
+  CFRelease(attrs)
+  return secKey  // Caller owns the SecKeyRef
 }
 
 // ---------------------------------------------------------------------------

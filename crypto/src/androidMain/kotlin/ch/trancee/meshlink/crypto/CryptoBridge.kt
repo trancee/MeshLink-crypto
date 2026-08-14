@@ -15,15 +15,19 @@
 package ch.trancee.meshlink.crypto
 
 import java.math.BigInteger
+import java.security.InvalidKeyException
 import java.security.KeyFactory
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.Signature
+import java.security.SignatureException
+import java.security.spec.InvalidKeySpecException
 import java.security.spec.NamedParameterSpec
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.security.spec.XECPrivateKeySpec
 import java.security.spec.XECPublicKeySpec
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.Mac
@@ -104,7 +108,11 @@ internal fun x25519Native(scalar: ByteArray, u: ByteArray): ByteArray? {
   } catch (e: NoSuchAlgorithmException) {
     x25519Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: InvalidKeyException) {
+    null
+  } catch (e: InvalidKeySpecException) {
+    null
+  } catch (e: IllegalStateException) {
     null
   }
 }
@@ -123,7 +131,7 @@ internal fun ed25519PublicKeyFromPrivateNative(secretKey: ByteArray): ByteArray?
   } catch (e: NoSuchAlgorithmException) {
     ed25519Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: InvalidKeySpecException) {
     null
   }
 }
@@ -144,7 +152,7 @@ internal fun ed25519SignNative(secretKey: ByteArray, message: ByteArray): ByteAr
   } catch (e: NoSuchAlgorithmException) {
     ed25519Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: InvalidKeySpecException) {
     null
   }
 }
@@ -170,7 +178,9 @@ internal fun ed25519VerifyNative(
   } catch (e: NoSuchAlgorithmException) {
     ed25519Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: SignatureException) {
+    null
+  } catch (e: InvalidKeySpecException) {
     null
   }
 }
@@ -200,8 +210,6 @@ internal fun chacha20Poly1305EncryptWithNonceNative(
   } catch (e: NoSuchAlgorithmException) {
     chacha20Poly1305Fallback = true
     null
-  } catch (e: Exception) {
-    null
   }
 }
 
@@ -230,7 +238,7 @@ internal fun chacha20Poly1305DecryptWithNonceNative(
   } catch (e: NoSuchAlgorithmException) {
     chacha20Poly1305Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: AEADBadTagException) {
     null
   }
 }
@@ -257,8 +265,6 @@ internal fun sha256Native(message: ByteArray): ByteArray? {
   } catch (e: NoSuchAlgorithmException) {
     sha256Fallback = true
     null
-  } catch (e: Exception) {
-    null
   }
 }
 
@@ -268,8 +274,6 @@ internal fun sha512Native(message: ByteArray): ByteArray? {
     MessageDigest.getInstance("SHA-512").digest(message)
   } catch (e: NoSuchAlgorithmException) {
     sha512Fallback = true
-    null
-  } catch (e: Exception) {
     null
   }
 }
@@ -283,7 +287,9 @@ internal fun hmacSha256Native(key: ByteArray, message: ByteArray): ByteArray? {
   } catch (e: NoSuchAlgorithmException) {
     hmacSha256Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: InvalidKeyException) {
+    null
+  } catch (e: IllegalArgumentException) {
     null
   }
 }
@@ -307,7 +313,9 @@ internal fun hmacSha256VerifyNative(
   } catch (e: NoSuchAlgorithmException) {
     hmacSha256Fallback = true
     null
-  } catch (e: Exception) {
+  } catch (e: InvalidKeyException) {
+    null
+  } catch (e: IllegalArgumentException) {
     null
   }
 }
@@ -352,7 +360,7 @@ internal fun hkdfSha256ExpandNative(
       previousBlock.copyInto(output, startOffset, 0, copyLength)
     }
     output
-  } catch (e: Exception) {
+  } catch (e: NoSuchAlgorithmException) {
     null
   }
 }

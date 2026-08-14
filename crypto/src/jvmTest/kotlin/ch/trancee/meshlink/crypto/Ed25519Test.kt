@@ -177,13 +177,15 @@ internal class Ed25519Test {
   @Tag("security")
   @Test
   fun `Ed25519 verify with identity-point public key returns false`() {
-    // y = 1, x = 0, sign bit 0 — a valid encoding of the identity point.
-    // pointFromBytes decodes it (returns non-null), but verification fails.
+    // y = 1, x = 0, sign bit 0 — a valid encoding of the identity point (0,1).
     val identityPublicKey = hex("0100000000000000000000000000000000000000000000000000000000000000")
-    val signature = ByteArray(64)
+    // Forged signature: R = identity point encoding, S = 0.
+    // WITHOUT the identity-point check, [0]B + [h]*identity = identity + identity = identity = R,
+    // so verification succeeds for any message. WITH the fix, verify must reject.
+    val forgedSignature = identityPublicKey + ByteArray(32)
     assertFalse(
-        Ed25519PureK.verify(identityPublicKey, ByteArray(0), signature),
-        "identity point cannot verify any signature",
+        Ed25519PureK.verify(identityPublicKey, ByteArray(0), forgedSignature),
+        "identity point cannot verify any signature — forgery must be rejected (CVE-2023-38490)",
     )
   }
 
