@@ -79,8 +79,10 @@ def main():
     if total_b < 0:
         lines.append("_kover report not found — check step failed_")
     else:
-        lines.append(f"**Branch coverage:** {pct}% ({total_branch_c} covered, {total_branch_m} missed)")
-        lines.append(f"**Instruction coverage:** {inst_pct}% ({total_inst_c} covered, {total_inst_m} missed)")
+        lines.append("| Metric | Coverage | Covered | Missed |")
+        lines.append("|---|---|---|---|")
+        lines.append(f"| Branch | {pct}% | {total_branch_c} | {total_branch_m} |")
+        lines.append(f"| Instruction | {inst_pct}% | {total_inst_c} | {total_inst_m} |")
         lines.append("")
         if missed_classes:
             lines.append("| Class | Missed | Covered |")
