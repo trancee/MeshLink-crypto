@@ -35,18 +35,24 @@ jobs:
         run: python3 scripts/ci-summary.py
 
   android-matrix:
-    name: Android SDK ${{ matrix.compile_sdk }}
+    name: Android compileSdk=${{ matrix.compile_sdk }}
     runs-on: ubuntu-latest
-    # fail-fast: false so all SDK levels run even if one fails
+    fail-fast: false
     strategy:
-      fail-fast: false
       matrix:
-        # SDK 21 — minimum supported (JCA has SHA-256/512/HMAC, no X25519/Ed25519/CHACHA20)
-        # SDK 28 — last before SDK 29 (same JCA availability as 21)
-        # SDK 29 — first with native X25519/Ed25519/ChaCha20-Poly1305 in JCA
-        # SDK 37 — latest stable (current default compileSdk)
+        # SDK 21 — minimum supported. JCA on physical Android has no X25519/
+        # Ed25519/ChaCha20-Poly1305; those primitives fall back to PureK at runtime.
+        # SDK 28 — last before SDK 29 (same JCA availability as 21).
+        # SDK 29 — first with native X25519/Ed25519/ChaCha20-Poly1305 in JCA.
+        # SDK 37 — latest stable (current default compileSdk).
         # Each entry maps to the correct sdkmanager package name:
-        # older platforms use "platforms;android-XX", SDK 37+ uses ".0" suffix
+        # older platforms use "platforms;android-XX", SDK 37+ uses ".0" suffix.
+        # NOTE: These jobs verify compilation only — they do NOT run runtime tests.
+        # Runtime dispatch + PureK fallback is verified in the macOS build job:
+        # DispatchBridgeTest uses reflection to simulate Android < API 29 (JCA
+        # lacks X25519/Ed25519/ChaCha20-Poly1305) and proves the elvis fallback
+        # pattern produces correct RFC KAT results.
+        # See docs/testing-strategy.md for the full rationale.
         include:
           - compile_sdk: "21"
             platform_package: "platforms;android-21"
@@ -74,11 +80,39 @@ jobs:
       - name: Install Android SDK packages
         run: |
           sdkmanager --channel=3 "${{ matrix.platform_package }}" "build-tools;37.0.0"
-      - name: Compile Android + run dispatch verification tests (compileSdk=${{ matrix.compile_sdk }})
+      - name: Verify Android compilation (compileSdk=${{ matrix.compile_sdk }})
         run: |
-          ./gradlew :crypto:compileAndroidMain :crypto:jvmTest --tests "*DispatchVerificationTest" --tests "*PureKFallbackVerificationTest" -PcompileSdkOverride=${{ matrix.compile_sdk }} --no-daemon --parallel
-      - name: Generate test summary (inline in GitHub Actions summary)
+          ./gradlew :crypto:compileAndroidMain -PcompileSdkOverride=${{ matrix.compile_sdk }} --no-daemon --parallel
+
+  benchmark:
+    name: JVM benchmarks (PureK)
+    runs-on: macos-latest
+    # Runs JMH microbenchmarks for every primitive on the PureK path.
+    # Results are parsed by ci-summary.py into a performance comparison table.
+    # Separated from the main build job because benchmarks take ~7 minutes.
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Cache Gradle packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-bench-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+      - name: Run JMH benchmarks
+        run: |
+          mkdir -p crypto/build/reports/benchmark
+          ./gradlew :crypto:jvmBenchmarkBenchmark --no-daemon --no-build-cache \
+            2>&1 | tee crypto/build/reports/benchmark/raw-output.txt
+          # Extract benchmark result lines
+          grep -E '.*Benchmark\..*avgt' crypto/build/reports/benchmark/raw-output.txt \
+            > crypto/build/reports/benchmark/results.tsv || true
+      - name: Generate benchmark summary
         if: always()
         env:
-          COMPILE_SDK: ${{ matrix.compile_sdk }}
+          BENCH_RESULTS_FILE: crypto/build/reports/benchmark/results.tsv
         run: python3 scripts/ci-summary.py
