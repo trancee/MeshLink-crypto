@@ -30,7 +30,7 @@ jobs:
           sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0"
       - name: Check (detekt + kover + abiValidation + spotless + JVM tests + iOS tests)
         run: ./gradlew check --parallel
-      - name: Generate coverage + test summary (inline in GitHub Actions summary)
+      - name: Generate coverage + test summary
         if: always()
         run: python3 scripts/ci-summary.py
 
@@ -40,19 +40,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # SDK 21 — minimum supported. JCA on physical Android has no X25519/
-        # Ed25519/ChaCha20-Poly1305; those primitives fall back to PureK at runtime.
-        # SDK 28 — last before SDK 29 (same JCA availability as 21).
-        # SDK 29 — first with native X25519/Ed25519/ChaCha20-Poly1305 in JCA.
-        # SDK 37 — latest stable (current default compileSdk).
-        # Each entry maps to the correct sdkmanager package name:
-        # older platforms use "platforms;android-XX", SDK 37+ uses ".0" suffix.
+        # Each entry maps to the correct sdkmanager package.
+        # SDK 21-28: JCA lacks X25519/Ed25519/ChaCha20-Poly1305 → PureK at runtime.
+        # SDK 29+: JCA supports all primitives natively.
         # NOTE: These jobs verify compilation only — they do NOT run runtime tests.
-        # Runtime dispatch + PureK fallback is verified in the macOS build job:
-        # DispatchBridgeTest uses reflection to simulate Android < API 29 (JCA
-        # lacks X25519/Ed25519/ChaCha20-Poly1305) and proves the elvis fallback
-        # pattern produces correct RFC KAT results.
-        # See docs/testing-strategy.md for the full rationale.
+        # Runtime dispatch verification is in the macOS build job via DispatchBridgeTest
+        # (jvmTest), which uses reflection to simulate Android < API 29.
+        # See docs/testing-strategy.md for rationale.
         include:
           - compile_sdk: "21"
             platform_package: "platforms;android-21"
@@ -83,38 +77,3 @@ jobs:
       - name: Verify Android compilation (compileSdk=${{ matrix.compile_sdk }})
         run: |
           ./gradlew :crypto:compileAndroidMain -PcompileSdkOverride=${{ matrix.compile_sdk }} --no-daemon --parallel
-
-  benchmark:
-    name: JVM benchmarks (PureK)
-    runs-on: macos-latest
-    # Runs JMH microbenchmarks for every primitive on the PureK path.
-    # Results are parsed by ci-summary.py into a performance comparison table.
-    # Separated from the main build job because benchmarks take ~7 minutes.
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 21
-      - name: Cache Gradle packages
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-bench-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-      - name: Run JMH benchmarks
-        run: |
-          mkdir -p crypto/build/reports/benchmark
-          ./gradlew :crypto:jvmBenchmarkBenchmark --no-daemon --no-build-cache \
-            2>&1 | tee crypto/build/reports/benchmark/raw-output.txt
-      - name: Extract benchmark results
-        if: always()
-        run: |
-          grep -E '.*Benchmark\..*avgt' crypto/build/reports/benchmark/raw-output.txt \
-            > crypto/build/reports/benchmark/results.tsv || true
-      - name: Generate benchmark summary
-        if: always()
-        env:
-          BENCH_RESULTS_FILE: crypto/build/reports/benchmark/results.tsv
-        run: python3 scripts/ci-summary.py

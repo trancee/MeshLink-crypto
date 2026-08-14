@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 """Generate an inline GitHub Actions summary from kover XML + JUnit XML reports.
 
-Appends coverage and test-result markdown to $GITHUB_STEP_SUMMARY so reviewers
-can inspect results directly in the Actions UI without downloading artifacts.
+Produces three sections in the GitHub Actions step summary:
+  1. Coverage summary (kover branch + instruction coverage)
+  2. Test results (per-platform pass/fail/skipped)
+  3. Crypto dispatch verification (per-test dispatch path: native vs PureK)
 
-Usage:
-  python3 scripts/ci-summary.py
-  (expects GITHUB_STEP_SUMMARY env var to be set by the runner)
+Dispatch tests are in jvmTest (DispatchVerificationTest, PureKFallbackVerificationTest,
+DispatchBridgeTest) and commonTest (runs on iOS too). The `COMPILE_SDK` env var
+(from the android-matrix job) is compile-time only — tests always run on JVM (JDK 21).
 """
+
 import xml.etree.ElementTree as ET
 import glob
 import os
 import sys
 
 
-  # Map test method names to (primitive, operation). Used for both
-  # DispatchVerificationTest (native path) and PureKFallbackVerificationTest
-  # (PureK path). The dispatch path itself is determined by the test class name.
+# Map test method names to (primitive, operation). Used for both
+# DispatchVerificationTest (native path), PureKFallbackVerificationTest
+# (PureK path), and DispatchBridgeTest (reflection-based fallback simulation).
 DISPATCH_TEST_MAP = {
-    # DispatchVerificationTest (native path)
+    # DispatchVerificationTest (native path via public API)
     "sha256_dispatchProducesCorrectDigest": ("SHA-256", "digest"),
     "sha512_dispatchProducesCorrectDigest": ("SHA-512", "digest"),
     "hmacSha256_digestProducesCorrectTag": ("HMAC-SHA-256", "digest"),
@@ -28,7 +31,7 @@ DISPATCH_TEST_MAP = {
     "ed25519_dispatchSignsCorrectly": ("Ed25519", "sign+verify"),
     "chacha20Poly1305_dispatchRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
     "chacha20Poly1305_dispatchRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
-    # PureKFallbackVerificationTest (PureK fallback path)
+    # PureKFallbackVerificationTest (PureK path, calling PureK objects directly)
     "sha256_pureKFallbackProducesCorrectDigest": ("SHA-256", "digest"),
     "sha512_pureKFallbackProducesCorrectDigest": ("SHA-512", "digest"),
     "hmacSha256_pureKFallbackProducesCorrectTag": ("HMAC-SHA-256", "digest"),
@@ -38,16 +41,16 @@ DISPATCH_TEST_MAP = {
     "ed25519_pureKFallbackSignsCorrectly": ("Ed25519", "sign+verify"),
     "chacha20Poly1305_pureKFallbackRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
     "chacha20Poly1305_pureKFallbackRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
-    # DispatchBridgeTest (reflection-based fallback verification on JVM)
-    "x25519_nativePathProducesCorrectResult": ("X25519", "compute"),
-    "x25519_fallbackPathActivatesWhenFlagSet": ("X25519", "fallback"),
-    "ed25519_nativePathSignsAndVerifies": ("Ed25519", "sign+verify"),
-    "ed25519_fallbackPathActivatesWhenFlagSet": ("Ed25519", "fallback"),
-    "chacha20Poly1305_nativePathRoundTrips": ("ChaCha20-Poly1305", "encrypt+decrypt"),
-    "chacha20Poly1305_fallbackPathActivatesWhenFlagSet": ("ChaCha20-Poly1305", "fallback"),
-    "hmacSha256_fallbackFlagExistsButUnused": ("HMAC-SHA-256", "flag check"),
+    # DispatchBridgeTest (reflection-based: simulate Android < API 29 by setting
+    # fallback flags to true, then verify the elvis pattern falls back to PureK)
+    "x25519_nativePathProducesCorrectResult": ("X25519", "compute (native)"),
+    "x25519_fallbackPathActivatesWhenFlagSet": ("X25519", "fallback (simulated)"),
+    "ed25519_nativePathSignsAndVerifies": ("Ed25519", "sign+verify (native)"),
+    "ed25519_fallbackPathActivatesWhenFlagSet": ("Ed25519", "fallback (simulated)"),
+    "chacha20Poly1305_nativePathRoundTrips": ("ChaCha20-Poly1305", "encrypt+decrypt (native)"),
+    "chacha20Poly1305_fallbackPathActivatesWhenFlagSet": ("ChaCha20-Poly1305", "fallback (simulated)"),
+    "hmacSha256_fallbackFlagExistsButUnused": ("HMAC-SHA-256", "flag check (native)"),
 }
-
 
 # Per-platform dispatch path for each primitive. On JVM the native path is JCA
 # (all primitives available on JDK 21). On iOS the native path is Darwin
@@ -92,41 +95,41 @@ def parse_testsuite(path):
 
 
 def parse_dispatch_tests(path):
-    """Parse <testcase> elements from a JUnit XML and return per-test results
-    for DispatchVerificationTest (native path), PureKFallbackVerificationTest
-    (PureK path), and DispatchBridgeTest (reflection-based fallback verification).
+    """Parse <testcase> elements from a JUnit XML and return per-test results.
 
-    Returns a list of (primitive, operation, passed, is_purek, test_class) tuples.
-    is_purek is True for PureKFallbackVerificationTest, False for native dispatch.
-    DispatchBridgeTest tests are tagged as is_purek when the method name
-    contains 'fallbackPath'.
+    Returns a list of (primitive, operation, passed, dispatch_path, platform_label) tuples.
     """
     try:
         root = ET.parse(path).getroot()
         ts = root if root.tag == "testsuite" else root.find("testsuite")
         if ts is None:
             return []
+        suite_dir = os.path.basename(os.path.dirname(path))
+        platform_label = friendly_label(suite_dir)
         results = []
         for tc in ts.findall("testcase"):
             name = tc.get("name", "")
             classname = tc.get("classname", "")
             # Strip JUnit5 parameterized suffixes: "[jvm]" / "[iosSimulatorArm64]"
             method = name.split("(")[0].split("[")[0]
-            is_purek = "PureKFallbackVerificationTest" in classname
-            is_bridge = "DispatchBridgeTest" in classname
-            if not is_purek and "DispatchVerificationTest" not in classname and not is_bridge:
-                continue
             if method not in DISPATCH_TEST_MAP:
                 continue
             primitive, operation = DISPATCH_TEST_MAP[method]
             failure = tc.find("failure") is not None
             error = tc.find("error") is not None
             passed = not failure and not error
-            # For DispatchBridgeTest, the *PathActivatesWhenFlagSet methods test
-            # the simulated fallback — mark as is_purek for the summary table.
-            if is_bridge and "fallbackPath" in method:
-                is_purek = True
-            results.append((primitive, operation, passed, is_purek, classname))
+            # Determine dispatch path
+            is_purek = "PureKFallbackVerificationTest" in classname
+            if is_purek:
+                dpath = "PureK fallback"
+            elif "DispatchBridgeTest" in classname:
+                if "fallbackPath" in method:
+                    dpath = "PureK fallback (simulated)"
+                else:
+                    dpath = dispatch_label(suite_dir, primitive)
+            else:
+                dpath = dispatch_label(suite_dir, primitive)
+            results.append((platform_label, primitive, operation, dpath, passed))
         return results
     except Exception:
         return []
@@ -134,6 +137,7 @@ def parse_dispatch_tests(path):
 
 def friendly_label(suite_dir):
     """Map Gradle test-result directory names to friendly platform labels.
+
     When COMPILE_SDK is set (matrix job), include it in the label to make
     clear that compilation targets a specific Android API, while tests run
     on the JVM — compileSdk does NOT affect runtime dispatch.
@@ -213,7 +217,6 @@ def main():
     if test_files:
         total_t = total_f = total_s = 0
         failures = []
-        # Collect dispatch info per source set directory
         for f in test_files:
             result = parse_testsuite(f)
             if result is None:
@@ -232,7 +235,6 @@ def main():
         lines.append("| Platform | Tests | Passed | Failed | Skipped |")
         lines.append("|---|---|---|---|---|")
 
-        # Per-source-set breakdown
         seen = set()
         for f in test_files:
             suite_dir = os.path.basename(os.path.dirname(f))
@@ -257,17 +259,8 @@ def main():
         # --- Crypto dispatch verification (per-test) ---
         dispatch_tests = []
         for f in test_files:
-            suite_dir = os.path.basename(os.path.dirname(f))
-            platform_label = friendly_label(suite_dir)
-            for primitive, operation, passed, is_purek, test_class in parse_dispatch_tests(f):
-                if is_purek:
-                    dpath = "PureK fallback"
-                else:
-                    dpath = dispatch_label(suite_dir, primitive)
-                # For DispatchBridgeTest fallback tests, note this is simulated
-                if "DispatchBridgeTest" in test_class and is_purek:
-                    dpath = "PureK fallback (simulated)"
-                dispatch_tests.append((platform_label, primitive, operation, dpath, passed))
+            for platform_label, prim, op, dpath, passed_test in parse_dispatch_tests(f):
+                dispatch_tests.append((platform_label, prim, op, dpath, passed_test))
 
         if dispatch_tests:
             lines.append("")
@@ -275,84 +268,26 @@ def main():
             lines.append("")
             lines.append("| Platform | Primitive | Operation | Dispatch | Result |")
             lines.append("|---|---|---|---|---|")
-            for label, prim, op, dpath, passed in dispatch_tests:
-                status = "pass" if passed else "FAIL"
+            for label, prim, op, dpath, passed_test in dispatch_tests:
+                status = "pass" if passed_test else "FAIL"
                 lines.append(f"| {label} | {prim} | {op} | {dpath} | {status} |")
 
             # --- SDK-level dispatch notes ---
             compile_sdk = os.environ.get("COMPILE_SDK", "")
             if compile_sdk:
                 lines.append("")
-                lines.append(f"_Matrix job: **compileSdk={compile_sdk}** (compile-time only). "
-                             + "Tests run on **JVM (JDK 21)**, not on Android runtime. "
-                             + "On JDK 21, JCA provides all primitives natively, so dispatch "
-                             + "is always `native (JCA)` regardless of compileSdk. "
-                             + "On physical Android < API 29, JCA lacks X25519/Ed25519/"
-                             + "ChaCha20-Poly1305, so those primitives fall back to PureK "
-                             + "at runtime. PureK fallback correctness is verified "
-                             + "independently by PureKFallbackVerificationTest (listed below "
-                             + "as `PureK fallback`)._")
-            # --- Expected Android SDK dispatch matrix ---
-            lines.append("")
-            lines.append("### Expected Android SDK Dispatch Matrix")
-            lines.append("")
-            lines.append(
-                "_compileSdk (matrix job) is compile-time only. Tests run on JVM (JDK 21)."
-            )
-            lines.append("Actual runtime dispatch on physical Android depends on the SDK level:")
-            lines.append("")
-            lines.append("| Primitive | Android SDK 21–28 | Android SDK 29+ | JVM (JDK 21) | iOS (arm64) |")
-            lines.append("|---|---|---|---|---|")
-            sdk_matrix = [
-                ("SHA-256", "JCA", "JCA", "JCA", "Darwin"),
-                ("SHA-512", "JCA", "JCA", "JCA", "Darwin"),
-                ("HMAC-SHA-256", "JCA", "JCA", "JCA", "Darwin"),
-                ("HKDF-SHA-256", "JCA", "JCA", "JCA", "Darwin"),
-                ("X25519", "PureK", "JCA", "JCA", "Darwin"),
-                ("Ed25519", "PureK", "JCA", "JCA", "Darwin"),
-                ("ChaCha20-Poly1305", "PureK", "JCA", "JCA", "PureK"),
-            ]
-            for prim, sdk21, sdk29, jvm, ios in sdk_matrix:
-                lines.append(f"| {prim} | {sdk21} | {sdk29} | {jvm} | {ios} |")
-            lines.append("")
-            lines.append(
-                "_DispatchBridgeTest (jvmTest) verifies the elvis fallback pattern "
-                "(`nativeFn(args) ?: PureKFn(args)`) by setting fallback flags via reflection, "
-                "simulating Android SDK < 29._"
-            )
+                lines.append(
+                    f"_Matrix job: **compileSdk={compile_sdk}** (compile-time only). "
+                    + "Tests run on **JVM (JDK 21)**, not on Android runtime. "
+                    + "On JDK 21, JCA handles all primitives, so dispatch is always `native (JCA)`. "
+                    + "On physical Android < API 29, JCA lacks X25519/Ed25519/ChaCha20-Poly1305, "
+                    + "so those primitives fall back to PureK. "
+                    + "DispatchBridgeTest (jvmTest) verifies this fallback via reflection._"
+                )
 
         if failures:
             lines.append("")
             lines.append(f"**Failed suites:** {', '.join(failures)}")
-
-    # --- JMH benchmark results ---
-    bench_file = os.environ.get("BENCH_RESULTS_FILE", "")
-    bench_lines = []
-    if bench_file and os.path.isfile(bench_file):
-        try:
-            with open(bench_file) as f:
-                bench_lines = [line.strip() for line in f if line.strip()]
-        except Exception:
-            bench_lines = []
-
-    if bench_lines:
-        lines.append("## JMH Benchmark Results (PureK path)")
-        lines.append("")
-        lines.append("| Benchmark | Mode | Ops | Mean | Error | Unit |")
-        lines.append("|---|---|---|---|---|---|")
-        for line in bench_lines:
-            parts = line.split()
-            if len(parts) >= 7:
-                bench_name = parts[0]
-                mode = parts[1]
-                ops = parts[2]
-                mean = parts[3]
-                err = parts[5]  # parts[4] is "±"
-                unit = parts[6]
-                lines.append(f"| {bench_name} | {mode} | {ops} | {mean} | ±{err} | {unit} |")
-        lines.append("")
-        lines.append("_Benchmarked on the PureK path (JMH, 2 warmups + 3 iterations, 1s each)._")
-        lines.append("_See `crypto/src/jvmBenchmark/` for benchmark source code._")
 
     if lines:
         with open(summary_path, "a") as f:
