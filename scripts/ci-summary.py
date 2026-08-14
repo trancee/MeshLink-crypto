@@ -51,8 +51,10 @@ def main():
     total_branch_m = total_branch_c = 0
     total_inst_m = total_inst_c = 0
     missed_classes = []
+    kover_available = False
     try:
         root = ET.parse("crypto/build/reports/kover/report.xml").getroot()
+        kover_available = True
         for cls in root.iter("class"):
             name = cls.get("name", "").split("/")[-1]
             for c in cls.iter("counter"):
@@ -67,18 +69,16 @@ def main():
                     total_inst_m += int(c.get("missed", "0"))
                     total_inst_c += int(c.get("covered", "0"))
     except FileNotFoundError:
-        total_branch_m = total_branch_c = -1
+        pass
 
-    total_b = total_branch_m + total_branch_c
-    pct = round(100 * total_branch_c / total_b, 2) if total_b > 0 else 0
-    total_i = total_inst_m + total_inst_c
-    inst_pct = round(100 * total_inst_c / total_i, 2) if total_i > 0 else 0
+    if kover_available:
+        total_b = total_branch_m + total_branch_c
+        pct = round(100 * total_branch_c / total_b, 2) if total_b > 0 else 0
+        total_i = total_inst_m + total_inst_c
+        inst_pct = round(100 * total_inst_c / total_i, 2) if total_i > 0 else 0
 
-    lines.append("## Coverage Summary (kover)")
-    lines.append("")
-    if total_b < 0:
-        lines.append("_kover report not found — check step failed_")
-    else:
+        lines.append("## Coverage Summary (kover)")
+        lines.append("")
         lines.append("| Metric | Coverage | Covered | Missed |")
         lines.append("|---|---|---|---|")
         lines.append(f"| Branch | {pct}% | {total_branch_c} | {total_branch_m} |")
@@ -91,55 +91,59 @@ def main():
                 lines.append(f"| {name} | {m} | {cv} |")
         else:
             lines.append("_100% branch coverage — no missed branches_")
+        lines.append("")
 
-    lines.append("")
-    lines.append("## Test Results Summary")
-    lines.append("")
-    lines.append("| Platform | Tests | Passed | Failed | Skipped |")
-    lines.append("|---|---|---|---|---|")
-
-    # Compute totals across all source sets
-    total_t = total_f = total_s = 0
-    failures = []
-    for f in sorted(glob.glob("crypto/build/test-results/*/*.xml")):
-        result = parse_testsuite(f)
-        if result is None:
-            continue
-        t, fa, sk, name = result
-        total_t += t
-        total_f += fa
-        total_s += sk
-        if fa > 0:
-            failures.append(name)
-
-    # Per-source-set breakdown
-    seen = set()
-    for f in sorted(glob.glob("crypto/build/test-results/*/*.xml")):
-        suite_dir = os.path.basename(os.path.dirname(f))
-        if suite_dir in seen:
-            continue
-        seen.add(suite_dir)
-        s_t = s_f = s_s = 0
-        for f2 in sorted(glob.glob(f"crypto/build/test-results/{suite_dir}/*.xml")):
-            result = parse_testsuite(f2)
+    # --- JUnit test results ---
+    test_files = sorted(glob.glob("crypto/build/test-results/*/*.xml"))
+    if test_files:
+        total_t = total_f = total_s = 0
+        failures = []
+        for f in test_files:
+            result = parse_testsuite(f)
             if result is None:
                 continue
-            t, fa, sk, _ = result
-            s_t += t
-            s_f += fa
-            s_s += sk
-        s_p = s_t - s_f - s_s
-        label = friendly_label(suite_dir)
-        lines.append(f"| {label} | {s_t} | {s_p} | {s_f} | {s_s} |")
-    passed = total_t - total_f - total_s
+            t, fa, sk, name = result
+            total_t += t
+            total_f += fa
+            total_s += sk
+            if fa > 0:
+                failures.append(name)
 
-    lines.append(f"| **Total** | **{total_t}** | **{passed}** | **{total_f}** | **{total_s}** |")
-    if failures:
+        passed = total_t - total_f - total_s
+
+        lines.append("## Test Results Summary")
         lines.append("")
-        lines.append(f"**Failed suites:** {', '.join(failures)}")
+        lines.append("| Platform | Tests | Passed | Failed | Skipped |")
+        lines.append("|---|---|---|---|---|")
 
-    with open(summary_path, "a") as f:
-        f.write("\n".join(lines) + "\n")
+        # Per-source-set breakdown
+        seen = set()
+        for f in test_files:
+            suite_dir = os.path.basename(os.path.dirname(f))
+            if suite_dir in seen:
+                continue
+            seen.add(suite_dir)
+            s_t = s_f = s_s = 0
+            for f2 in sorted(glob.glob(f"crypto/build/test-results/{suite_dir}/*.xml")):
+                result = parse_testsuite(f2)
+                if result is None:
+                    continue
+                t, fa, sk, _ = result
+                s_t += t
+                s_f += fa
+                s_s += sk
+            s_p = s_t - s_f - s_s
+            label = friendly_label(suite_dir)
+            lines.append(f"| {label} | {s_t} | {s_p} | {s_f} | {s_s} |")
+
+        lines.append(f"| **Total** | **{total_t}** | **{passed}** | **{total_f}** | **{total_s}** |")
+        if failures:
+            lines.append("")
+            lines.append(f"**Failed suites:** {', '.join(failures)}")
+
+    if lines:
+        with open(summary_path, "a") as f:
+            f.write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":

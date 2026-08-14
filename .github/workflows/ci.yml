@@ -22,9 +22,9 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
-          packages: "build-tools;37.0.0,platforms;android-37"
+          packages: "build-tools;37.0.0 platforms;android-37"
       - name: Check (detekt + kover + abiValidation + spotless + JVM tests + iOS tests)
         run: ./gradlew check
       - name: Generate coverage + test summary (inline in GitHub Actions summary)
