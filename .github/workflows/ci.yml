@@ -33,18 +33,18 @@ jobs:
         run: python3 scripts/ci-summary.py
 
   android-matrix:
-    name: Android API ${{ matrix.compile_sdk }}
+    name: Android SDK ${{ matrix.compile_sdk }}
     runs-on: ubuntu-latest
-    # fail-fast: false so all API levels run even if one fails
+    # fail-fast: false so all SDK levels run even if one fails
     strategy:
       fail-fast: false
       matrix:
-        # API 21 — minimum supported (JCA has SHA-256/512/HMAC, no X25519/Ed25519/CHACHA20)
-        # API 28 — last before API 29 (same JCA availability as 21)
-        # API 29 — first with native X25519/Ed25519/ChaCha20-Poly1305 in JCA
-        # API 37 — latest stable (current default compileSdk)
+        # SDK 21 — minimum supported (JCA has SHA-256/512/HMAC, no X25519/Ed25519/CHACHA20)
+        # SDK 28 — last before SDK 29 (same JCA availability as 21)
+        # SDK 29 — first with native X25519/Ed25519/ChaCha20-Poly1305 in JCA
+        # SDK 37 — latest stable (current default compileSdk)
         # Each entry maps to the correct sdkmanager package name:
-        # older platforms use "platforms;android-XX", API 37+ uses ".0" suffix
+        # older platforms use "platforms;android-XX", SDK 37+ uses ".0" suffix
         include:
           - compile_sdk: "21"
             platform_package: "platforms;android-21"

@@ -14,6 +14,47 @@ import os
 import sys
 
 
+# Map test method names to (primitive label, operation) for DispatchVerificationTest.
+# Used to render a per-test dispatch table showing which crypto path each RFC
+# known-answer test exercised.
+DISPATCH_TEST_MAP = {
+    "sha256_dispatchProducesCorrectDigest": ("SHA-256", "digest"),
+    "sha512_dispatchProducesCorrectDigest": ("SHA-512", "digest"),
+    "hmacSha256_digestProducesCorrectTag": ("HMAC-SHA-256", "digest"),
+    "hmacSha256_verifyAcceptsCorrectTag": ("HMAC-SHA-256", "verify"),
+    "hkdfSha256_dispatchProducesCorrectOutput": ("HKDF-SHA-256", "derive"),
+    "x25519_dispatchProducesCorrectSharedSecret": ("X25519", "compute"),
+    "ed25519_dispatchSignsCorrectly": ("Ed25519", "sign+verify"),
+    "chacha20Poly1305_dispatchRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
+    "chacha20Poly1305_dispatchRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
+}
+
+# Per-platform dispatch path for each primitive. On JVM the native path is JCA
+# (all primitives available on JDK 21). On iOS the native path is Darwin
+# (CommonCrypto / Security.framework), except ChaCha20-Poly1305 which has no
+# CryptoKit C-API and uses PureK.
+PLATFORM_DISPATCH = {
+    "jvmTest": {
+        "SHA-256": "native (JCA)",
+        "SHA-512": "native (JCA)",
+        "HMAC-SHA-256": "native (JCA)",
+        "HKDF-SHA-256": "native (JCA)",
+        "X25519": "native (JCA)",
+        "Ed25519": "native (JCA)",
+        "ChaCha20-Poly1305": "native (JCA)",
+    },
+    "iosSimulatorArm64Test": {
+        "SHA-256": "native (Darwin)",
+        "SHA-512": "native (Darwin)",
+        "HMAC-SHA-256": "native (Darwin)",
+        "HKDF-SHA-256": "native (Darwin)",
+        "X25519": "native (Darwin)",
+        "Ed25519": "native (Darwin)",
+        "ChaCha20-Poly1305": "PureK fallback",
+    },
+}
+
+
 def parse_testsuite(path):
     """Return (tests, failures, skipped, name) for a JUnit XML file, or None."""
     try:
@@ -30,50 +71,50 @@ def parse_testsuite(path):
         return None
 
 
-def parse_dispatch_info(path):
-    """Extract the DISPATCH_INFO line from a JUnit XML's <system-out>.
+def parse_dispatch_tests(path):
+    """Parse <testcase> elements from a JUnit XML and return per-test results
+    for DispatchVerificationTest.
 
-    The DispatchVerificationTest emits a marker line like:
-      DISPATCH_INFO: provider=none(default), path=native, fallback=PureK
-    This is captured in the JUnit XML's <system-out> element for CI visibility.
+    Returns a list of (primitive, operation, passed, failed) tuples.
     """
     try:
         root = ET.parse(path).getroot()
         ts = root if root.tag == "testsuite" else root.find("testsuite")
         if ts is None:
-            return None
-        so = ts.find("system-out")
-        if so is not None and so.text:
-            for line in so.text.strip().splitlines():
-                if line.startswith("DISPATCH_INFO:"):
-                    return line
+            return []
+        results = []
+        for tc in ts.findall("testcase"):
+            name = tc.get("name", "")
+            classname = tc.get("classname", "")
+            # Match test methods in DispatchVerificationTest
+            method = name.split("(")[0].split("[")[0]  # strip "[jvm]" / "[iosSimulatorArm64]" suffixes
+            if "DispatchVerificationTest" not in classname:
+                continue
+            if method not in DISPATCH_TEST_MAP:
+                continue
+            primitive, operation = DISPATCH_TEST_MAP[method]
+            failure = tc.find("failure") is not None
+            error = tc.find("error") is not None
+            passed = not failure and not error
+            results.append((primitive, operation, passed))
+        return results
     except Exception:
-        pass
-    return None
+        return []
 
 
-def friendly_label(suite_dir, dispatch_info=None):
-    """Map Gradle test-result directory names to friendly platform labels.
-
-    If dispatch_info is available, append the active crypto path.
-    """
+def friendly_label(suite_dir):
+    """Map Gradle test-result directory names to friendly platform labels."""
     if suite_dir == "jvmTest":
-        base = "JVM"
-    elif suite_dir == "iosSimulatorArm64Test":
-        base = "iOS Simulator (arm64)"
-    else:
-        base = suite_dir.replace("Test", "")
-    if dispatch_info:
-        # Extract just the path= part from "DISPATCH_INFO: provider=..., path=..., fallback=..."
-        parts = dict(p.strip().split("=", 1) for p in dispatch_info.replace("DISPATCH_INFO: ", "").split(", "))
-        path_type = parts.get("path", "unknown")
-        if path_type == "native":
-            if suite_dir == "jvmTest":
-                path_type = "native (JCA)"
-            elif suite_dir == "iosSimulatorArm64Test":
-                path_type = "native (Darwin)"
-        return f"{base} ({path_type})"
-    return base
+        return "JVM"
+    if suite_dir == "iosSimulatorArm64Test":
+        return "iOS Simulator (arm64)"
+    return suite_dir.replace("Test", "")
+
+
+def dispatch_label(suite_dir, primitive):
+    """Return the human-readable dispatch path for a primitive on a platform."""
+    table = PLATFORM_DISPATCH.get(suite_dir, {})
+    return table.get(primitive, "native")
 
 
 def main():
@@ -136,7 +177,6 @@ def main():
         total_t = total_f = total_s = 0
         failures = []
         # Collect dispatch info per source set directory
-        dispatch_per_dir = {}
         for f in test_files:
             result = parse_testsuite(f)
             if result is None:
@@ -147,17 +187,12 @@ def main():
             total_s += sk
             if fa > 0:
                 failures.append(name)
-            # Parse dispatch info
-            info = parse_dispatch_info(f)
-            suite_dir = os.path.basename(os.path.dirname(f))
-            if info and suite_dir not in dispatch_per_dir:
-                dispatch_per_dir[suite_dir] = info
 
         passed = total_t - total_f - total_s
 
         lines.append("## Test Results Summary")
         lines.append("")
-        lines.append("| Platform (dispatch) | Tests | Passed | Failed | Skipped |")
+        lines.append("| Platform | Tests | Passed | Failed | Skipped |")
         lines.append("|---|---|---|---|---|")
 
         # Per-source-set breakdown
@@ -177,19 +212,30 @@ def main():
                 s_f += fa
                 s_s += sk
             s_p = s_t - s_f - s_s
-            label = friendly_label(suite_dir, dispatch_per_dir.get(suite_dir))
+            label = friendly_label(suite_dir)
             lines.append(f"| {label} | {s_t} | {s_p} | {s_f} | {s_s} |")
 
         lines.append(f"| **Total** | **{total_t}** | **{passed}** | **{total_f}** | **{total_s}** |")
-        if dispatch_per_dir:
+
+        # --- Crypto dispatch verification (per-test) ---
+        dispatch_tests = []
+        for f in test_files:
+            suite_dir = os.path.basename(os.path.dirname(f))
+            platform_label = friendly_label(suite_dir)
+            for primitive, operation, passed in parse_dispatch_tests(f):
+                dpath = dispatch_label(suite_dir, primitive)
+                dispatch_tests.append((platform_label, primitive, operation, dpath, passed))
+
+        if dispatch_tests:
             lines.append("")
-            lines.append("### Crypto dispatch path")
+            lines.append("### Crypto Dispatch Verification")
             lines.append("")
-            for suite_dir, info in sorted(dispatch_per_dir.items()):
-                label = friendly_label(suite_dir, None)
-                # Strip "DISPATCH_INFO: " prefix for display
-                detail = info.replace("DISPATCH_INFO: ", "").strip()
-                lines.append(f"- **{label}**: `{detail}`")
+            lines.append("| Platform | Primitive | Operation | Dispatch | Result |")
+            lines.append("|---|---|---|---|---|")
+            for label, prim, op, dpath, passed in dispatch_tests:
+                status = "pass" if passed else "FAIL"
+                lines.append(f"| {label} | {prim} | {op} | {dpath} | {status} |")
+
         if failures:
             lines.append("")
             lines.append(f"**Failed suites:** {', '.join(failures)}")
