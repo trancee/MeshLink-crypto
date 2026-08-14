@@ -21,3 +21,5 @@ crypto/detekt-baseline-*.xml
 
 # Keep the Gradle wrapper jar tracked
 !gradle/wrapper/gradle-wrapper.jar
+__pycache__/
+*.pyc

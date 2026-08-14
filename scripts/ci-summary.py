@@ -116,8 +116,15 @@ def parse_dispatch_tests(path):
 
 
 def friendly_label(suite_dir):
-    """Map Gradle test-result directory names to friendly platform labels."""
+    """Map Gradle test-result directory names to friendly platform labels.
+    When COMPILE_SDK is set (matrix job), append the SDK level to the label
+    to make it clear that compilation targets a specific Android API, even
+    though the tests run on the JVM.
+    """
+    compile_sdk = os.environ.get("COMPILE_SDK", "")
     if suite_dir == "jvmTest":
+        if compile_sdk:
+            return f"JVM (compileSdk={compile_sdk})"
         return "JVM"
     if suite_dir == "iosSimulatorArm64Test":
         return "iOS Simulator (arm64)"
@@ -256,12 +263,15 @@ def main():
             compile_sdk = os.environ.get("COMPILE_SDK", "")
             if compile_sdk:
                 lines.append("")
-                lines.append(f"_Compiled against Android SDK {compile_sdk} (compile-time only). "
-                             + "Runtime dispatch is determined by the host JVM/JDK. "
-                             + "On JDK 21 all primitives dispatch to JCA-native. "
-                             + "On physical Android < API 29, X25519/Ed25519/ChaCha20-Poly1305 "
-                             + "fall back to PureK. PureK fallback correctness is verified "
-                             + "separately by PureKFallbackVerificationTest._")
+                lines.append(f"_Matrix job: **compileSdk={compile_sdk}** (compile-time only). "
+                             + "Tests run on **JVM (JDK 21)**, not on Android runtime. "
+                             + "On JDK 21, JCA provides all primitives natively, so dispatch "
+                             + "is always `native (JCA)` regardless of compileSdk. "
+                             + "On physical Android < API 29, JCA lacks X25519/Ed25519/"
+                             + "ChaCha20-Poly1305, so those primitives fall back to PureK "
+                             + "at runtime. PureK fallback correctness is verified "
+                             + "independently by PureKFallbackVerificationTest (listed below "
+                             + "as `PureK fallback`)._")
 
         if failures:
             lines.append("")

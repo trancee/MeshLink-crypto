@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CI `android-matrix` job now runs `--tests "*DispatchVerificationTest" --tests "*PureKFallbackVerificationTest"` to verify both native dispatch and PureK fallback paths across SDK levels 21, 28, 29, 37
-- `scripts/ci-summary.py` dispatch table now shows both native and PureK test results; added SDK-level dispatch notes section
+- `scripts/ci-summary.py` dispatch table now shows both native and PureK test results; platform label includes compileSdk level (e.g. "JVM (compileSdk=21)"); added transparent SDK-level dispatch notes explaining that matrix tests run on JVM/JDK 21 where JCA handles all primitives, while compileSdk is compile-time only
 - macOS `build` job: `html { onCheck }` reads `koverHtmlOnCheck` property (default `true`); CI sets it to `false` to skip HTML report on CI
 
 ### Fixed
