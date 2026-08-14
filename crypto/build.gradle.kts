@@ -188,7 +188,7 @@ kover {
         }
       }
       xml { onCheck = true }
-      html { onCheck = true }
+      html { onCheck = (findProperty("koverHtmlOnCheck")?.toString() ?: "true") != "false" }
       verify {
         rule {
           minBound(100)

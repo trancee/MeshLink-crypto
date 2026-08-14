@@ -14,10 +14,11 @@ import os
 import sys
 
 
-# Map test method names to (primitive label, operation) for DispatchVerificationTest.
-# Used to render a per-test dispatch table showing which crypto path each RFC
-# known-answer test exercised.
+  # Map test method names to (primitive, operation). Used for both
+  # DispatchVerificationTest (native path) and PureKFallbackVerificationTest
+  # (PureK path). The dispatch path itself is determined by the test class name.
 DISPATCH_TEST_MAP = {
+    # DispatchVerificationTest (native path)
     "sha256_dispatchProducesCorrectDigest": ("SHA-256", "digest"),
     "sha512_dispatchProducesCorrectDigest": ("SHA-512", "digest"),
     "hmacSha256_digestProducesCorrectTag": ("HMAC-SHA-256", "digest"),
@@ -27,6 +28,16 @@ DISPATCH_TEST_MAP = {
     "ed25519_dispatchSignsCorrectly": ("Ed25519", "sign+verify"),
     "chacha20Poly1305_dispatchRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
     "chacha20Poly1305_dispatchRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
+    # PureKFallbackVerificationTest (PureK fallback path)
+    "sha256_pureKFallbackProducesCorrectDigest": ("SHA-256", "digest"),
+    "sha512_pureKFallbackProducesCorrectDigest": ("SHA-512", "digest"),
+    "hmacSha256_pureKFallbackProducesCorrectTag": ("HMAC-SHA-256", "digest"),
+    "hmacSha256_pureKFallbackVerifyAcceptsCorrectTag": ("HMAC-SHA-256", "verify"),
+    "hkdfSha256_pureKFallbackProducesCorrectOutput": ("HKDF-SHA-256", "derive"),
+    "x25519_pureKFallbackProducesCorrectSharedSecret": ("X25519", "compute"),
+    "ed25519_pureKFallbackSignsCorrectly": ("Ed25519", "sign+verify"),
+    "chacha20Poly1305_pureKFallbackRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
+    "chacha20Poly1305_pureKFallbackRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
 }
 
 # Per-platform dispatch path for each primitive. On JVM the native path is JCA
@@ -73,9 +84,10 @@ def parse_testsuite(path):
 
 def parse_dispatch_tests(path):
     """Parse <testcase> elements from a JUnit XML and return per-test results
-    for DispatchVerificationTest.
+    for both DispatchVerificationTest and PureKFallbackVerificationTest.
 
-    Returns a list of (primitive, operation, passed, failed) tuples.
+    Returns a list of (primitive, operation, passed, is_purek) tuples.
+    is_purek is True for PureKFallbackVerificationTest, False for native dispatch.
     """
     try:
         root = ET.parse(path).getroot()
@@ -86,9 +98,10 @@ def parse_dispatch_tests(path):
         for tc in ts.findall("testcase"):
             name = tc.get("name", "")
             classname = tc.get("classname", "")
-            # Match test methods in DispatchVerificationTest
+            # Match test methods in either DispatchVerificationTest or PureKFallbackVerificationTest
             method = name.split("(")[0].split("[")[0]  # strip "[jvm]" / "[iosSimulatorArm64]" suffixes
-            if "DispatchVerificationTest" not in classname:
+            is_purek = "PureKFallbackVerificationTest" in classname
+            if not is_purek and "DispatchVerificationTest" not in classname:
                 continue
             if method not in DISPATCH_TEST_MAP:
                 continue
@@ -96,7 +109,7 @@ def parse_dispatch_tests(path):
             failure = tc.find("failure") is not None
             error = tc.find("error") is not None
             passed = not failure and not error
-            results.append((primitive, operation, passed))
+            results.append((primitive, operation, passed, is_purek))
         return results
     except Exception:
         return []
@@ -222,8 +235,11 @@ def main():
         for f in test_files:
             suite_dir = os.path.basename(os.path.dirname(f))
             platform_label = friendly_label(suite_dir)
-            for primitive, operation, passed in parse_dispatch_tests(f):
-                dpath = dispatch_label(suite_dir, primitive)
+            for primitive, operation, passed, is_purek in parse_dispatch_tests(f):
+                if is_purek:
+                    dpath = "PureK fallback"
+                else:
+                    dpath = dispatch_label(suite_dir, primitive)
                 dispatch_tests.append((platform_label, primitive, operation, dpath, passed))
 
         if dispatch_tests:
@@ -236,10 +252,20 @@ def main():
                 status = "pass" if passed else "FAIL"
                 lines.append(f"| {label} | {prim} | {op} | {dpath} | {status} |")
 
+            # --- SDK-level dispatch notes ---
+            compile_sdk = os.environ.get("COMPILE_SDK", "")
+            if compile_sdk:
+                lines.append("")
+                lines.append(f"_Compiled against Android SDK {compile_sdk} (compile-time only). "
+                             + "Runtime dispatch is determined by the host JVM/JDK. "
+                             + "On JDK 21 all primitives dispatch to JCA-native. "
+                             + "On physical Android < API 29, X25519/Ed25519/ChaCha20-Poly1305 "
+                             + "fall back to PureK. PureK fallback correctness is verified "
+                             + "separately by PureKFallbackVerificationTest._")
+
         if failures:
             lines.append("")
             lines.append(f"**Failed suites:** {', '.join(failures)}")
-
     if lines:
         with open(summary_path, "a") as f:
             f.write("\n".join(lines) + "\n")
