@@ -21,18 +21,6 @@ hides a breakage (`docs/agents/build.md`).
 ./gradlew check --rerun --no-build-cache
 ```
 
-## Benchmarks
-
-JMH microbenchmarks live in `crypto/src/jvmBenchmark/`. Run them with:
-
-```bash
-./gradlew :crypto:jvmBenchmarkBenchmark --rerun --no-build-cache
-```
-
-Any code change to a pure-K crypto primitive must pass a before/after benchmark
-comparison (ADR-0009). See `docs/agents/build.md` for the capture-and-compare steps.
-A regression of more than 10% on any path blocks merge.
-
 ## Git hooks
 
 The repo keeps git hooks in `/.githooks/`. Install them, one time, per clone:
@@ -41,22 +29,6 @@ The repo keeps git hooks in `/.githooks/`. Install them, one time, per clone:
 git config core.hooksPath .githooks
 ```
 
-The `pre-commit` hook runs the ADR-0009 benchmark comparison automatically when a
-commit stages a file under `crypto/src/commonMain/kotlin/ch/trancee/meshlink/crypto/`.
-It runs one JMH pass and compares it to the committed baseline
-(`crypto/benchmarks/baseline.tsv`). It prints a table of deltas and tags each
-benchmark STABLE or NOISY. It does not hard-block — the JVM is non-deterministic
-and the baseline is a single sample. Small deltas are noise, not defects. Skip it
-with `SKIP_BENCH_HOOK=1 git commit ...`, or `git commit --no-verify`.
-Refresh the baseline with `REFRESH_BASELINE=1 git commit ...` after a primitive
-improvement or a host/JVM change (see `docs/agents/workflow.md`).
-
-## Contributing a crypto primitive
-
-Open a GitHub issue first. Carry the crypto-primitive acceptance checklist
-(`docs/agents/issue-tracker.md`): correctness vectors, a JMH benchmark, green
-constant-time lint, and 100% kover on the pure-K path. A primitive is not done
-without its benchmark (ADR-0009).
 
 ## Pull requests
 

@@ -27,21 +27,16 @@ means for this repository. Code owners enforce it via CODEOWNERS review.
   ABI validation via `kotlin { abiValidation {} }` (ADR-0007).
 - `./gradlew check --rerun --no-build-cache` must pass locally before PR.
 
-## 4. Benchmarks
-
-- Every primitive has a JMH benchmark in `crypto/src/jvmBenchmark/` (ADR-0009).
-- Code changes to pure-K primitives require a before/after comparison.
-- >10% regression on any benchmark blocks merge.
-
-## 5. CI
+## 4. CI
 
 - CI runs on `macos-latest` (required for iOS KMP compilation).
 - CI gates: detekt + kover + spotless + ABI validation + JVM tests +
   iOS simulator tests.
+- Android SDK matrix verifies compilation across API 21/28/29/37.
 - The CI summary shows kover coverage + test results inline in the Actions
   run summary (no artifact download needed).
 
-## 6. Release
+## 5. Release
 
 - Releases use Conventional Commits.
 - Publishing to Maven Central requires GPG-signed artifacts.

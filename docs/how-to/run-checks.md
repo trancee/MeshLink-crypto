@@ -48,15 +48,6 @@ Tests live in `crypto/src/jvmTest/`. They use JUnit 5 with `@Tag` annotations. T
 | `security` | Security-related assertions |
 | `smoke` | Basic build/toolchain validation |
 
-## Run benchmarks
-
-JMH microbenchmarks live in `crypto/src/jvmBenchmark/`.
-
-```bash
-./gradlew :crypto:jvmBenchmarkBenchmark --rerun --no-build-cache
-```
-
-Any code change to a pure-Kotlin primitive requires a before/after benchmark comparison. A regression of more than 10% on any benchmarked path blocks merge. See [ADR-0009](../adr/0009-benchmark-regression-check.md) and [docs/agents/build.md](../agents/build.md) for the capture-and-compare procedure.
 
 ## Run the constant-time lint only
 

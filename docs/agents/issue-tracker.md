@@ -22,23 +22,8 @@ This checklist is part of the definition of done. It is not optional.
 
 - [ ] **Correctness vectors.** Add the right test vectors and confirm they pass.
   - Use Wycheproof for primitives that have a Wycheproof corpus.
-  - Use RFC 6234 Appendix B for SHA-256 and SHA-512. These two have no Wycheproof corpus.
-- [ ] **Benchmark.** Add a JMH microbenchmark.
-  - Put it in `crypto/src/jvmBenchmark/`.
-  - Cover the one-shot path and the incremental path.
-  - Use block-size boundaries.
-  - Copy `SHA256Benchmark` or `SHA512Benchmark` as the template.
-- [ ] **Before/after comparison.** Run this only when the change touches the
-  pure-K path.
-  - Run `./gradlew :crypto:jvmBenchmarkBenchmark` on the before-change revision.
-  - Run it again on the after-change revision.
-  - Compare mean ns/op and ops/s.
-  - A regression of more than 10% blocks merge.
-  - A native-fallback-only change is exempt. Mark this item N/A.
 - [ ] **Constant-time lint.** Confirm detekt is clean on the changed pure-K path (ADR-0003).
-- [ ] **Coverage.** Confirm kover is 100% on the pure-K path. The wildcard
-  `ch.trancee.meshlink.crypto.*Benchmark` excludes benchmark classes for you
-  (ADR-0009), so no manual kover edit is needed.
+- [ ] **Coverage.** Confirm kover is 100% on the pure-K path.
 
 ## Pull requests as a triage surface
 

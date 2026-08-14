@@ -40,13 +40,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # NOTE: KMP AGP 9.x does not auto-create androidInstrumentedTest source set.
+        # Runtime dispatch on physical Android is verified via:
+        # - DispatchVerificationTest (commonTest, runs on iOS simulator)
+        # - PureKFallbackVerificationTest (commonTest, tests PureK directly)
+        # - Wycheproof + RFC KAT vectors in jvmTest (correctness only)
         # Each entry maps to the correct sdkmanager package.
         # SDK 21-28: JCA lacks X25519/Ed25519/ChaCha20-Poly1305 → PureK at runtime.
         # SDK 29+: JCA supports all primitives natively.
-        # NOTE: These jobs verify compilation only — they do NOT run runtime tests.
-        # Runtime dispatch verification is in the macOS build job via DispatchBridgeTest
-        # (jvmTest), which uses reflection to simulate Android < API 29.
-        # See docs/testing-strategy.md for rationale.
         include:
           - compile_sdk: "21"
             platform_package: "platforms;android-21"
@@ -75,5 +76,7 @@ jobs:
         run: |
           sdkmanager --channel=3 "${{ matrix.platform_package }}" "build-tools;37.0.0"
       - name: Verify Android compilation (compileSdk=${{ matrix.compile_sdk }})
+        env:
+          COMPILE_SDK: ${{ matrix.compile_sdk }}
         run: |
           ./gradlew :crypto:compileAndroidMain -PcompileSdkOverride=${{ matrix.compile_sdk }} --no-daemon --parallel

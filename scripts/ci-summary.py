@@ -6,9 +6,9 @@ Produces three sections in the GitHub Actions step summary:
   2. Test results (per-platform pass/fail/skipped)
   3. Crypto dispatch verification (per-test dispatch path: native vs PureK)
 
-Dispatch tests are in jvmTest (DispatchVerificationTest, PureKFallbackVerificationTest,
-DispatchBridgeTest) and commonTest (runs on iOS too). The `COMPILE_SDK` env var
-(from the android-matrix job) is compile-time only — tests always run on JVM (JDK 21).
+DISPATCH_TEST_MAP maps test method names to (primitive, operation) tuples.
+The dispatch path is determined by the test class: DispatchVerificationTest
+uses native dispatch, PureKFallbackVerificationTest uses PureK directly.
 """
 
 import xml.etree.ElementTree as ET
@@ -17,11 +17,8 @@ import os
 import sys
 
 
-# Map test method names to (primitive, operation). Used for both
-# DispatchVerificationTest (native path), PureKFallbackVerificationTest
-# (PureK path), and DispatchBridgeTest (reflection-based fallback simulation).
 DISPATCH_TEST_MAP = {
-    # DispatchVerificationTest (native path via public API)
+    # DispatchVerificationTest (native dispatch via public API)
     "sha256_dispatchProducesCorrectDigest": ("SHA-256", "digest"),
     "sha512_dispatchProducesCorrectDigest": ("SHA-512", "digest"),
     "hmacSha256_digestProducesCorrectTag": ("HMAC-SHA-256", "digest"),
@@ -29,9 +26,9 @@ DISPATCH_TEST_MAP = {
     "hkdfSha256_dispatchProducesCorrectOutput": ("HKDF-SHA-256", "derive"),
     "x25519_dispatchProducesCorrectSharedSecret": ("X25519", "compute"),
     "ed25519_dispatchSignsCorrectly": ("Ed25519", "sign+verify"),
-    "chacha20Poly1305_dispatchRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
+    "chacha20Poly1305_dispatchRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt/decrypt"),
     "chacha20Poly1305_dispatchRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
-    # PureKFallbackVerificationTest (PureK path, calling PureK objects directly)
+    # PureKFallbackVerificationTest (PureK objects directly)
     "sha256_pureKFallbackProducesCorrectDigest": ("SHA-256", "digest"),
     "sha512_pureKFallbackProducesCorrectDigest": ("SHA-512", "digest"),
     "hmacSha256_pureKFallbackProducesCorrectTag": ("HMAC-SHA-256", "digest"),
@@ -39,23 +36,10 @@ DISPATCH_TEST_MAP = {
     "hkdfSha256_pureKFallbackProducesCorrectOutput": ("HKDF-SHA-256", "derive"),
     "x25519_pureKFallbackProducesCorrectSharedSecret": ("X25519", "compute"),
     "ed25519_pureKFallbackSignsCorrectly": ("Ed25519", "sign+verify"),
-    "chacha20Poly1305_pureKFallbackRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt+decrypt"),
+    "chacha20Poly1305_pureKFallbackRoundTripsCorrectly": ("ChaCha20-Poly1305", "encrypt/decrypt"),
     "chacha20Poly1305_pureKFallbackRejectsTamperedCiphertext": ("ChaCha20-Poly1305", "AEAD reject"),
-    # DispatchBridgeTest (reflection-based: simulate Android < API 29 by setting
-    # fallback flags to true, then verify the elvis pattern falls back to PureK)
-    "x25519_nativePathProducesCorrectResult": ("X25519", "compute (native)"),
-    "x25519_fallbackPathActivatesWhenFlagSet": ("X25519", "fallback (simulated)"),
-    "ed25519_nativePathSignsAndVerifies": ("Ed25519", "sign+verify (native)"),
-    "ed25519_fallbackPathActivatesWhenFlagSet": ("Ed25519", "fallback (simulated)"),
-    "chacha20Poly1305_nativePathRoundTrips": ("ChaCha20-Poly1305", "encrypt+decrypt (native)"),
-    "chacha20Poly1305_fallbackPathActivatesWhenFlagSet": ("ChaCha20-Poly1305", "fallback (simulated)"),
-    "hmacSha256_fallbackFlagExistsButUnused": ("HMAC-SHA-256", "flag check (native)"),
 }
 
-# Per-platform dispatch path for each primitive. On JVM the native path is JCA
-# (all primitives available on JDK 21). On iOS the native path is Darwin
-# (CommonCrypto / Security.framework), except ChaCha20-Poly1305 which has no
-# CryptoKit C-API and uses PureK.
 PLATFORM_DISPATCH = {
     "jvmTest": {
         "SHA-256": "native (JCA)",
@@ -95,9 +79,9 @@ def parse_testsuite(path):
 
 
 def parse_dispatch_tests(path):
-    """Parse <testcase> elements from a JUnit XML and return per-test results.
+    """Parse <testcase> elements from a JUnit XML and return per-test dispatch results.
 
-    Returns a list of (primitive, operation, passed, dispatch_path, platform_label) tuples.
+    Returns a list of (platform_label, primitive, operation, dispatch_path, passed) tuples.
     """
     try:
         root = ET.parse(path).getroot()
@@ -110,23 +94,18 @@ def parse_dispatch_tests(path):
         for tc in ts.findall("testcase"):
             name = tc.get("name", "")
             classname = tc.get("classname", "")
-            # Strip JUnit5 parameterized suffixes: "[jvm]" / "[iosSimulatorArm64]"
             method = name.split("(")[0].split("[")[0]
+            is_purek = "PureKFallbackVerificationTest" in classname
+            if not is_purek and "DispatchVerificationTest" not in classname:
+                continue
             if method not in DISPATCH_TEST_MAP:
                 continue
             primitive, operation = DISPATCH_TEST_MAP[method]
             failure = tc.find("failure") is not None
             error = tc.find("error") is not None
             passed = not failure and not error
-            # Determine dispatch path
-            is_purek = "PureKFallbackVerificationTest" in classname
             if is_purek:
                 dpath = "PureK fallback"
-            elif "DispatchBridgeTest" in classname:
-                if "fallbackPath" in method:
-                    dpath = "PureK fallback (simulated)"
-                else:
-                    dpath = dispatch_label(suite_dir, primitive)
             else:
                 dpath = dispatch_label(suite_dir, primitive)
             results.append((platform_label, primitive, operation, dpath, passed))
@@ -136,12 +115,7 @@ def parse_dispatch_tests(path):
 
 
 def friendly_label(suite_dir):
-    """Map Gradle test-result directory names to friendly platform labels.
-
-    When COMPILE_SDK is set (matrix job), include it in the label to make
-    clear that compilation targets a specific Android API, while tests run
-    on the JVM — compileSdk does NOT affect runtime dispatch.
-    """
+    """Map Gradle test-result directory names to friendly platform labels."""
     compile_sdk = os.environ.get("COMPILE_SDK", "")
     if suite_dir == "jvmTest":
         if compile_sdk:
@@ -272,17 +246,15 @@ def main():
                 status = "pass" if passed_test else "FAIL"
                 lines.append(f"| {label} | {prim} | {op} | {dpath} | {status} |")
 
-            # --- SDK-level dispatch notes ---
             compile_sdk = os.environ.get("COMPILE_SDK", "")
             if compile_sdk:
                 lines.append("")
                 lines.append(
-                    f"_Matrix job: **compileSdk={compile_sdk}** (compile-time only). "
-                    + "Tests run on **JVM (JDK 21)**, not on Android runtime. "
-                    + "On JDK 21, JCA handles all primitives, so dispatch is always `native (JCA)`. "
-                    + "On physical Android < API 29, JCA lacks X25519/Ed25519/ChaCha20-Poly1305, "
-                    + "so those primitives fall back to PureK. "
-                    + "DispatchBridgeTest (jvmTest) verifies this fallback via reflection._"
+                    f"_Matrix job: compileSdk={compile_sdk} (compile-time only). "
+                    + "Tests run on JVM (JDK 21), not on Android runtime. "
+                    + "compileSdk does NOT affect runtime dispatch. "
+                    + "On physical Android < API 29, JCA lacks X25519/Ed25519/ChaCha20-Poly1305 "
+                    + "(PureK fallback). On Android 29+ and JVM 21, JCA handles all primitives._"
                 )
 
         if failures:

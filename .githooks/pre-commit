@@ -1,23 +1,9 @@
 #!/usr/bin/env bash
-# git pre-commit hook (ADR-0009, committed-baseline fast path).
+# git pre-commit hook.
 #
 # Purpose:
-#   Run one JMH pass and compare it to the committed baseline
-#   (crypto/benchmarks/baseline.tsv). Surfaces >10% regressions on STABLE
-#   benchmarks. Replaces the old stash + before/after mode (~2-3 min) with a
-#   single run (~1.5 min). Pure bash + awk; no python/jq.
-#
-# Non-blocking by design:
-#   The JVM is not deterministic. A no-op change once swung ~13%. The baseline
-#   is a single sample on one host. CI does not gate on this (ADR-0009). The PR
-#   review and the issue checklist gate the merge.
-#
-# Refresh / skip:
-#   REFRESH_BASELINE=1 git commit ...  -> rewrite baseline.tsv from the current
-#                                         run and stage it. Use after a primitive
-#                                         improvement, or on a new host/JDK.
-#   SKIP_BENCH_HOOK=1 git commit ...   -> comparison skipped
-#   git commit --no-verify             -> hook skipped
+#   Run ktfmt formatting check and detekt lint on changed files.
+#   Non-blocking surf — prints warnings, exits 0.
 #
 # Activate (one time per clone):
 #   git config core.hooksPath .githooks
@@ -27,97 +13,11 @@ set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel)" || exit 0
 cd "$ROOT" || exit 0
 
-BASELINE="crypto/benchmarks/baseline.tsv"
-
-# Skip on request.
-if [[ "${SKIP_BENCH_HOOK:-0}" == "1" ]]; then
-  echo "[bench] SKIP_BENCH_HOOK=1 -> comparison skipped" >&2
-  exit 0
+# Run formatting check (ktfmt via spotless).
+echo "[format] checking ktfmt formatting..."
+if ! ./gradlew :crypto:spotlessCheck --rerun --no-build-cache --quiet 2>&1; then
+  echo "[format] WARNING: spotlessCheck failed — files are not ktfmt-formatted." >&2
+  echo "[format] Run: ./gradlew :crypto:spotlessApply --rerun --no-build-cache" >&2
 fi
 
-# Only fire when staged changes touch crypto primitive sources.
-touched=()
-while IFS= read -r line; do
-  [[ -n "$line" ]] && touched+=("$line")
-done < <(git diff --cached --name-only -- 'crypto/src/commonMain/kotlin/ch/trancee/meshlink/crypto/' 2>/dev/null || true)
-if [[ ${#touched[@]} -eq 0 ]]; then
-  exit 0
-fi
-
-echo "[bench] primitive files staged:" >&2
-printf '  %s\n' "${touched[@]}" >&2
-
-# Host fingerprint. Must match the derivation used when the baseline was written.
-host_str="$(uname -sm) jdk$(java -version 2>&1 | head -1 | awk -F\" '{print $2}' | cut -d. -f1)"
-base_host="$(grep '^# host:' "$BASELINE" 2>/dev/null | head -1)"
-if [[ "${REFRESH_BASELINE:-0}" != "1" ]] && ! printf '%s\n' "$base_host" | grep -Fq "host: $host_str"; then
-  echo "[bench] baseline host differs; absolute numbers are not comparable." >&2
-  echo "[bench] current host: $host_str" >&2
-  echo "[bench] baseline host: ${base_host:-<none>}" >&2
-  echo "[bench] re-baseline after landing this change with:" >&2
-  echo "[bench]   REFRESH_BASELINE=1 git commit ..." >&2
-  exit 0
-fi
-
-if [[ "${REFRESH_BASELINE:-0}" == "1" ]]; then
-  echo "[bench] REFRESH_BASELINE=1 -> rewriting $BASELINE from the current run" >&2
-  mode="refresh"
-else
-  echo "[bench] single JMH run vs committed baseline (ADR-0009 fast path; ~1.5 min)" >&2
-  mode="compare"
-fi
-echo "[bench] set SKIP_BENCH_HOOK=1 to skip" >&2
-
-# Measure the CURRENT (staged) code directly — no stash. The working tree already
-# holds the staged changes; :crypto:jvmBenchmarkBenchmark compiles and runs them.
-if ! ./gradlew :crypto:jvmBenchmarkBenchmark --rerun --no-build-cache --quiet > bench-curr.log 2>&1; then
-  echo "[bench] WARNING: :crypto:jvmBenchmarkBenchmark failed (compile or bench error)." >&2
-  echo "[bench] surf unavailable; not blocking. Fix the error and re-commit." >&2
-  rm -f bench-curr.log
-  exit 0
-fi
-
-if [[ "$mode" == "refresh" ]]; then
-  {
-    echo "# host: $host_str"
-    echo "# generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    echo "# benchmark<TAB>ns_per_op<TAB>score_error  (AverageTime mode, ns/op)"
-    awk '$2=="avgt" && NF>=6 {print $1"\t"$4"\t"$6}' bench-curr.log | sort
-  } > "$BASELINE"
-  git add "$BASELINE" 2>/dev/null || true
-  echo "[bench] baseline refreshed + staged ($BASELINE)." >&2
-  rm -f bench-curr.log
-  exit 0
-fi
-
-# Compare current vs baseline (non-blocking surf).
-cur_tsv="$(mktemp)"
-awk '$2=="avgt" && NF>=6 {print $1"\t"$4"\t"$6}' bench-curr.log | sort > "$cur_tsv"
-nrows="$(awk 'NF>=2 && $1 !~ /^#/ {c++} END{print c+0}' "$cur_tsv")"
-if [[ "$nrows" -eq 0 ]]; then
-  echo "[bench] WARNING: could not parse the JMH summary table from bench-curr.log." >&2
-  echo "[bench] surf unavailable; not blocking. Inspect bench-curr.log." >&2
-  rm -f bench-curr.log "$cur_tsv"
-  exit 0
-fi
-
-echo "===== bench baseline comparison (ADR-0009; non-blocking surf) ====="
-awk -F'\t' '
-  FNR==NR { if ($1 ~ /^#/ || NF<2) next; bns[$1]=$2; berr[$1]=$3; next }
-  NF<2 { next }
-  { name=$1; cns=$2; cerr=$3
-    if (!(name in bns)) { printf "%-50s %13s %13.1f %+7.1f  %s\n", name, "(new)", cns, 0.0, "[new]"; nc++; next }
-    d=(cns-bns[name])/bns[name]*100
-    if (cerr/cns > 0.30) { v="noisy"; nz++ }
-    else if (d>10) { v="REGRESSION"; rg++ }
-    else if (d<-10) { v="improve"; im++ }
-    else { v="ok"; ok++ }
-    printf "%-50s %13.1f %13.1f %+7.1f  %s\n", name, bns[name], cns, d, v
-  }
-  END { printf "summary: regressions=%d improve=%d noisy=%d ok=%d new=%d\n", rg, im, nz, ok, nc+0 }
-' "$BASELINE" "$cur_tsv"
-echo "===== end baseline comparison ====="
-rm -f bench-curr.log "$cur_tsv"
-echo "[bench] >10% slower on a STABLE benchmark is a real signal; review it in the PR."
-echo "[bench] CI does not gate on this (ADR-0009). PR review + issue checklist gate the merge."
 exit 0

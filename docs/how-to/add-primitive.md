@@ -4,7 +4,7 @@
 
 ## Before you start
 
-A primitive is not done until it ships with its correctness vectors, a JMH benchmark, green constant-time lint, and 100% coverage on the pure-Kotlin path. Open a GitHub issue first to track the work. See the issue checklist in [docs/agents/issue-tracker.md](../agents/issue-tracker.md).
+A primitive is not done until it ships with its correctness vectors, green constant-time lint, and 100% coverage on the pure-Kotlin path. Open a GitHub issue first to track the work. See the issue checklist in [docs/agents/issue-tracker.md](../agents/issue-tracker.md).
 
 ## Step 1: Open an issue
 
@@ -80,13 +80,7 @@ public fun foo(key: ByteArray, message: ByteArray): ByteArray?
 
 Reference: `SHA256Test.kt`, `X25519Test.kt`, `ChaCha20Poly1305Test.kt`.
 
-## Step 8: Add a JMH benchmark
-
-Create `crypto/src/jvmBenchmark/kotlin/ch/trancee/meshlink/crypto/FooBenchmark.kt`. Cover the one-shot path and the incremental path at block-size boundaries. Use `SHA256Benchmark` or `SHA512Benchmark` as the template.
-
-Benchmark classes matching `ch.trancee.meshlink.crypto.*Benchmark` are automatically excluded from kover coverage (ADR-0009).
-
-## Step 9: Run the gates
+## Step 8: Run the gates
 
 ```bash
 ./gradlew check --rerun --no-build-cache
@@ -98,7 +92,3 @@ Verify:
 - kover passes (100% on pure-K path)
 - abiValidation passes (ABI dump is clean)
 - All tests pass
-
-## Step 10: Benchmark comparison
-
-If the new primitive is a refactor of an existing one, run the before/after benchmark comparison. A regression of more than 10% blocks merge. See [ADR-0009](../adr/0009-benchmark-regression-check.md) and [docs/agents/build.md](../agents/build.md).

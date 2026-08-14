@@ -98,14 +98,12 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 - [ADR-0006](docs/adr/0006-module-layout.md) — Single shared KMP module
 - [ADR-0007](docs/adr/0007-build-quality-toolchain.md) — ktfmt + detekt + kover + abiValidation
 - [ADR-0008](docs/adr/0008-skie-excluded.md) — SKIE excluded
-- [ADR-0009](docs/adr/0009-benchmark-regression-check.md) — Mandatory JMH benchmarks per primitive
 
 ### Contributing
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — prerequisites, build, test, and git hooks
 - [Contributing a crypto primitive](docs/how-to/add-primitive.md) — step-by-step
-- [Build & test conventions](docs/agents/build.md) — Gradle flags, benchmarks, kover, detekt
-- [Issue tracker](docs/agents/issue-tracker.md) — GitHub issue conventions and the crypto-primitive checklist
+- [Build & test conventions](docs/agents/build.md) — Gradle flags, kover, detekt
 - [Agent workflow](docs/agents/workflow.md) — the 5-step agent workflow
 
 ### Other
@@ -117,10 +115,8 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). In short:
-
 1. Open a GitHub issue first.
-2. Implement the primitive with test vectors, a JMH benchmark, green constant-time lint, and 100% coverage on the pure-K path.
+2. Implement the primitive with test vectors, green constant-time lint, and 100% coverage on the pure-K path.
 3. Run `./gradlew check --rerun --no-build-cache` locally.
 4. Open a pull request with a Conventional Commit message.
 

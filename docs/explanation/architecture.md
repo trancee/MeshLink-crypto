@@ -26,10 +26,9 @@ crypto/src/
 ├── commonMain/    expect declarations + pure-K implementations (shared engine)
 ├── commonTest/    Interop harness tests (run on all targets)
 ├── jvmMain/       JVM actuals + CryptoBridge (JCA dispatch)
-├── androidMain/   Android actuals + CryptoBridge (JCA dispatch — duplicated, KMP does not inherit)
+├── androidMain/   Android actuals + CryptoBridge (JCA dispatch)
 ├── iosMain/       iOS actuals + CryptoBridge (CommonCrypto / Security.framework)
 ├── jvmTest/       Unit tests (JUnit 5, Wycheproof, KAT)
-├── jvmBenchmark/  JMH microbenchmarks
 ```
 
 KMP source sets do **not** inherit across targets. `androidMain` does not extend `jvmMain`. This is why the JCA dispatch code is duplicated between JVM and Android. The iOS bridge uses Kotlin/Native cinterop to C frameworks (CommonCrypto, Security.framework) instead.
@@ -86,5 +85,4 @@ SKIE is excluded from the build (see [ADR-0008](../adr/0008-skie-excluded.md)). 
 - [ADR-0006](../adr/0006-module-layout.md) — Module layout
 - [ADR-0007](../adr/0007-build-quality-toolchain.md) — Build toolchain
 - [ADR-0008](../adr/0008-skie-excluded.md) — SKIE exclusion
-- [ADR-0009](../adr/0009-benchmark-regression-check.md) — Benchmark regression
 - [Proposal: iOS Native Crypto](../proposals/0001-cryptokit-ios-native.md)
