@@ -28,19 +28,6 @@ jobs:
           build-tools: 37.0.0
       - name: Check (detekt + kover + abiValidation + spotless + JVM tests + iOS tests)
         run: ./gradlew check
-      - name: Upload coverage report (HTML)
+      - name: Generate coverage + test summary (inline in GitHub Actions summary)
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: kover-html-report
-          path: crypto/build/reports/kover/html/
-          retention-days: 14
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            crypto/build/test-results/
-            crypto/build/reports/tests/
-          retention-days: 14
+        run: python3 scripts/ci-summary.py
