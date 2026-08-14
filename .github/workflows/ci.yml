@@ -37,8 +37,8 @@ jobs:
   android-matrix:
     name: Android compileSdk=${{ matrix.compile_sdk }}
     runs-on: ubuntu-latest
-    fail-fast: false
     strategy:
+      fail-fast: false
       matrix:
         # SDK 21 — minimum supported. JCA on physical Android has no X25519/
         # Ed25519/ChaCha20-Poly1305; those primitives fall back to PureK at runtime.
@@ -108,7 +108,9 @@ jobs:
           mkdir -p crypto/build/reports/benchmark
           ./gradlew :crypto:jvmBenchmarkBenchmark --no-daemon --no-build-cache \
             2>&1 | tee crypto/build/reports/benchmark/raw-output.txt
-          # Extract benchmark result lines
+      - name: Extract benchmark results
+        if: always()
+        run: |
           grep -E '.*Benchmark\..*avgt' crypto/build/reports/benchmark/raw-output.txt \
             > crypto/build/reports/benchmark/results.tsv || true
       - name: Generate benchmark summary
