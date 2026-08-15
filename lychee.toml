@@ -15,7 +15,12 @@ exclude_path = [
 ]
 
 exclude = [
-    # Example excludes — add repo-specific patterns here.
+    # GitHub release/tag/compare URLs for the current version are not live
+    # until the tag is pushed (checked on local pre-push hook too).
+    # Format: https://github.com/<owner>/<repo>/releases/tag/v*
+    "^https://github\\.com/[^/]+/[^/]+/releases/tag/v[^/]+$",
+    # Compare URLs with unreleased tags (fail before push).
+    "^https://github\\.com/[^/]+/[^/]+/compare/v[^/]+\\.\\.\\.HEAD$",
 ]
 
 # Retry transient network failures a few times before failing CI.
