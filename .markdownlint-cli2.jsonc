@@ -1,0 +1,30 @@
+{
+  // Markdown lint rules for MeshLink-crypto docs.
+  // See docs/how-to/run-checks.md for how this fits into local/CI quality gates.
+  "config": {
+    "default": true,
+    // Long-form prose (CHANGELOG, ADRs, docs) is not wrapped at 80 columns.
+    "MD013": false,
+    // Referencing "#123"-style issue/PR/section numbers inline is common
+    // and isn't a mistyped heading.
+    "MD018": false,
+    // docs/adr/ memos intentionally use one continuously-incrementing
+    // list across multiple "###" subsections as a stable cross-reference
+    // numbering scheme.
+    "MD029": false,
+    // docs/reference/supported-primitives.md and ADRs use inline <span>
+    // and raw HTML for formatting.
+    "MD033": false,
+    // Overly opinionated about pipe spacing; conflicts with existing
+    // hand-formatted tables that are otherwise valid Markdown.
+    "MD060": false
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    ".agents/**",
+    ".gradle/**",
+    ".kotlin/**",
+    "./**/build/**",
+    "crypto/api/**"
+  ]
+}

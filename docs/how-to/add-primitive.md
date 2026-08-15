@@ -83,7 +83,7 @@ Reference: `SHA256Test.kt`, `X25519Test.kt`, `ChaCha20Poly1305Test.kt`.
 ## Step 8: Run the gates
 
 ```bash
-./gradlew check --rerun --no-build-cache
+./gradlew check --rerun-tasks --no-build-cache
 ```
 
 Verify:

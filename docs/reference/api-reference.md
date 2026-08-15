@@ -75,6 +75,7 @@ A single entry point that delegates to all primitive facade objects. Use this fo
 ```kotlin
 fun sha256(message: ByteArray): Result<ByteArray>
 ```
+
 Computes SHA-256 ([RFC 6234 §5.1](https://datatracker.ietf.org/doc/html/rfc6234#section-5.1)).
 
 | Parameter | Description |
@@ -85,6 +86,7 @@ Computes SHA-256 ([RFC 6234 §5.1](https://datatracker.ietf.org/doc/html/rfc6234
 ```kotlin
 fun sha512(message: ByteArray): Result<ByteArray>
 ```
+
 Computes SHA-512 ([RFC 6234 §5.2](https://datatracker.ietf.org/doc/html/rfc6234#section-5.2)).
 
 | Parameter | Description |
@@ -97,6 +99,7 @@ Computes SHA-512 ([RFC 6234 §5.2](https://datatracker.ietf.org/doc/html/rfc6234
 ```kotlin
 fun hmacSha256(key: SecretKey, message: ByteArray): Result<ByteArray>
 ```
+
 Computes HMAC-SHA256 ([RFC 2104](https://datatracker.ietf.org/doc/html/rfc2104)). Produces an authentication tag.
 
 | Parameter | Description |
@@ -112,6 +115,7 @@ fun verifyHmacSha256(
     tag: ByteArray,
 ): Result<Boolean>
 ```
+
 Verifies an HMAC-SHA256 tag. Uses constant-time comparison internally (no early exit).
 
 | Parameter | Description |
@@ -131,6 +135,7 @@ fun hkdfSha256(
     outputLength: Int,
 ): Result<ByteArray>
 ```
+
 Runs full HKDF-SHA256 ([RFC 5869](https://datatracker.ietf.org/doc/html/rfc5869)) — Extract then Expand. Use this when deriving session keys from a shared secret.
 
 | Parameter | Description |
@@ -144,11 +149,13 @@ Runs full HKDF-SHA256 ([RFC 5869](https://datatracker.ietf.org/doc/html/rfc5869)
 ```kotlin
 fun extract(ikm: ByteArray, salt: ByteArray): Result<ByteArray>
 ```
+
 HKDF-Extract only: `PRK = HMAC-SHA256(salt, IKM)`. Use this when you need the intermediate PRK before calling Expand.
 
 ```kotlin
 fun expand(prk: ByteArray, info: ByteArray, outputLength: Int): Result<ByteArray>
 ```
+
 HKDF-Expand only: `OKM = Expand(PRK, info, L)`. Use this after calling `extract` to derive multiple keys from the same PRK.
 
 ### Key agreement
@@ -156,6 +163,7 @@ HKDF-Expand only: `OKM = Expand(PRK, info, L)`. Use this after calling `extract`
 ```kotlin
 fun x25519(scalar: PrivateKey, u: PublicKey): Result<ByteArray>
 ```
+
 Computes the X25519 shared secret ([RFC 7748 §5](https://datatracker.ietf.org/doc/html/rfc7748#section-5)).
 
 | Parameter | Description |
@@ -169,6 +177,7 @@ Computes the X25519 shared secret ([RFC 7748 §5](https://datatracker.ietf.org/d
 ```kotlin
 fun ed25519Sign(secretKey: PrivateKey, message: ByteArray): Result<ByteArray>
 ```
+
 Signs a message with Ed25519 ([RFC 8032 §5.1](https://datatracker.ietf.org/doc/html/rfc8032#section-5.1)).
 
 | Parameter | Description |
@@ -184,6 +193,7 @@ fun ed25519Verify(
     signature: ByteArray,
 ): Result<Boolean>
 ```
+
 Verifies an Ed25519 signature.
 
 | Parameter | Description |
@@ -198,13 +208,14 @@ Verifies an Ed25519 signature.
 ```kotlin
 fun chacha20Poly1305Encrypt(key: SecretKey, message: ByteArray): Result<ByteArray>
 ```
+
 Encrypts with ChaCha20-Poly1305 ([RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) §2.8). A fresh 96-bit nonce is generated internally.
 
 | Parameter | Description |
 |---|---|
 | `key` | The 32-byte (256-bit) secret key. |
 | `message` | The plaintext to encrypt. Any length (including empty). |
-| **Returns** | `nonce(12) || ciphertext || tag(16)` on success. |
+| **Returns** | `nonce(12) + ciphertext + tag(16)` on success. |
 
 ```kotlin
 fun chacha20Poly1305Decrypt(
@@ -212,7 +223,8 @@ fun chacha20Poly1305Decrypt(
     ciphertext: ByteArray,
 ): Result<ByteArray?>
 ```
-Decrypts and authenticates. The input must have the format produced by `chacha20Poly1305Encrypt`: `nonce(12) || ciphertext || tag(16)`.
+
+Decrypts and authenticates. The input must have the format produced by `chacha20Poly1305Encrypt`: `nonce(12) + ciphertext + tag(16)`.
 
 | Parameter | Description |
 |---|---|
@@ -241,7 +253,7 @@ Do not set a provider unless you need features the default native path cannot pr
 | `ed25519Sign(secretKey, message)` | Returns the 64-byte signature, or `null`. |
 | `ed25519Verify(publicKey, message, signature)` | Returns `true` if valid, `false` if invalid, or `null` if unsupported. |
 | `supportsChaCha20Poly1305()` | Returns `true` if the provider handles ChaCha20-Poly1305 AEAD. |
-| `chacha20Poly1305Encrypt(key, nonce, aad, plaintext)` | Returns `ciphertext || tag(16)`, or `null`. The provider must generate or receive a unique 12-byte nonce. |
+| `chacha20Poly1305Encrypt(key, nonce, aad, plaintext)` | Returns `ciphertext + tag(16)`, or `null`. The provider must generate or receive a unique 12-byte nonce. |
 | `chacha20Poly1305Decrypt(key, nonce, aad, ciphertextWithTag)` | Returns the plaintext, or `null` if the tag fails. |
 
 ### `setCryptoProvider(provider: CryptoProvider?)`

@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# git pre-push hook — full verification tier.
+#
+# Runs before any push: Conventional Commit validation, full-history secret
+# scan, YAML lint, markdown lint + link check, and Gradle verification
+# (detekt + kover + spotless + abiValidation + tests). This is the local
+# backstop before CI; passing this hook does NOT guarantee CI passes.
+#
+# Activate: git config core.hooksPath .githooks
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+remote_name="${1:-}"
+remote_url="${2:-}"
+zero_sha="0000000000000000000000000000000000000000"
+changed_files_manifest="$(mktemp)"
+commit_manifest="$(mktemp)"
+trap 'rm -f "$changed_files_manifest" "$commit_manifest"' EXIT
+
+conventional_commit_pattern='^(feat|fix|test|docs|refactor|perf|chore)(\([A-Za-z0-9._/-]+))?(!)?: .+'
+
+append_changed_files() {
+  local range="$1"
+  git diff --name-only "$range" >> "$changed_files_manifest"
+}
+
+append_commit_range() {
+  local range="$1"
+  git rev-list "$range" >> "$commit_manifest"
+}
+
+determine_base_ref() {
+  if git rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
+    printf '%s\n' '@{upstream}'
+    return
+  fi
+  if [[ -n "$remote_name" ]] && git show-ref --verify --quiet "refs/remotes/$remote_name/main"; then
+    printf 'refs/remotes/%s/main\n' "$remote_name"
+    return
+  fi
+  if git show-ref --verify --quiet 'refs/remotes/origin/main'; then
+    printf '%s' 'refs/remotes/origin/main'
+    return
+  fi
+  if git show-ref --verify --quiet 'refs/heads/main'; then
+    printf '%s' 'refs/heads/main'
+    return
+  fi
+  printf '%s' ''
+}
+
+saw_ref_updates=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ -z "${local_ref:-}" ]]; then
+    continue
+  fi
+  saw_ref_updates=1
+
+  if [[ "$remote_ref" == "refs/heads/main" ]]; then
+    echo "[pre-push] Direct pushes to main are prohibited. Push a feature branch and open a PR." >&2
+    exit 1
+  fi
+
+  if [[ "$local_sha" == "$zero_sha" ]]; then
+    continue
+  fi
+
+  if [[ "$remote_sha" == "$zero_sha" ]]; then
+    base_ref="$(determine_base_ref)"
+    if [[ -n "$base_ref" ]]; then
+      append_changed_files "$base_ref..$local_sha"
+      append_commit_range "$base_ref..$local_sha"
+    else
+      append_commit_files "$local_sha"
+      append_commit_range "$local_sha"
+    fi
+  else
+    append_changed_files "$remote_sha..$local_sha"
+    append_commit_range "$remote_sha..$local_sha"
+  fi
+done
+
+if [[ "$saw_ref_updates" -eq 0 ]]; then
+  base_ref="$(determine_base_ref)"
+  if [[ -n "$base_ref" ]]; then
+    append_changed_files "$base_ref..HEAD"
+    append_commit_range "$base_ref..HEAD"
+  else
+    append_commit_files HEAD
+    append_commit_range HEAD
+  fi
+fi
+
+# --- Conventional Commits validation ---
+if [[ -s "$commit_manifest" ]]; then
+  sort -u "$commit_manifest" -o "$commit_manifest"
+  invalid_commits=()
+  while IFS= read -r commit; do
+    [[ -z "$commit" ]] && continue
+    subject="$(git log --format=%s -n 1 "$commit")"
+    if [[ ! "$subject" =~ $conventional_commit_pattern ]]; then
+      invalid_commits+=("$commit $subject")
+    fi
+  done < "$commit_manifest"
+
+  if [[ ${#invalid_commits[@]} -gt 0 ]]; then
+    echo "[pre-push] Outgoing commits must use Conventional Commits:" >&2
+    for item in "${invalid_commits[@]}"; do
+      echo "  - $item" >&2
+    done
+    exit 1
+  fi
+fi
+
+if [[ ! -s "$changed_files_manifest" ]]; then
+  exit 0
+fi
+
+# --- Collect changed files ---
+sort -u "$changed_files_manifest" -o "$changed_files_manifest"
+
+pushed_files=()
+while IFS= read -r file; do
+  if [[ -n "$file" ]]; then
+    pushed_files+=("$file")
+  fi
+done < "$changed_files_manifest"
+
+if [[ ${#pushed_files[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+need_markdown=0
+need_yaml=0
+markdown_files=()
+yaml_files=()
+
+for file in "${pushed_files[@]}"; do
+  case "$file" in
+    *.md)
+      if [[ -f "$file" ]]; then
+        need_markdown=1
+        markdown_files+=("$file")
+      fi
+      ;;
+    *.yml|*.yaml)
+      if [[ -f "$file" ]]; then
+        need_yaml=1
+        yaml_files+=("$file")
+      fi
+      ;;
+  esac
+done
+
+# --- Gitleaks full-history scan ---
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[pre-push] gitleaks is required to scan history for secrets." >&2
+  echo "[pre-push] Install it with: brew install gitleaks (or see" >&2
+  echo "[pre-push] https://github.com/gitleaks/gitleaks#installing)" >&2
+  exit 1
+fi
+echo "[pre-push] Scanning repository history for secrets"
+gitleaks detect --source . --redact -v --config .gitleaks.toml
+
+# --- YAML lint ---
+if [[ "$need_yaml" -eq 1 ]]; then
+  if ! command -v yamllint >/dev/null 2>&1; then
+    echo "[pre-push] yamllint is required for YAML changes." >&2
+    echo "[pre-push] Install it with: brew install yamllint" >&2
+    exit 1
+  fi
+  echo "[pre-push] Running YAML lint: ${yaml_files[*]}"
+  yamllint "${yaml_files[@]}"
+fi
+
+# --- Markdown lint + link check ---
+if [[ "$need_markdown" -eq 1 ]]; then
+  echo "[pre-push] Running Markdown lint/link check: ${markdown_files[*]}"
+  ./scripts/check-markdown.sh "${markdown_files[@]}"
+fi
+
+# --- Gradle full verification ---
+gradle_cmd=(./gradlew --console=plain --rerun-tasks --no-build-cache)
+echo "[pre-push] Running Gradle verification (detekt + kover + spotless + abiValidation + tests)"
+"${gradle_cmd[@]}" :crypto:check

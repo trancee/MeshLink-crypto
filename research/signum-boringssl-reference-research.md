@@ -30,7 +30,7 @@ crypto-kmp needs pure-K fallback arithmetic, that is our own radix-2^26 port (AD
 by BoringSSL/ref11 rather than by signum. (Caveat: per the README; I have not audited signum's source
 to rule out a pure-K fallback module — can verify on request.)
 
-Source: https://github.com/a-sit-plus/signum (README).
+Source: <https://github.com/a-sit-plus/signum> (README).
 
 ## google/boringssl (C — reference constant-time implementation + Wycheproof wiring)
 
@@ -50,7 +50,7 @@ For crypto-kmp (Kotlin), BoringSSL is a reference for **algorithm structure** an
 discipline + Wycheproof validation pattern**, not for Kotlin code (it is C). ref10 / X25519-daleed
 remain the closest constant-time arithmetic references for a from-scratch Kotlin port.
 
-Sources: https://github.com/google/boringssl (README + tree); https://github.com/google/wycheproof.
+Sources: <https://github.com/google/boringssl> (README + tree); <https://github.com/google/wycheproof>.
 
 ## Corroboration status vs. crypto-kmp decisions
 

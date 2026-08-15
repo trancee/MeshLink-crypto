@@ -154,7 +154,6 @@ CI runs `./gradlew check` on macOS. This validates compilation, formatting, lint
 
 The pure-Kotlin path is tested on the JVM. If you target iOS or specific Android API levels, verify the native dispatch works on those platforms. Use the [interop harness tests](../reference/api-reference.md) as a pattern.
 
-
 ## See also
 
 - [Constant-Time Discipline](../explanation/constant-time.md) — the security model behind the pure-Kotlin path

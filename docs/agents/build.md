@@ -2,10 +2,10 @@
 
 ## Gradle invocations
 
-Every `./gradlew` call **must** include `--rerun` and `--no-build-cache` to ensure fresh execution. Do not rely on cached outputs.
+Every `./gradlew` call **must** include `--rerun-tasks` and `--no-build-cache` to ensure fresh execution. Do not rely on cached outputs.
 
 ```bash
-./gradlew test --rerun --no-build-cache
+./gradlew test --rerun-tasks --no-build-cache
 ```
 
 ## Project layout

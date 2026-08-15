@@ -20,7 +20,7 @@ The library is not yet published to a public Maven repository. Until release, us
 1. Build and publish to your local Maven cache:
 
 ```bash
-./gradlew :crypto:publishToMavenLocal --rerun --no-build-cache
+./gradlew :crypto:publishToMavenLocal --rerun-tasks --no-build-cache
 ```
 
 2. Add the local repository and dependency to your project's `build.gradle.kts`:

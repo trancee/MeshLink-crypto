@@ -1,0 +1,23 @@
+# yamllint configuration — see https://yamllint.readthedocs.io
+#
+# MeshLink-crypto keeps its YAML under .github/ (workflows, ISSUE_TEMPLATE,
+# dependabot, detekt.yml). Vendored and generated content is excluded.
+---
+ignore: |
+  .gradle/
+  .kotlin/
+  .agents/
+  crypto/build/
+  .github/copilot-setup-steps.yml
+
+rules:
+  document-start: disable
+  line-length:
+    max: 120
+    level: error
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+  comments:
+    min-spaces-from-content: 1
+  truthy:
+    check-keys: false

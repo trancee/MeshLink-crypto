@@ -43,7 +43,7 @@ Targets: JVM, Android (API 21+), iOS arm64 + simulator. JS/WASM out of scope.
 - **`@Secret` annotation**: annotate all secret parameters (`key`, `nonce`,
   `hash state`) with `@Secret`. The `ConstantTimeRule` bans data-dependent
   branches and secret-indexed array access on annotated parameters.
-- **`--rerun --no-build-cache`**: every `./gradlew` invocation must include
+- **`--rerun-tasks --no-build-cache`**: every `./gradlew` invocation must include
   these flags (see `docs/agents/build.md`).
 
 ### Gradle / Kotlin DSL
@@ -72,6 +72,7 @@ Targets: JVM, Android (API 21+), iOS arm64 + simulator. JS/WASM out of scope.
 - **Test location**: `crypto/src/jvmTest/` for JVM-specific tests,
   `crypto/src/commonTest/` for cross-platform harness tests.
 - **Test tags** (`@Tag`):
+
   | Tag | Purpose |
   |-----|---------|
   | `positive` | Correctness assertions (known-answer tests, Wycheproof vectors) |
@@ -79,6 +80,7 @@ Targets: JVM, Android (API 21+), iOS arm64 + simulator. JS/WASM out of scope.
   | `timing` | Timing variance assertions (opt-in) |
   | `security` | Security-related assertions |
   | `smoke` | Basic build/toolchain validation |
+
 - **Wycheproof vectors**: placed in `crypto/src/jvmTest/resources/wycheproof/`.
 - **Known-answer tests**: inline test functions for primitives without a
   Wycheproof corpus.
@@ -117,7 +119,7 @@ checklist, and the architecture decisions (ADRs):
 5. **New primitives follow the registration chain** — see "Adding a New
    Primitive" below. Every step is required, no shortcuts.
 6. **Conventional Commits** on all PR titles and commit messages.
-7. **`--rerun --no-build-cache`** on every Gradle invocation.
+7. **`--rerun-tasks --no-build-cache`** on every Gradle invocation.
 
 ---
 
@@ -209,11 +211,11 @@ When you add, remove, or change a public method in `crypto/src/commonMain/`:
 
 | Goal | Command |
 |------|---------|
-| Full quality gate (local) | `./gradlew check --rerun --no-build-cache` |
+| Full quality gate (local) | `./gradlew check --rerun-tasks --no-build-cache` |
 | Format Kotlin | `./gradlew spotlessKotlinApply` |
-| Detekt (constant-time lint) | `./gradlew :crypto:detektCommonMainSourceSet --rerun --no-build-cache` |
-| Coverage report | `./gradlew :crypto:koverXmlReport --rerun --no-build-cache` |
-| ABI dump | `./gradlew :crypto:apiDump --rerun --no-build-cache` |
-| Run tests only | `./gradlew test --rerun --no-build-cache` |
-| iOS test (Mac only) | `./gradlew :crypto:iosSimulatorArm64Test --rerun --no-build-cache` |
-| Local Maven publish | `./gradlew :crypto:publishToMavenLocal --rerun --no-build-cache` |
+| Detekt (constant-time lint) | `./gradlew :crypto:detektCommonMainSourceSet --rerun-tasks --no-build-cache` |
+| Coverage report | `./gradlew :crypto:koverXmlReport --rerun-tasks --no-build-cache` |
+| ABI dump | `./gradlew :crypto:apiDump --rerun-tasks --no-build-cache` |
+| Run tests only | `./gradlew test --rerun-tasks --no-build-cache` |
+| iOS test (Mac only) | `./gradlew :crypto:iosSimulatorArm64Test --rerun-tasks --no-build-cache` |
+| Local Maven publish | `./gradlew :crypto:publishToMavenLocal --rerun-tasks --no-build-cache` |

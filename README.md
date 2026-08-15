@@ -1,4 +1,5 @@
 # MeshLink-crypto
+
 [![AI Ready](https://img.shields.io/badge/AI--Ready-yes-brightgreen?style=flat)](https://github.com/johnpapa/ai-ready)
 
 MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for Kotlin Multiplatform, with per-primitive native fallback.
@@ -100,7 +101,7 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 - [ADR-0007](docs/adr/0007-build-quality-toolchain.md) — ktfmt + detekt + kover + abiValidation
 - [ADR-0008](docs/adr/0008-skie-excluded.md) — SKIE excluded
 
-### Contributing
+### Contributing resources
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — prerequisites, build, test, and git hooks
 - [Contributing a crypto primitive](docs/how-to/add-primitive.md) — step-by-step

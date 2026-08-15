@@ -1,23 +1,131 @@
 #!/usr/bin/env bash
 # git pre-commit hook.
 #
-# Purpose:
-#   Run ktfmt formatting check and detekt lint on changed files.
-#   Non-blocking surf — prints warnings, exits 0.
+# Fast tier: secret scan (staged), hook self-check, YAML lint,
+# markdown lint/link check (offline), ktfmt formatting, and Detekt.
+# Secret scan, YAML lint, markdown lint, and Detekt are hard blocks.
+# Formatting is a non-blocking surf — prints a warning, exits 0.
 #
 # Activate (one time per clone):
 #   git config core.hooksPath .githooks
 
-set -uo pipefail
+set -euo pipefail
 
-ROOT="$(git rev-parse --show-toplevel)" || exit 0
-cd "$ROOT" || exit 0
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
 
-# Run formatting check (ktfmt via spotless).
-echo "[format] checking ktfmt formatting..."
-if ! ./gradlew :crypto:spotlessCheck --rerun --no-build-cache --quiet 2>&1; then
-  echo "[format] WARNING: spotlessCheck failed — files are not ktfmt-formatted." >&2
-  echo "[format] Run: ./gradlew :crypto:spotlessApply --rerun --no-build-cache" >&2
+staged_files=()
+pre_format_hashes=()
+
+while IFS= read -r -d '' file; do
+  staged_files+=("$file")
+  if [[ -f "$file" ]]; then
+    pre_format_hashes+=("$(git hash-object "$file")")
+  else
+    pre_format_hashes+=("")
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if [[ ${#staged_files[@]} -eq 0 ]]; then
+  exit 0
 fi
+
+# --- Secret scan (staged changes only) ---
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[pre-commit] gitleaks is required to scan staged changes for secrets." >&2
+  echo "[pre-commit] Install it with: brew install gitleaks / cargo install gitleaks" >&2
+  exit 1
+fi
+echo "[pre-commit] Scanning staged changes for secrets"
+gitleaks protect --staged --redact -v --config .gitleaks.toml
+
+# --- Validate hook and script shell syntax ---
+hook_changed=0
+for file in "${staged_files[@]}"; do
+  case "$file" in
+    .githooks/*|scripts/check-markdown.sh|scripts/bootstrap.sh|scripts/install-git-hooks.sh)
+      hook_changed=1
+      ;;
+  esac
+done
+if [[ "$hook_changed" -eq 1 ]]; then
+  echo "[pre-commit] Validating shell scripts"
+  bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg scripts/check-markdown.sh
+fi
+
+# --- YAML lint ---
+yaml_files=()
+for file in "${staged_files[@]}"; do
+  case "$file" in
+    *.yml|*.yaml)
+      if [[ -f "$file" ]]; then
+        yaml_files+=("$file")
+      fi
+      ;;
+  esac
+done
+if [[ ${#yaml_files[@]} -gt 0 ]]; then
+  if ! command -v yamllint >/dev/null 2>&1; then
+    echo "[pre-commit] yamllint is required for YAML changes." >&2
+    echo "[pre-commit] Install it with: brew install yamllint" >&2
+    exit 1
+  fi
+  echo "[pre-commit] Running YAML lint: ${yaml_files[*]}"
+  yamllint "${yaml_files[@]}"
+fi
+
+# --- Markdown lint + link check (offline — internal links only) ---
+markdown_files=()
+for file in "${staged_files[@]}"; do
+  case "$file" in
+    *.md)
+      if [[ -f "$file" ]]; then
+        markdown_files+=("$file")
+      fi
+      ;;
+  esac
+done
+if [[ ${#markdown_files[@]} -gt 0 ]]; then
+  echo "[pre-commit] Running Markdown lint/link check (offline): ${markdown_files[*]}"
+  ./scripts/check-markdown.sh --offline "${markdown_files[@]}"
+fi
+
+# --- Kotlin test name validation ---
+# Test names with parentheses break Kotlin/Native compilation.
+kotlin_test_files=()
+for file in "${staged_files[@]}"; do
+  if [[ "$file" == *.kt ]] && [[ "$file" == */commonTest/* || "$file" == */jvmTest/* || "$file" == */androidTest/* || "$file" == */iosTest/* || "$file" == */test/* ]]; then
+    kotlin_test_files+=("$file")
+  fi
+done
+if [[ ${#kotlin_test_files[@]} -gt 0 ]]; then
+  echo "[pre-commit] Checking test names for invalid characters..."
+  invalid_found=0
+  for file in "${kotlin_test_files[@]}"; do
+    if grep -nE "fun\s+\`[^\`]*\([^)]*\)[^\`]*\`" "$file" >/dev/null; then
+      echo "[pre-commit] ERROR: Test name with parentheses found in $file:" >&2
+      grep -nE "fun\s+\`[^\`]*\([^)]*\)[^\`]*\`" "$file" | sed 's/^/    /' >&2
+      echo "[pre-commit] Parentheses in test names are invalid for Kotlin/Native." >&2
+      invalid_found=1
+    fi
+  done
+  if [[ $invalid_found -eq 1 ]]; then
+    exit 1
+  fi
+fi
+
+# --- ktfmt formatting (non-blocking surf) ---
+echo "[pre-commit] checking ktfmt formatting..."
+if ! ./gradlew :crypto:spotlessCheck --rerun-tasks --no-build-cache --quiet 2>&1; then
+  echo "[pre-commit] WARNING: spotlessCheck failed — files are not ktfmt-formatted." >&2
+  echo "[pre-commit] Run: ./gradlew :crypto:spotlessApply --rerun-tasks --no-build-cache" >&2
+fi
+
+# --- Detekt static analysis ---
+echo "[pre-commit] running Detekt..."
+./gradlew :crypto:detektCommonMainSourceSet :crypto:detektJvmTestSourceSet --rerun-tasks --no-build-cache --quiet 2>&1 || {
+  echo "[pre-commit] ERROR: Detekt found violations. Fix before committing." >&2
+  exit 1
+}
 
 exit 0

@@ -9,6 +9,47 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Markdown / YAML / Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+      - name: Install lychee
+        run: |
+          mkdir -p /tmp/lychee
+          LYCHEE_RELEASE="https://github.com/lycheeverse/lychee/releases"
+          LYCHEE_URL="${LYCHEE_RELEASE}/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz"
+          curl -fsSL "$LYCHEE_URL" | tar -xz -C /tmp/lychee --strip-components=1
+          sudo install -m 0755 /tmp/lychee/lychee /usr/local/bin/lychee
+      - name: Install yamllint
+        run: python3 -m pip install --user yamllint
+      - name: Install gitleaks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(gh release view --repo gitleaks/gitleaks --json tagName --jq '.tagName')
+          ASSET="gitleaks_${VERSION#v}_linux_x64.tar.gz"
+          URL="https://github.com/gitleaks/gitleaks/releases/download/${VERSION}/${ASSET}"
+          curl -fsSL "$URL" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan repository history for secrets
+        run: gitleaks detect --source . --redact -v --config .gitleaks.toml
+      - name: YAML lint
+        run: yamllint .
+      - name: Markdown lint + link check
+        run: ./scripts/check-markdown.sh
+
   build:
     name: JVM + Android + iOS
     # macOS is required: iOS targets (Kotlin/Native) need a host that can
@@ -19,6 +60,8 @@ jobs:
       ORG_GRADLE_PROJECT_koverHtmlOnCheck: false
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v5
         with:
           distribution: temurin

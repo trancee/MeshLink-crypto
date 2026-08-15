@@ -46,6 +46,7 @@ a CryptoKit + Secure Enclave backed implementation if they need features the
 C APIs cannot provide (e.g., keys that never leave the Secure Enclave).
 
 This rejects the Medium article's callback injection for two reasons:
+
 - It has no pure-K fallback (callers get `""` if no callback is set).
 - The project's design already has a superior pattern (per-primitive
   native-or-pure-K via expect/actual + cinterop).
@@ -79,7 +80,7 @@ Security.tbd exports them as binary symbols, but the C headers do not include
 them. We recreate them as `CFStringRef` via
 `CFStringCreateWithCString` with the correct string values.
 
-```
+```text
 iosMain actual X25519.compute(scalar, u):
   1. SecKeyCreateWithData(scalar, attributes={kSecAttrKeyType: kSecAttrKeyTypeX25519,
      kSecAttrKeyClass: kSecAttrKeyClassPrivate})
@@ -94,6 +95,7 @@ iosMain actual X25519.compute(scalar, u):
 **Byte order note**: iOS `SecKeyCreateWithData` for Curve25519 accepts raw
 little-endian bytes (RFC 7748 wire format). No byte reversal is needed — the
 project's raw key bytes are passed directly.
+
 ### Ed25519 via Security.framework
 
 **Swift-only constants**: `kSecAttrKeyTypeEd25519` and
@@ -101,7 +103,7 @@ project's raw key bytes are passed directly.
 them. We recreate them as
 `CFStringRef` via `CFStringCreateWithCString`.
 
-```
+```text
 iosMain actual Ed25519.publicKeyFromPrivate(secretKey):
   1. SecKeyCreateWithData(seed, attr={kSecAttrKeyType: kSecAttrKeyTypeEd25519,
      kSecAttrKeyClass: kSecAttrKeyClassPrivate})
@@ -344,7 +346,7 @@ key lifecycle is the app's responsibility.
 
 ## Relationship between the two parts
 
-```
+```text
 commonMain:  X25519.compute(scalar, u)
                 │
                 ├─ iOS + CryptoKit provider injected? → call provider.x25519()

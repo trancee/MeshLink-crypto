@@ -18,10 +18,10 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
 
 ## Run the full quality gate
 
-From the repository root, always pass `--rerun` and `--no-build-cache`:
+From the repository root, always pass `--rerun-tasks` and `--no-build-cache`:
 
 ```bash
-./gradlew check --rerun --no-build-cache
+./gradlew check --rerun-tasks --no-build-cache
 ```
 
 This runs:
@@ -35,7 +35,7 @@ This runs:
 ## Run tests only
 
 ```bash
-./gradlew test --rerun --no-build-cache
+./gradlew test --rerun-tasks --no-build-cache
 ```
 
 Tests live in `crypto/src/jvmTest/`. They use JUnit 5 with `@Tag` annotations. Tags include:
@@ -48,11 +48,10 @@ Tests live in `crypto/src/jvmTest/`. They use JUnit 5 with `@Tag` annotations. T
 | `security` | Security-related assertions |
 | `smoke` | Basic build/toolchain validation |
 
-
 ## Run the constant-time lint only
 
 ```bash
-./gradlew :crypto:detektCommonMainSourceSet --rerun --no-build-cache
+./gradlew :crypto:detektCommonMainSourceSet --rerun-tasks --no-build-cache
 ```
 
 This runs the `ConstantTimeRule` on `commonMain`. It flags any data-dependent branch or secret-indexed access in `@Secret`-annotated code.
@@ -60,7 +59,7 @@ This runs the `ConstantTimeRule` on `commonMain`. It flags any data-dependent br
 ## Run coverage only
 
 ```bash
-./gradlew :crypto:koverXmlReport --rerun --no-build-cache
+./gradlew :crypto:koverXmlReport --rerun-tasks --no-build-cache
 ```
 
 The HTML report is at `crypto/build/reports/kover/report.html`. The gate enforces 100% line and branch coverage on the pure-Kotlin path.

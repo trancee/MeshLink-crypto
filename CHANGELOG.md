@@ -8,18 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Maven Central publishing configuration (`maven-publish` + `signing` plugins)
 - Gradle version catalog version property (`libs.versions.library`)
 - `.github/workflows/publish.yml` — release workflow targeting Maven Central
 - `.env.example` — template for local Maven Central + GPG signing credentials
 - DispatchVerificationTest in `commonTest` — RFC KAT dispatch verification via public API
 - PureKFallbackVerificationTest in `commonTest` — RFC KAT verification of PureK implementations directly, independent of dispatch layer
+
 ### Changed
+
 - CI `android-matrix` job now verifies `compileAndroidMain` only (compile-time verification across SDK 21/28/29/37) — removed misleading `jvmTest` runs that showed identical JCA-dispatch results regardless of compileSdk
 - Removed `android-emulator` CI job: KMP AGP 9.x does not auto-create `androidInstrumentedTest` source set or `androidConnectedCheck` task; emulator used `arm64-v8a` system image on `ubuntu-latest` (x86_64)
 - `scripts/ci-summary.py` dispatch table now shows native, PureK, and simulated-fallback test results; platform label includes compileSdk level (e.g. "JVM [JDK 21] / compileSdk=21"); added transparent SDK-level dispatch notes explaining that matrix jobs verify compilation only and tests run on JVM/JDK 21
 - macOS `build` job: `html { onCheck }` reads `koverHtmlOnCheck` property (default `true`); CI sets it to `false` to skip HTML report generation on CI
+
 ### Fixed
+
 - `TimingHarnessTest` "constant-time operation" test no longer fails spuriously on CI — increased iterations to 100_000 and warmup to 10_000 so per-sample durations reach millisecond scale where `System.nanoTime()` measurement is stable; added zero-median guard in `assertConstantTime` to prevent NaN/Infinity from sub-nanosecond truncation
 - `.gitignore` now excludes `.env` and `.env.*` — prevents credential leaks
 - CODEOWNERS now points to `/crypto/src/` instead of the non-existent `/meshlink/src/`
