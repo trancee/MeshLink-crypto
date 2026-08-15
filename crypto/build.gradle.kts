@@ -232,6 +232,9 @@ signing {
     // Normalize line endings: GitHub Secrets may inject CRLF which BouncyCastle
     // (used by the signing plugin) cannot parse, even though gpg handles it fine.
     var normalizedKey = signingKey.trim().replace("\r\n", "\n").replace("\r", "\n")
+    // Some secret managers store keys with literal backslash-n sequences
+    // instead of actual newline characters. Convert them to real newlines.
+    normalizedKey = normalizedKey.replace("\\n", "\n").replace("\\r", "\n")
     // Some secret managers store the key without ASCII armor headers.
     // Wrap in standard PGP private key block delimiters if missing.
     if (!normalizedKey.contains("BEGIN PGP")) {

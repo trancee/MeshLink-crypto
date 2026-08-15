@@ -31,18 +31,45 @@ jobs:
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
-          if [ -n "$SIGNING_KEY" ]; then
-            echo "SIGNING_KEY is set (length: ${#SIGNING_KEY})"
-            echo "$SIGNING_KEY" | head -1
-            echo "$SIGNING_KEY" | tail -1
-            echo "$SIGNING_KEY" > /tmp/signing-key.pgp
-            gpg --batch --import --import-options show-only /tmp/signing-key.pgp \
-              && echo "PGP key is valid" \
-              || echo "ERROR: PGP key is invalid or cannot be parsed"
-          else
-            echo "ERROR: SIGNING_KEY env var is not set"
-            exit 1
+          echo "SIGNING_KEY length: ${#SIGNING_KEY}"
+          echo "Has PGP headers: $(echo "$SIGNING_KEY" | grep -c 'BEGIN PGP')"
+          echo "Has literal backslash-n: $(echo "$SIGNING_KEY" | grep -c '\\n')"
+
+          # Write raw key to file
+          printf '%s\n' "$SIGNING_KEY" > /tmp/signing-key-raw.asc
+
+          # Try as-is
+          if gpg --batch --import --import-options show-only /tmp/signing-key-raw.asc 2>/dev/null; then
+            cp /tmp/signing-key-raw.asc /tmp/signing-key.asc
+            echo "Key is valid as-is"
+            exit 0
           fi
+
+          # Try with PGP headers added
+          if ! grep -q 'BEGIN PGP' /tmp/signing-key-raw.asc; then
+            printf '-----BEGIN PGP PRIVATE KEY BLOCK-----\n\n%s\n-----END PGP PRIVATE KEY BLOCK-----\n' \
+              "$(cat /tmp/signing-key-raw.asc)" > /tmp/signing-key-headers.asc
+            if gpg --batch --import --import-options show-only /tmp/signing-key-headers.asc 2>/dev/null; then
+              cp /tmp/signing-key-headers.asc /tmp/signing-key.asc
+              echo "Key is valid with headers added"
+              exit 0
+            fi
+          fi
+
+          # Try converting literal \n to actual newlines
+          printf '%b' "$SIGNING_KEY" > /tmp/signing-key-converted.asc
+          if gpg --batch --import --import-options show-only /tmp/signing-key-converted.asc 2>/dev/null; then
+            cp /tmp/signing-key-converted.asc /tmp/signing-key.asc
+            echo "Key is valid with newline conversion"
+            exit 0
+          fi
+
+          echo "ERROR: PGP key cannot be parsed in any format"
+          echo "The SIGNING_KEY secret appears to be malformed."
+          echo "Please re-export your PGP key with:"
+          echo "  gpg --armor --export-secret-keys YOUR_KEY_ID > key.asc"
+          echo "And copy the ENTIRE file contents (including BEGIN/END headers) into the SIGNING_KEY secret."
+          exit 1
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because
         # SIGNING_KEY is a multi-line PGP key block that breaks shell
