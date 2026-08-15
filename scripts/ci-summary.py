@@ -50,15 +50,6 @@ PLATFORM_DISPATCH = {
         "Ed25519": "native (JCA)",
         "ChaCha20-Poly1305": "native (JCA)",
     },
-    "iosSimulatorArm64Test": {
-        "SHA-256": "native (Darwin)",
-        "SHA-512": "native (Darwin)",
-        "HMAC-SHA-256": "native (Darwin)",
-        "HKDF-SHA-256": "native (Darwin)",
-        "X25519": "native (Darwin)",
-        "Ed25519": "native (Darwin)",
-        "ChaCha20-Poly1305": "PureK fallback",
-    },
 }
 
 
@@ -121,8 +112,6 @@ def friendly_label(suite_dir):
         if compile_sdk:
             return f"JVM [JDK 21] / compileSdk={compile_sdk}"
         return "JVM [JDK 21]"
-    if suite_dir == "iosSimulatorArm64Test":
-        return "iOS Simulator (arm64)"
     return suite_dir.replace("Test", "")
 
 

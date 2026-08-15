@@ -34,7 +34,6 @@ kotlin {
   }
 
   iosArm64()
-  iosSimulatorArm64()
 
   sourceSets {
     getByName("commonTest") {
@@ -51,20 +50,15 @@ kotlin {
   abiValidation {}
 }
 
-// iOS (native) tests require a running simulator/device to execute. On macOS we enable
-// the arm64 iOS simulator test (iosSimulatorArm64Test) to validate native dispatch
-// interop (ADR-0002) via InteropHarnessTest (commonTest, which uses kotlin.test —
-// multiplatform, no JUnit 5 tags needed). On non-macOS hosts all iOS tests are disabled
-// so `:check` is green for local development.
-// iOS binaries still compile (metadata + KLib) and feed the abiValidation gate;
-// the pure-K path is covered by the JVM suite + kover. (ADR-0007 / ticket 01.)
+// iOS native tests (iosArm64Test) require a connected iOS device and are disabled.
+// The pure-K path is covered by the JVM suite + kover; native dispatch is
+// validated by the compile-abiValidation gate. (ADR-0007 / ticket 01.)
 tasks
     .matching {
       it.name.startsWith("ios") && it.name.endsWith("Test")
     }
     .configureEach {
-      val isMacOs = System.getProperty("os.name").lowercase().contains("mac")
-      enabled = isMacOs && name == "iosSimulatorArm64Test"
+      enabled = false
     }
 
 // JUnit 5 trait-tag filter (ADR-0003, seam 3). Tests carry @Tag annotations.
@@ -170,6 +164,27 @@ spotless {
 // and PGP signing. Credentials read from Gradle properties (set locally via
 // ~/.gradle/gradle.properties or as env vars.
 publishing {
+  publications {
+    // Rename published artifactIds from "crypto-*" to "meshlink-crypto*".
+    // The project dir is still "crypto/"; only the Maven coordinates change.
+    // Gradle consumers resolve platform variants via module metadata automatically.
+    // Maven consumers use the explicit artifactIds below.
+    named<MavenPublication>("kotlinMultiplatform") {
+      setArtifactId("meshlink-crypto")
+    }
+    named<MavenPublication>("android") {
+      setArtifactId("meshlink-crypto-android")
+    }
+    named<MavenPublication>("jvm") {
+      setArtifactId("meshlink-crypto-jvm")
+    }
+    named<MavenPublication>("iosArm64") {
+      setArtifactId("meshlink-crypto-ios")
+    }
+    // iosSimulatorArm64 was dropped: only iosArm64 (device) is needed for
+    // distribution; the simulator build is a local dev concern only.
+  }
+
   publications.withType<MavenPublication> {
     pom {
       name.set("MeshLink-crypto")
