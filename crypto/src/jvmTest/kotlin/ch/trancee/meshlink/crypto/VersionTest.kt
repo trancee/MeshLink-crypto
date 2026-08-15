@@ -9,6 +9,6 @@ internal class VersionTest {
   @Tag("smoke")
   @Test
   fun `module version matches the published contract`() {
-    assertEquals("0.1.0-SNAPSHOT", moduleVersion())
+    assertEquals("0.1.0", moduleVersion())
   }
 }
