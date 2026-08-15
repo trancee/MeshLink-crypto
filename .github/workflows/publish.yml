@@ -227,4 +227,4 @@ jobs:
           fi
           echo "=== Deployment transferred to namespace: $NAMESPACE ==="
           echo "Verify via Central Portal: https://central.sonatype.com/deployments"
-          echo "Maven Central search: https://search.maven.org/search?q=g:ch.trancee.meshlink"
+          echo "Maven Central search: https://search.maven.org/search?q=g:ch.trancee.meshlink.crypto"

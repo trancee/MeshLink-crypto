@@ -10,8 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Group ID changed from `ch.trancee.meshlink` to `ch.trancee.meshlink.crypto` —
+  the Maven `group` in `crypto/build.gradle.kts` now matches the package namespace
+  (`ch.trancee.meshlink.crypto.*`) and the Central Portal deployment name.
 - Artifact coordinates changed from `ch.trancee.meshlink:crypto` to
-  `ch.trancee.meshlink:meshlink-crypto` (main metadata publication).
+  `ch.trancee.meshlink.crypto:meshlink-crypto` (main metadata publication).
   Platform-specific publications renamed:
   - `crypto-android` → `meshlink-crypto-android`
   - `crypto-jvm` → `meshlink-crypto-jvm`
@@ -27,8 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publishing transfer namespace changed to `ch.trancee.meshlink.crypto` (was
   `ch.trancee.meshlink`) — the Central Portal OSSRH Staging API deployment name
   now appears as `ch.trancee.meshlink.crypto` instead of `ch.trancee.meshlink`.
-  Only the `NAMESPACE` variable in `.github/workflows/publish.yml` changed;
-  the Maven `group` in `crypto/build.gradle.kts` remains `ch.trancee.meshlink`.
+  Both the `NAMESPACE` variable in `.github/workflows/publish.yml` and the
+  Maven `group` in `crypto/build.gradle.kts` now use `ch.trancee.meshlink.crypto`.
+- Publishing yamllint failure: Python heredoc inside YAML block scalar
+  broke YAML parsing; single-line `python3 -c` alternative was 192 chars
+  (exceeds 120-char yamllint limit). Replaced with `jq` for staging repo
+  parsing in the "Drop stale staging repositories" step.
 - Publishing `402 Payment Required` from `s01.oss.sonatype.org`: the Sonatype
   account has migrated to the Central Portal. Migrated publishing repository URL
   to `https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/`
@@ -37,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (credentials are legacy OSSRH tokens — need Central Portal User Token) vs
   other errors. Added post-upload `POST /manual/upload/defaultRepository/<namespace>`
   transfer step required by the Central Portal to make staged deployments visible.
+  Added post-transfer verification step that queries the staging API to confirm
+  the deployment was accepted (state changes to "closed", `portal_deployment_id`
+  becomes non-null).
 
 ## [0.1.0] — 2026-08-15
 

@@ -13,7 +13,7 @@ plugins {
   id("signing")
 }
 
-group = "ch.trancee.meshlink"
+group = "ch.trancee.meshlink.crypto"
 
 // Version comes from the version catalog (libs.versions TOML); not hardcoded.
 version = libs.versions.library.get()

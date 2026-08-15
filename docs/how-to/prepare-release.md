@@ -126,18 +126,18 @@ After the workflow completes, artifacts typically appear on Maven Central within
 
 ```bash
 # Check the POM file exists
-curl -sI "https://repo1.maven.org/maven2/ch/trancee/meshlink/meshlink-crypto/0.2.0/meshlink-crypto-0.2.0.pom"
+curl -sI "https://repo1.maven.org/maven2/ch/trancee/meshlink/crypto/meshlink-crypto/0.2.0/meshlink-crypto-0.2.0.pom"
 
 # Check the search index
-curl -sS "https://search.maven.org/solrsearch/select?q=g:ch.trancee.meshlink&rows=20&wt=json"
+curl -sS "https://search.maven.org/solrsearch/select?q=g:ch.trancee.meshlink.crypto&rows=20&wt=json"
 ```
 
 Expected artifacts:
 
-- `ch.trancee.meshlink:meshlink-crypto` — main metadata (Gradle KMP consumers)
-- `ch.trancee.meshlink:meshlink-crypto-jvm` — JVM (with Javadoc JAR)
-- `ch.trancee.meshlink:meshlink-crypto-android` — Android
-- `ch.trancee.meshlink:meshlink-crypto-ios` — iOS arm64 (KLib)
+- `ch.trancee.meshlink.crypto:meshlink-crypto` — main metadata (Gradle KMP consumers)
+- `ch.trancee.meshlink.crypto:meshlink-crypto-jvm` — JVM (with Javadoc JAR)
+- `ch.trancee.meshlink.crypto:meshlink-crypto-android` — Android
+- `ch.trancee.meshlink.crypto:meshlink-crypto-ios` — iOS arm64 (KLib)
 
 ## Troubleshooting
 
