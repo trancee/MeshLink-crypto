@@ -168,7 +168,7 @@ spotless {
 // Publishing configuration for Maven Central.
 // KMP auto-registers MavenPublication per target. Configure shared POM metadata
 // and PGP signing. Credentials read from Gradle properties (set locally via
-// ~/.gradle/gradle/properties or in CI via -P flags).
+// ~/.gradle/gradle.properties or as env vars.
 publishing {
   publications.withType<MavenPublication> {
     pom {
@@ -199,26 +199,33 @@ publishing {
     }
   }
 
-  // Maven Central repository: credentials from Gradle properties (-P flags in CI).
+  // Maven Central repository: credentials from Gradle properties or env vars.
   repositories {
     maven {
       name = "MavenCentral"
       url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
       credentials {
-        username = findProperty("MAVEN_CENTRAL_USERNAME") as String? ?: ""
-        password = findProperty("MAVEN_CENTRAL_PASSWORD") as String? ?: ""
+        username = findProperty("MAVEN_CENTRAL_USERNAME") as String?
+            ?: System.getenv("MAVEN_CENTRAL_USERNAME") ?: ""
+        password = findProperty("MAVEN_CENTRAL_PASSWORD") as String?
+            ?: System.getenv("MAVEN_CENTRAL_PASSWORD") ?: ""
       }
     }
   }
 }
 
 // Signing: PGP-sign all published artifacts.
-// In CI, SIGNING_KEY_ID / SIGNING_KEY / SIGNING_KEY_PASSWORD are passed as -P flags.
-// Locally, set them in ~/.gradle/gradle.properties.
+// In CI, signing config is passed via environment variables (SIGNING_KEY_ID,
+// SIGNING_KEY, SIGNING_KEY_PASSWORD) because the PGP key block is multi-line
+// and breaks -P flag shell expansion. Locally, set them in
+// ~/.gradle/gradle.properties or export as env vars.
 signing {
   val signingKeyId: String? = findProperty("signingKeyId") as String?
+      ?: System.getenv("SIGNING_KEY_ID")
   val signingKey: String? = findProperty("signingKey") as String?
+      ?: System.getenv("SIGNING_KEY")
   val signingPassword: String? = findProperty("signingKeyPassword") as String?
+      ?: System.getenv("SIGNING_KEY_PASSWORD")
   if (signingKey != null && signingKeyId != null) {
     useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
     sign(publishing.publications)
