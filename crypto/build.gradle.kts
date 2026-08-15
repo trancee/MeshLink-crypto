@@ -233,5 +233,6 @@ signing {
     // (used by the signing plugin) cannot parse, even though gpg handles it fine.
     val normalizedKey = signingKey.trim().replace("\r\n", "\n").replace("\r", "\n")
     useInMemoryPgpKeys(null as String?, normalizedKey, signingPassword)
+    sign(publishing.publications)
   }
 }
