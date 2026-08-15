@@ -74,18 +74,16 @@ jobs:
         run: |
           STATUS=$(curl -sS -o /tmp/sonatype-status.txt -w '%{http_code}' \
             -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
-            "https://s01.oss.sonatype.org/service/rest/organizations")
-          echo "Sonatype API status: $STATUS"
+            "https://s01.oss.sonatype.org/service/local/staging/profiles")
+          echo "OSSRH staging profiles status: $STATUS"
           echo "Response: $(head -c 500 /tmp/sonatype-status.txt)"
           if [ "$STATUS" -eq 401 ]; then
             echo "::error::Maven Central credentials are invalid (401 Unauthorized)"
             exit 1
           elif [ "$STATUS" -eq 402 ]; then
-            echo "::error::Maven Central credentials accepted but account not provisioned (402 Payment Required)"
-            echo "Check: https://s01.oss.sonatype.org/ — account must be provisioned for ch.trancee namespace"
-            echo "If using new Central Portal: generate an access token at https://central.sonatype.com/"
+            echo "::error::Account not provisioned for deployment (402 Payment Required)"
           elif [ "$STATUS" -eq 200 ]; then
-            echo "Credentials are valid"
+            echo "Credentials are valid for OSSRH staging"
           fi
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because
