@@ -50,6 +50,14 @@ implementations and per-primitive native fallback:
 
 ### Fixed
 
+- Publish workflow signing failure: multi-line GPG key block (SIGNING_KEY)
+  broke shell expansion when passed via `-P` flags — signing config now passed
+  exclusively via environment variables
+- Signing key ID format validation: Gradle signing plugin rejects GPG
+  fingerprints — build config falls back to `null` and lets the plugin extract
+  the key ID from the PGP key itself
+- `actions/checkout` upgraded from @v5 to @v7 across all workflows
+
 - `TimingHarnessTest` "constant-time operation" test no longer fails spuriously on CI — increased iterations to 100_000 and warmup to 10_000 so per-sample durations reach millisecond scale where `System.nanoTime()` measurement is stable; added zero-median guard in `assertConstantTime` to prevent NaN/Infinity from sub-nanosecond truncation
 - `.gitignore` now excludes `.env` and `.env.*` — prevents credential leaks
 - CODEOWNERS now points to `/crypto/src/` instead of the non-existent `/meshlink/src/`

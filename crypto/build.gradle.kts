@@ -226,8 +226,14 @@ signing {
       ?: System.getenv("SIGNING_KEY")
   val signingPassword: String? = findProperty("signingKeyPassword") as String?
       ?: System.getenv("SIGNING_KEY_PASSWORD")
-  if (signingKey != null && signingKeyId != null) {
-    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+  if (signingKey != null) {
+    // The signing plugin rejects key IDs in fingerprint format.
+    // If the provided ID doesn't match 8/16 hex chars, pass null so
+    // the plugin extracts the key ID from the PGP key itself.
+    val keyId = signingKeyId?.takeIf {
+      it.matches(Regex("^(0x)?[0-9A-Fa-f]{8}([0-9A-Fa-f]{8})?$"))
+    }
+    useInMemoryPgpKeys(keyId, signingKey, signingPassword)
     sign(publishing.publications)
   }
 }
