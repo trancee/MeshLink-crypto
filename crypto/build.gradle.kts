@@ -229,7 +229,9 @@ signing {
   val signingPassword: String? =
       findProperty("signingKeyPassword") as String? ?: System.getenv("SIGNING_KEY_PASSWORD")
   if (signingKey != null) {
-    useInMemoryPgpKeys(null as String?, signingKey, signingPassword)
-    sign(publishing.publications)
+    // Normalize line endings: GitHub Secrets may inject CRLF which BouncyCastle
+    // (used by the signing plugin) cannot parse, even though gpg handles it fine.
+    val normalizedKey = signingKey.trim().replace("\r\n", "\n").replace("\r", "\n")
+    useInMemoryPgpKeys(null as String?, normalizedKey, signingPassword)
   }
 }
