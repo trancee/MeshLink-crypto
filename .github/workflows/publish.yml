@@ -93,14 +93,49 @@ jobs:
           else
             echo "Unexpected status: $STATUS"
           fi
+      - name: Drop stale staging repositories
+        # The OSSRH Staging API may leave repositories in "closed" state from
+        # previous failed publishes. Drop them before a new publish to avoid
+        # "Repository is in state closed and must be dropped" errors.
+        # See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
+        if: success()
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          echo "=== Listing staging repositories ==="
+          STATUS=$(curl -sS -o /tmp/staged-status.txt -w '%{http_code}' \
+            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            -H "Accept: application/json" \
+            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories")
+          echo "Search status: $STATUS"
+          echo "Response: $(cat /tmp/staged-status.txt)"
+          # Extract repo keys with state=closed and drop them (single-line Python)
+          REPOS=""
+          if [ "$STATUS" = "200" ]; then
+            REPOS=$(python3 -c "import json;[print(r.get('key','')) for r in json.loads(open('/tmp/staged-status.txt').read()).get('repositories',[]) if r.get('state')=='closed']" 2>/dev/null)
+          fi
+          if [ -z "$REPOS" ]; then
+            echo "No closed staging repositories to drop."
+          else
+            for repo in $REPOS; do
+              echo "Dropping stale repository: $repo"
+              DROP_STATUS=$(curl -sS -o /tmp/drop-status.txt -w '%{http_code}' \
+                -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+                -H "Accept: application/json" \
+                -X DELETE \
+                "https://ossrh-staging-api.central.sonatype.com/manual/drop/repository/$repo")
+              echo "Drop status: $DROP_STATUS"
+              echo "Response: $(cat /tmp/drop-status.txt)"
+            done
+          fi
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because
         # SIGNING_KEY is a multi-line PGP key block that breaks shell
-        # command line expansion.
-        # The signing block normalizes line endings, converts literal \\n
-        # escape sequences to real newlines, and auto-wraps keys missing
-        # PGP ASCII armor headers. keyId is passed as null so the plugin
-        # extracts it from the PGP private key block itself.
+        # command line expansion. The signing block normalizes line endings,
+        # converts literal \n escape sequences to real newlines, and auto-wraps
+        # keys missing PGP ASCII armor headers. keyId is passed as null so the
+        # plugin extracts it from the PGP private key block itself.
         # The publishing repository was migrated from s01.oss.sonatype.org
         # (legacy OSSRH, returns HTTP 402 when account is on Central Portal)
         # to ossrh-staging-api.central.sonatype.com (Central Portal OSSRH

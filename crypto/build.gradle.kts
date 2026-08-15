@@ -158,6 +158,12 @@ spotless {
 
 // Dokka (ticket 01): KDoc generation from the start. Apply-only; Dokka derives the
 // module name from the project and creates the `dokkaGenerate` task.
+// Maven Central requires a Javadoc JAR for JVM publications (ADR-0007).
+// For Kotlin KMP projects, Dokka HTML output serves as the Javadoc replacement.
+tasks.register<Jar>("javadocJarJvm") {
+  archiveClassifier.set("javadoc")
+  from(tasks.named("dokkaGenerateHtml"))
+}
 
 // Publishing configuration for Maven Central.
 // KMP auto-registers MavenPublication per target. Configure shared POM metadata
@@ -183,6 +189,10 @@ publishing {
           else -> targetName
         }
     )
+    // Attach Javadoc JAR to JVM publication for Maven Central requirement.
+    if (targetName == "jvm") {
+      artifact(tasks.named("javadocJarJvm"))
+    }
     pom {
       name.set("MeshLink-crypto")
       description.set(
