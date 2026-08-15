@@ -226,5 +226,4 @@ jobs:
               echo "(no jq parsing, raw: $(cat /tmp/verify-status.txt))"
           fi
           echo "=== Deployment transferred to namespace: $NAMESPACE ==="
-          echo "Verify via Central Portal: https://central.sonatype.com/deployments"
-          echo "Maven Central search: https://search.maven.org/search?q=g:ch.trancee.meshlink.crypto"
+          echo "Maven Central search: https://search.maven.org/search?q=g:ch.trancee.meshlink"

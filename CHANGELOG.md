@@ -10,28 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Group ID changed from `ch.trancee.meshlink` to `ch.trancee.meshlink.crypto` —
-  the Maven `group` in `crypto/build.gradle.kts` now matches the package namespace
-  (`ch.trancee.meshlink.crypto.*`) and the Central Portal deployment name.
 - Artifact coordinates changed from `ch.trancee.meshlink:crypto` to
-  `ch.trancee.meshlink.crypto:meshlink-crypto` (main metadata publication).
+  `ch.trancee.meshlink:meshlink-crypto` (main metadata publication).
   Platform-specific publications renamed:
   - `crypto-android` → `meshlink-crypto-android`
   - `crypto-jvm` → `meshlink-crypto-jvm`
   - `crypto-iosarm64` → `meshlink-crypto-ios`
   - `crypto-iosSimulatorArm64` → dropped (only `iosArm64` device binary needed for
     distribution; simulator builds are a local development concern)
+- Publishing transfer namespace changed from `ch.trancee.meshlink` to
+  `ch.trancee.meshlink.crypto` in `.github/workflows/publish.yml` — the Central
+  Portal deployment now appears under the `ch.trancee.meshlink.crypto` namespace.
+  Note: the Maven `group` in `crypto/build.gradle.kts` remains
+  `ch.trancee.meshlink` (the staging profile is `ch.trancee`, the account root,
+  and cannot be overridden via code).
 - `SIGNING_KEY_ID` env var is no longer consumed by the build — the signing
   plugin extracts the key ID from the PGP private key block automatically.
   The secret can be removed from GitHub without affecting the build.
 
 ### Fixed
 
-- Publishing transfer namespace changed to `ch.trancee.meshlink.crypto` (was
-  `ch.trancee.meshlink`) — the Central Portal OSSRH Staging API deployment name
-  now appears as `ch.trancee.meshlink.crypto` instead of `ch.trancee.meshlink`.
-  Both the `NAMESPACE` variable in `.github/workflows/publish.yml` and the
-  Maven `group` in `crypto/build.gradle.kts` now use `ch.trancee.meshlink.crypto`.
 - Publishing yamllint failure: Python heredoc inside YAML block scalar
   broke YAML parsing; single-line `python3 -c` alternative was 192 chars
   (exceeds 120-char yamllint limit). Replaced with `jq` for staging repo
