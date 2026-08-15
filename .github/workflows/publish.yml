@@ -67,23 +67,35 @@ jobs:
           echo "  gpg --armor --export-secret-keys YOUR_KEY_ID > key.asc"
           echo "And copy the ENTIRE file contents (including BEGIN/END headers) into the SIGNING_KEY secret."
           exit 1
-      - name: Check Sonatype credentials
+      - name: Check Sonatype credentials (Central Portal)
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
-          STATUS=$(curl -sS -o /tmp/sonatype-status.txt -w '%{http_code}' \
+          echo "=== Testing Central Portal credentials ==="
+          # Test Central Portal authentication
+          STATUS=$(curl -sS -o /tmp/central-status.txt -w '%{http_code}' \
+            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            "https://central-upload.sonatype.com/")
+          echo "Central Portal upload URL: $STATUS"
+          echo "  Response: $(head -c 500 /tmp/central-status.txt)"
+
+          # Test legacy OSSRH (for comparison)
+          STATUS2=$(curl -sS -o /tmp/ossrh-status.txt -w '%{http_code}' \
             -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
             "https://s01.oss.sonatype.org/service/local/staging/profiles")
-          echo "OSSRH staging profiles status: $STATUS"
-          echo "Response: $(head -c 500 /tmp/sonatype-status.txt)"
-          if [ "$STATUS" -eq 401 ]; then
-            echo "::error::Maven Central credentials are invalid (401 Unauthorized)"
+          echo "Legacy OSSRH (s01): $STATUS2"
+          echo "  Response: $(head -c 500 /tmp/ossrh-status.txt)"
+
+          # If Central Portal returns 200 or 401 (not 404), it exists as an endpoint
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Central Portal credentials are valid"
+          elif [ "$STATUS" -eq 401 ]; then
+            echo "::error::Central Portal credentials are invalid (401)"
             exit 1
           elif [ "$STATUS" -eq 402 ]; then
-            echo "::error::Account not provisioned for deployment (402 Payment Required)"
-          elif [ "$STATUS" -eq 200 ]; then
-            echo "Credentials are valid for OSSRH staging"
+            echo "::error::Central Portal account not provisioned (402)"
+            exit 1
           fi
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because

@@ -199,11 +199,14 @@ publishing {
     }
   }
 
-  // Maven Central repository: credentials from Gradle properties or env vars.
+  // Maven Central / Central Portal repository.
+  // Uses central-upload.sonatype.com (the new Central Portal) instead of
+  // s01.oss.sonatype.org (legacy OSSRH) because the account has migrated
+  // to the Central Portal and s01 returns HTTP 402 Payment Required.
   repositories {
     maven {
       name = "MavenCentral"
-      url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+      url = uri("https://central-upload.sonatype.com/")
       credentials {
         username =
             findProperty("MAVEN_CENTRAL_USERNAME") as String?
