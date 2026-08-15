@@ -164,28 +164,25 @@ spotless {
 // and PGP signing. Credentials read from Gradle properties (set locally via
 // ~/.gradle/gradle.properties or as env vars.
 publishing {
-  publications {
-    // Rename published artifactIds from "crypto-*" to "meshlink-crypto*".
-    // The project dir is still "crypto/"; only the Maven coordinates change.
-    // Gradle consumers resolve platform variants via module metadata automatically.
-    // Maven consumers use the explicit artifactIds below.
-    named<MavenPublication>("kotlinMultiplatform") {
-      setArtifactId("meshlink-crypto")
-    }
-    named<MavenPublication>("android") {
-      setArtifactId("meshlink-crypto-android")
-    }
-    named<MavenPublication>("jvm") {
-      setArtifactId("meshlink-crypto-jvm")
-    }
-    named<MavenPublication>("iosArm64") {
-      setArtifactId("meshlink-crypto-ios")
-    }
-    // iosSimulatorArm64 was dropped: only iosArm64 (device) is needed for
-    // distribution; the simulator build is a local dev concern only.
-  }
-
+  // Rename published artifactIds from "crypto-*" to "meshlink-crypto*".
+  // The project dir is still "crypto/"; only the Maven coordinates change.
+  // Gradle consumers resolve platform variants via module metadata automatically.
+  // Maven consumers use the explicit artifactIds. iosSimulatorArm64 was dropped:
+  // only iosArm64 (device) is needed for distribution; the simulator build is a
+  // local dev concern only.
+  // withType<MavenPublication> is lazy: on non-macOS CI hosts the iosArm64
+  // publication may not exist, but configureEach skips it gracefully.
   publications.withType<MavenPublication> {
+    val targetName = name
+    setArtifactId(
+        when (targetName) {
+          "kotlinMultiplatform" -> "meshlink-crypto"
+          "android" -> "meshlink-crypto-android"
+          "jvm" -> "meshlink-crypto-jvm"
+          "iosArm64" -> "meshlink-crypto-ios"
+          else -> targetName
+        }
+    )
     pom {
       name.set("MeshLink-crypto")
       description.set(
