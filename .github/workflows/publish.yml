@@ -110,10 +110,11 @@ jobs:
             "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories")
           echo "Search status: $STATUS"
           echo "Response: $(cat /tmp/staged-status.txt)"
-          # Extract repo keys with state=closed and drop them (single-line Python)
+          # Extract closed repo keys using jq (avoids Python heredoc YAML issues)
           REPOS=""
           if [ "$STATUS" = "200" ]; then
-            REPOS=$(python3 -c "import json;[print(r.get('key','')) for r in json.loads(open('/tmp/staged-status.txt').read()).get('repositories',[]) if r.get('state')=='closed']" 2>/dev/null)
+            REPOS=$(jq -r '.repositories[]|select(.state=="closed")|.key' \
+              /tmp/staged-status.txt 2>/dev/null)
           fi
           if [ -z "$REPOS" ]; then
             echo "No closed staging repositories to drop."
