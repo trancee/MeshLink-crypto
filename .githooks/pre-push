@@ -19,7 +19,7 @@ changed_files_manifest="$(mktemp)"
 commit_manifest="$(mktemp)"
 trap 'rm -f "$changed_files_manifest" "$commit_manifest"' EXIT
 
-conventional_commit_pattern='^(feat|fix|test|docs|refactor|perf|chore)(\([A-Za-z0-9._/-]+))?(!)?: .+'
+conventional_commit_pattern='^(feat|fix|test|docs|refactor|perf|chore)(\([^)]+\))?(!)?: .+'
 
 append_changed_files() {
   local range="$1"
@@ -29,6 +29,11 @@ append_changed_files() {
 append_commit_range() {
   local range="$1"
   git rev-list "$range" >> "$commit_manifest"
+}
+
+append_commit_files() {
+  local ref="$1"
+  git diff --name-only "$ref" >> "$changed_files_manifest"
 }
 
 determine_base_ref() {

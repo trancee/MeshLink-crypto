@@ -4,7 +4,7 @@ set -euo pipefail
 message_file="${1:?commit message file is required}"
 message="$(head -n 1 "$message_file" | tr -d '\r')"
 
-pattern='^(feat|fix|test|docs|refactor|perf|chore)(\([A-Za-z0-9._/-]+\))?(!)?: .+'
+pattern='^(feat|fix|test|docs|refactor|perf|chore)(\([^)]+\))?(!)?: .+'
 
 if [[ "$message" =~ $pattern ]]; then
   exit 0
