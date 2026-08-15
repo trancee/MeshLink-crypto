@@ -205,10 +205,14 @@ publishing {
       name = "MavenCentral"
       url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
       credentials {
-        username = findProperty("MAVEN_CENTRAL_USERNAME") as String?
-            ?: System.getenv("MAVEN_CENTRAL_USERNAME") ?: ""
-        password = findProperty("MAVEN_CENTRAL_PASSWORD") as String?
-            ?: System.getenv("MAVEN_CENTRAL_PASSWORD") ?: ""
+        username =
+            findProperty("MAVEN_CENTRAL_USERNAME") as String?
+                ?: System.getenv("MAVEN_CENTRAL_USERNAME")
+                ?: ""
+        password =
+            findProperty("MAVEN_CENTRAL_PASSWORD") as String?
+                ?: System.getenv("MAVEN_CENTRAL_PASSWORD")
+                ?: ""
       }
     }
   }
@@ -220,10 +224,9 @@ publishing {
 // and breaks -P flag shell expansion. Locally, set them in
 // ~/.gradle/gradle.properties or export as env vars.
 signing {
-  val signingKey: String? = findProperty("signingKey") as String?
-      ?: System.getenv("SIGNING_KEY")
-  val signingPassword: String? = findProperty("signingKeyPassword") as String?
-      ?: System.getenv("SIGNING_KEY_PASSWORD")
+  val signingKey: String? = findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
+  val signingPassword: String? =
+      findProperty("signingKeyPassword") as String? ?: System.getenv("SIGNING_KEY_PASSWORD")
   if (signingKey != null) {
     // Pass null for keyId — the signing plugin extracts it from the PGP key itself.
     useInMemoryPgpKeys(null as String?, signingKey, signingPassword)
