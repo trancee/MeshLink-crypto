@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Artifact coordinates changed from `ch.trancee.meshlink:crypto` to
+  `ch.trancee.meshlink:meshlink-crypto` (main metadata publication).
+  Platform-specific publications renamed:
+  - `crypto-android` → `meshlink-crypto-android`
+  - `crypto-jvm` → `meshlink-crypto-jvm`
+  - `crypto-iosarm64` → `meshlink-crypto-ios`
+  - `crypto-iosSimulatorArm64` → dropped (only `iosArm64` device binary needed for
+    distribution; simulator builds are a local development concern)
+- `SIGNING_KEY_ID` env var is no longer consumed by the build — the signing
+  plugin extracts the key ID from the PGP private key block automatically.
+  The secret can be removed from GitHub without affecting the build.
+
 ### Fixed
 
 - Publish workflow `402 Payment Required` from `s01.oss.sonatype.org`: the Sonatype
