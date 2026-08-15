@@ -74,9 +74,9 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 - [Tutorial: First Encryption](docs/tutorials/first-encryption.md) — encrypt and decrypt a message step by step
 
 ### How-to guides
-
 - [How to: Integrate into a KMP Project](docs/how-to/integrate-kmp.md)
 - [How to: Run Tests and Quality Gates](docs/how-to/run-checks.md)
+- [How to: Prepare a Release](docs/how-to/prepare-release.md)
 - [How to: Add a Crypto Primitive](docs/how-to/add-primitive.md)
 - [How to: Follow Security and Usage Best Practices](docs/how-to/best-practices.md)
 
