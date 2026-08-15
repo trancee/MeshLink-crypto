@@ -11,6 +11,7 @@ The pure-Kotlin path is the only code that holds secrets and is authored by us; 
 ## Decision
 
 The pure-K path must pass three gates:
+
 1. **Wycheproof** test vectors for every primitive as the correctness oracle.
 2. A **static lint** that bans data-dependent branching (`if`/conditional) and secret-dependent indexing (`array[i]` with a secret index) in secret-data scopes.
 3. A **Wycheproof-routed timing test harness** that asserts no early-exit (e.g. comparisons must be constant-time, never `contentEquals()` or index-on-first-mismatch).

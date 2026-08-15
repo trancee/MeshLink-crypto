@@ -1,0 +1,27 @@
+# Config for lychee (link checker) — see scripts/check-markdown.sh and
+# docs/how-to/run-checks.md.
+#
+# Checks all Markdown files for broken internal anchors and external URLs.
+# Retries transient network failures before failing CI.
+exclude_path = [
+    ".agents/",
+    ".git/",
+    ".gradle/",
+    ".kotlin/",
+    # Generated ABI dump and build artifacts
+    "crypto/api/",
+    "crypto/build/",
+    "build/",
+]
+
+exclude = [
+    # Example excludes — add repo-specific patterns here.
+]
+
+# Retry transient network failures a few times before failing CI.
+max_retries = 3
+retry_wait_time = 2
+timeout = 20
+
+# Treat 429 (rate limit) as a source of retries, not an immediate failure.
+accept = ["100..=103", "200..=299", "429"]

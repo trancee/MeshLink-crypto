@@ -89,5 +89,6 @@ body:
     id: additional
     attributes:
       label: Additional context
-      description: Add any other context, logs, or proof-of-concept code. For timing issues, attach the timing harness output.
+      description: >- # yamllint disable-line rule:line-length
+        Add any other context, logs, or proof-of-concept code. For timing issues, attach the timing harness output.
       render: "markdown"

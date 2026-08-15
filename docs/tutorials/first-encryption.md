@@ -37,7 +37,7 @@ println(ciphertext.joinToString("") { "%02x".format(it) })
 
 The ciphertext has this layout:
 
-```
+```text
 nonce (12 bytes) || encrypted message || tag (16 bytes)
 ```
 

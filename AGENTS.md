@@ -24,6 +24,7 @@ Write documentation in ASD-STE100 Simplified Technical English.
 ## Workflow
 
 Follow the 5-step agent workflow:
+
 1. Read relevant skill files before implementation, refactors, or any task where an established best practice applies.
 2. Prepare a Conventional Commit after each unit of work (pending approval — see Git above).
 3. Before opening a PR, run the `/code-review` skill and resolve any genuine issues it finds.

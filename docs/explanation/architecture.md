@@ -12,7 +12,7 @@ The library targets JVM, Android (API 21+), and iOS (arm64 + simulator). JS and 
 
 The project has two Gradle modules (see [ADR-0006](../adr/0006-module-layout.md)):
 
-```
+```text
 :crypto                  The single KMP module. All primitives and dispatch live here.
 :crypto-detekt-rules     A JVM-only subproject. Ships the custom ConstantTimeRule for detekt.
 ```
@@ -21,7 +21,7 @@ The root `build.gradle.kts` applies no plugins. Plugins are applied per-module v
 
 The `:crypto` module source set structure:
 
-```
+```text
 crypto/src/
 ├── commonMain/    expect declarations + pure-K implementations (shared engine)
 ├── commonTest/    Interop harness tests (run on all targets)
@@ -45,7 +45,7 @@ The dispatch is **per-primitive**. A single target can use native SHA-256 and pu
 
 ### Dispatch flow
 
-```
+```text
 Caller → Crypto / Hasher / Authenticator / Kdf / KeyExchange / Signer / Aead
   → expect/actual dispatch object (e.g. X25519)
     → CryptoBridge.x25519Native(scalar, u)   // native path

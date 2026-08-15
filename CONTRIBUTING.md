@@ -29,7 +29,6 @@ The repo keeps git hooks in `/.githooks/`. Install them, one time, per clone:
 git config core.hooksPath .githooks
 ```
 
-
 ## Pull requests
 
 - Conventional Commits.

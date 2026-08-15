@@ -6,7 +6,7 @@ accepted
 
 ## Context
 
-[SKIE](https://skie.kotlinlang.org) is a Kotlin Multiplatform tool that (a) prevents Kotlin/Native
+[SKIE](https://skie.co) is a Kotlin Multiplatform tool that (a) prevents Kotlin/Native
 reference-cycle leaks, (b) bridges Kotlin coroutines/`Flow` to Swift concurrency, and (c) improves
 Objective-C/Swift interop quality (exception handling, cleaner selectors). Question raised: include
 it in crypto-kmp's build?

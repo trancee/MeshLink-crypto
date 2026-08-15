@@ -58,21 +58,21 @@
 
 ## Source URLs
 
-- Repository: https://github.com/a-sit-plus/signum
-- SHA-256 (pure Kotlin): https://github.com/a-sit-plus/signum/blob/main/indispensable-josef/src/commonMain/kotlin/at/asitplus/signum/indispensable/josef/io/sha256.kt
-- HMAC (delegates to platform): https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/supreme/mac/MAC.kt
-- HKDF (delegates to platform): https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/supreme/kdf/KDF.kt
-- Digest expect/actual: https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/supreme/hash/DigestExtensions.kt
-- DigestImpl Android: https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidMain/kotlin/at/asitplus/signum/supreme/hash/DigestImpl.kt
-- DigestImpl JVM: https://github.com/a-sit-plus/signum/blob/main/supreme/src/jvmMain/kotlin/at/asitplus/signum/supreme/hash/DigestImpl.kt
-- DigestImpl iOS: https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/hash/DigestImpl.kt
-- AES JCA: https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidJvmMain/kotlin/at/asitplus/signum/supreme/symmetric/AES.jca.kt
-- ChaCha JCA: https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidJvmMain/kotlin/at/asitplus/signum/supreme/symmetric/ChaCha.jca.kt
-- Encryptor JCA: https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidJvmMain/kotlin/at/asitplus/signum/supreme/symmetric/Encryptor.jca.kt
-- AES iOS: https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/symmetric/AES.ios.kt
-- ChaCha iOS: https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/symmetric/ChaCha.ios.kt
-- AndroidKeyStoreProvider: https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidMain/kotlin/at/asitplus/signum/supreme/os/AndroidKeyStoreProvider.kt
-- IosKeychainProvider: https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/os/IosKeychainProvider.kt
-- JKSProvider: https://github.com/a-sit-plus/signum/blob/main/supreme/src/jvmMain/kotlin/at/asitplus/signum/supreme/os/JKSProvider.kt
-- RFC9380 (pure Kotlin math, but uses platform Digest): https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/ecmath/RFC9380.kt
-- SymmetricEncryptionAlgorithm: https://github.com/a-sit-plus/signum/blob/main/indispensable/src/commonMain/kotlin/at/asitplus/signum/indispensable/symmetric/SymmetricEncryptionAlgorithm.kt
+- Repository: <https://github.com/a-sit-plus/signum>
+- SHA-256 (pure Kotlin): <https://github.com/a-sit-plus/signum/blob/main/indispensable-josef/src/commonMain/kotlin/at/asitplus/signum/indispensable/josef/io/sha256.kt>
+- HMAC (delegates to platform): <https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/supreme/mac/MAC.kt>
+- HKDF (delegates to platform): <https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/supreme/kdf/KDF.kt>
+- Digest expect/actual: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/supreme/hash/DigestExtensions.kt>
+- DigestImpl Android: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidMain/kotlin/at/asitplus/signum/supreme/hash/DigestImpl.kt>
+- DigestImpl JVM: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/jvmMain/kotlin/at/asitplus/signum/supreme/hash/DigestImpl.kt>
+- DigestImpl iOS: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/hash/DigestImpl.kt>
+- AES JCA: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidJvmMain/kotlin/at/asitplus/signum/supreme/symmetric/AES.jca.kt>
+- ChaCha JCA: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidJvmMain/kotlin/at/asitplus/signum/supreme/symmetric/ChaCha.jca.kt>
+- Encryptor JCA: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidJvmMain/kotlin/at/asitplus/signum/supreme/symmetric/Encryptor.jca.kt>
+- AES iOS: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/symmetric/AES.ios.kt>
+- ChaCha iOS: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/symmetric/ChaCha.ios.kt>
+- AndroidKeyStoreProvider: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/androidMain/kotlin/at/asitplus/signum/supreme/os/AndroidKeyStoreProvider.kt>
+- IosKeychainProvider: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/iosMain/kotlin/at/asitplus/signum/supreme/os/IosKeychainProvider.kt>
+- JKSProvider: <https://github.com/a-sit-plus/signum/blob/main/supreme/src/jvmMain/kotlin/at/asitplus/signum/supreme/os/JKSProvider.kt>
+- RFC9380 (pure Kotlin math, but uses platform Digest): <https://github.com/a-sit-plus/signum/blob/main/supreme/src/commonMain/kotlin/at/asitplus/signum/ecmath/RFC9380.kt>
+- SymmetricEncryptionAlgorithm: <https://github.com/a-sit-plus/signum/blob/main/indispensable/src/commonMain/kotlin/at/asitplus/signum/indispensable/symmetric/SymmetricEncryptionAlgorithm.kt>

@@ -8,7 +8,7 @@
 
 ```bash
 cd /path/to/MeshLink-crypto
-./gradlew :crypto:publishToMavenLocal --rerun --no-build-cache
+./gradlew :crypto:publishToMavenLocal --rerun-tasks --no-build-cache
 ```
 
 2. Add `mavenLocal()` to your project's `settings.gradle.kts` or `build.gradle.kts`:

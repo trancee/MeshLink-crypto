@@ -1,0 +1,20 @@
+# Gitleaks config for MeshLink-crypto.
+#
+# Extends gitleaks' built-in default rule set (secret-pattern detection) and
+# adds repository-specific path excludes on top of it.
+[extend]
+useDefault = true
+
+[allowlist]
+# crypto/src/jvmTest/resources/wycheproof/ holds vendored Wycheproof JSON
+# test vectors — they contain hex strings that could trigger false positives.
+# .agents/ holds vendored agent skill files, also third-party content.
+# crypto/api/ contains generated ABI dumps.
+# docs/rfcs/ holds vendored RFC text files — RFC test vectors contain
+# hex-encoded key material that gitleaks misidentifies.
+paths = [
+  '''crypto/src/jvmTest/resources/wycheproof/.*''',
+  '''\.agents/.*''',
+  '''crypto/api/.*''',
+  '''docs/rfcs/.*''',
+]

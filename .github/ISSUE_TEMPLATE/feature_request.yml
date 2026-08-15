@@ -17,7 +17,9 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: Describe the feature you'd like. If this is a new RFC primitive, link to the RFC and specify which section.
+      description: >-
+        Describe the feature you'd like. If this is a new RFC primitive,
+        link to the RFC and specify which section.
       placeholder: |
         **RFC**: RFC 7748 §5
         **Primitive**: X25519 key agreement
@@ -32,7 +34,9 @@ body:
       label: Alternatives considered
       description: What did you consider instead? Why was it rejected?
       render: "markdown"
-      placeholder: "e.g. Using a third-party library — rejected because it adds a dependency and breaks the zero-dependency design (ADR-0005)."
+      placeholder: >-
+        e.g. Using a third-party library — rejected because it adds a
+        dependency and breaks the zero-dependency design (ADR-0005).
     validations:
       required: false
 
@@ -54,7 +58,7 @@ body:
       render: "markdown"
       options:
         - label: I have searched for existing requests to avoid duplicates
-        - label: I understand the project targets JVM + Android (API 21+) + iOS only — no JS/WASM
-        - label: For crypto primitives: I have identified the relevant RFC and test vectors (Wycheproof if available)
+        - label: "I understand the project targets JVM + Android (API 21+) + iOS only — no JS/WASM"
+        - label: "For crypto primitives: I have identified the relevant RFC and test vectors (Wycheproof if available)"
     validations:
       required: true
