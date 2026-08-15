@@ -24,7 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Publish workflow `402 Payment Required` from `s01.oss.sonatype.org`: the Sonatype
+- Publishing transfer namespace changed to `ch.trancee.meshlink.crypto` (was
+  `ch.trancee.meshlink`) — the Central Portal OSSRH Staging API deployment name
+  now appears as `ch.trancee.meshlink.crypto` instead of `ch.trancee.meshlink`.
+  Only the `NAMESPACE` variable in `.github/workflows/publish.yml` changed;
+  the Maven `group` in `crypto/build.gradle.kts` remains `ch.trancee.meshlink`.
+- Publishing `402 Payment Required` from `s01.oss.sonatype.org`: the Sonatype
   account has migrated to the Central Portal. Migrated publishing repository URL
   to `https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/`
   (Central Portal OSSRH Staging API compatibility endpoint). Added credential

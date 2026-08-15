@@ -55,6 +55,7 @@ Run the full verification suite before tagging:
 ```
 
 This runs:
+
 - **ktfmt** — formatting check
 - **detekt** — static analysis (including `ConstantTimeRule`)
 - **kover** — 100% coverage gate on the pure-K path
@@ -80,6 +81,7 @@ Add entries under `## [Unreleased]` → `### Added`, `### Changed`, `### Fixed` 
 ## Step 5: Update artifact documentation
 
 If artifact coordinates or API surface changed, update:
+
 - [API reference](../../docs/reference/api-reference.md)
 - [Supported primitives table](../../docs/reference/supported-primitives.md)
 - [Get started guide](get-started.md) — update version numbers and coordinates
@@ -104,14 +106,16 @@ gh run watch --repo trancee/MeshLink-crypto
 ```
 
 The workflow performs these steps:
+
 1. **Validate PGP signing key** — parses `SIGNING_KEY` via gpg in all formats (raw, with headers, with newline conversion)
 2. **Check Sonatype credentials** — verifies Central Portal User Token against the OSSRH Staging API
 3. **Drop stale staging repositories** — deletes any leftover "closed" staging repos from prior failed publishes
 4. **Build and publish** — `./gradlew :crypto:publish` signs and uploads all publications (JVM, Android, iOS, KMP metadata)
 5. **Search for staged repositories** — diagnostic step confirming a staging repo was created
-6. **Transfer deployment to Central Portal** — `POST /manual/upload/defaultRepository/ch.trancee.meshlink` transfers the staged deployment from the OSSRH Staging API compatibility endpoint to the Central Portal
+6. **Transfer deployment to Central Portal** — `POST /manual/upload/defaultRepository/ch.trancee.meshlink.crypto` transfers the staged deployment to the Central Portal with the namespace `ch.trancee.meshlink.crypto`.
 
 All steps must pass. If the transfer step fails:
+
 - Check the error response in the workflow logs
 - Ensure no stale staging repos exist in the [Central Portal](https://central.sonatype.com/)
 - Re-tag and re-push if needed
@@ -129,6 +133,7 @@ curl -sS "https://search.maven.org/solrsearch/select?q=g:ch.trancee.meshlink&row
 ```
 
 Expected artifacts:
+
 - `ch.trancee.meshlink:meshlink-crypto` — main metadata (Gradle KMP consumers)
 - `ch.trancee.meshlink:meshlink-crypto-jvm` — JVM (with Javadoc JAR)
 - `ch.trancee.meshlink:meshlink-crypto-android` — Android

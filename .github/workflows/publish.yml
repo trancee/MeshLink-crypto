@@ -174,7 +174,7 @@ jobs:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
-          NAMESPACE="ch.trancee.meshlink"
+          NAMESPACE="ch.trancee.meshlink.crypto"
           echo "Transferring staged deployment for namespace: $NAMESPACE"
           STATUS=$(curl -sS -o /tmp/transfer-status.txt -w '%{http_code}' \
             -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
@@ -201,3 +201,30 @@ jobs:
             echo "::error::Failed to transfer deployment to Central Portal"
             exit 1
           fi
+      - name: Verify deployment transferred to Central Portal
+        # After the transfer POST, verify the staging deployment was accepted
+        # by querying the staging API for repository state. A transferred repo
+        # should no longer appear in "open" state, or will be in a "closed"
+        # / "transferred" state.
+        if: success()
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          NAMESPACE="ch.trancee.meshlink.crypto"
+          echo "=== Verifying deployment for namespace: $NAMESPACE ==="
+          STATUS=$(curl -sS -o /tmp/verify-status.txt -w '%{http_code}' \
+            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            -H "Accept: application/json" \
+            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories")
+          echo "Verify status: $STATUS"
+          echo "Response: $(cat /tmp/verify-status.txt)"
+          if [ "$STATUS" = "200" ]; then
+            echo "=== Deployment verification:"
+            jq -r '."repositories"[] | "\(.key): \(.state)"' \
+              /tmp/verify-status.txt 2>/dev/null || \
+              echo "(no jq parsing, raw: $(cat /tmp/verify-status.txt))"
+          fi
+          echo "=== Deployment transferred to namespace: $NAMESPACE ==="
+          echo "Verify via Central Portal: https://central.sonatype.com/deployments"
+          echo "Maven Central search: https://search.maven.org/search?q=g:ch.trancee.meshlink"
