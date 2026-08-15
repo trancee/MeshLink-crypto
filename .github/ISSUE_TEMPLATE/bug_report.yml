@@ -1,0 +1,93 @@
+name: Bug report
+description: Report a bug in the MeshLink-crypto library
+title: "bug: "
+labels: ["needs-triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug. Include the primitive affected and what goes wrong.
+      placeholder: "e.g. SHA-256 produces incorrect output for inputs > 55 bytes..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, deterministic reproduction steps.
+      render: "markdown"
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+      render: "markdown"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened (error messages, incorrect output, timing issues).
+      render: "markdown"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: This is a cryptographic library. Security-relevant bugs must be coordinated via SECURITY.md.
+      multiple: false
+      options:
+        - "🐛 Minor — incorrect behavior on non-secret data"
+        - "🚨 Security — timing leak, constant-time violation, or secret exposure"
+        - "💥 Critical — produces wrong cryptographic results"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Library version
+      description: Library version or git commit hash.
+      placeholder: "0.1.0-SNAPSHOT or commit abc1234"
+    validations:
+      required: true
+      pattern: "^.+"
+      patternDescription: "Version or commit hash required"
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      parse: "markdown"
+      description: |
+        Target platform:
+        - JVM (JDK version)
+        - Android (API level + device/emulator)
+        - iOS (device/simulator + OS version)
+
+        Which path was active? (Native or pure-K fallback?)
+      placeholder: |
+        JVM 21, macOS 15
+        Native path (JCA)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context, logs, or proof-of-concept code. For timing issues, attach the timing harness output.
+      render: "markdown"

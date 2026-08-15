@@ -1,0 +1,60 @@
+name: Feature request
+description: Request a new primitive, feature, or enhancement
+title: "feat: "
+labels: ["needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve? Why is it needed?
+      placeholder: "e.g. There is no SHA-3 in the library, but my protocol requires it..."
+      render: "markdown"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you'd like. If this is a new RFC primitive, link to the RFC and specify which section.
+      placeholder: |
+        **RFC**: RFC 7748 §5
+        **Primitive**: X25519 key agreement
+        **Native fallback**: JCA KeyAgreement / Security.framework
+      render: "markdown"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What did you consider instead? Why was it rejected?
+      render: "markdown"
+      placeholder: "e.g. Using a third-party library — rejected because it adds a dependency and breaks the zero-dependency design (ADR-0005)."
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Who benefits? Is there a workaround today?
+      render: "markdown"
+      placeholder: "e.g. All iOS consumers who need hardware-accelerated X25519 without pulling in CryptoKit directly."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Contributor checklist
+      description: Does this proposal align with the project's acceptance criteria?
+      render: "markdown"
+      options:
+        - label: I have searched for existing requests to avoid duplicates
+        - label: I understand the project targets JVM + Android (API 21+) + iOS only — no JS/WASM
+        - label: For crypto primitives: I have identified the relevant RFC and test vectors (Wycheproof if available)
+    validations:
+      required: true
