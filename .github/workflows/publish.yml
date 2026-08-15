@@ -67,47 +67,69 @@ jobs:
           echo "  gpg --armor --export-secret-keys YOUR_KEY_ID > key.asc"
           echo "And copy the ENTIRE file contents (including BEGIN/END headers) into the SIGNING_KEY secret."
           exit 1
-      - name: Check Sonatype credentials (Central Portal)
+      - name: Check Sonatype credentials
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
-          echo "=== Testing Central Portal credentials ==="
-          # Test Central Portal authentication
-          STATUS=$(curl -sS -o /tmp/central-status.txt -w '%{http_code}' \
+          echo "=== Testing Central Portal OSSRH Staging API ==="
+          # The OSSRH Staging API is the Central Portal's compatibility endpoint
+          # for publishers migrating from legacy OSSRH (s01.oss.sonatype.org).
+          # Credentials must be Central Portal User Tokens, not legacy OSSRH tokens.
+          # See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
+          STATUS=$(curl -sS -o /tmp/ossrh-status.txt -w '%{http_code}' \
             -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
-            "https://central-upload.sonatype.com/")
-          echo "Central Portal upload URL: $STATUS"
-          echo "  Response: $(head -c 500 /tmp/central-status.txt)"
-
-          # Test legacy OSSRH (for comparison)
-          STATUS2=$(curl -sS -o /tmp/ossrh-status.txt -w '%{http_code}' \
-            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
-            "https://s01.oss.sonatype.org/service/local/staging/profiles")
-          echo "Legacy OSSRH (s01): $STATUS2"
+            "https://ossrh-staging-api.central.sonatype.com/service/local/staging/profiles")
+          echo "OSSRH Staging API staging profiles: $STATUS"
           echo "  Response: $(head -c 500 /tmp/ossrh-status.txt)"
 
-          # If Central Portal returns 200 or 401 (not 404), it exists as an endpoint
-          if [ "$STATUS" -eq 200 ]; then
-            echo "Central Portal credentials are valid"
-          elif [ "$STATUS" -eq 401 ]; then
-            echo "::error::Central Portal credentials are invalid (401)"
+          if [ "$STATUS" -eq 401 ]; then
+            echo "::error::Credentials rejected (401). You need a Central Portal User Token,"
+            echo "not a legacy OSSRH token. Generate one at https://central.sonatype.com/"
             exit 1
-          elif [ "$STATUS" -eq 402 ]; then
-            echo "::error::Central Portal account not provisioned (402)"
-            exit 1
+          elif [ "$STATUS" -eq 200 ]; then
+            echo "Credentials are valid for Central Portal OSSRH Staging API"
+          else
+            echo "Unexpected status: $STATUS"
           fi
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because
         # SIGNING_KEY is a multi-line PGP key block that breaks shell
-        # command line expansion. See: docs/how-to/get-started.md#publishing
+        # command line expansion.
         # The signing block normalizes line endings, converts literal \\n
         # escape sequences to real newlines, and auto-wraps keys missing
         # PGP ASCII armor headers. keyId is passed as null so the plugin
-        # extracts it from the PGP key itself.
+        # extracts it from the PGP private key block itself.
+        # The publishing repository was migrated from s01.oss.sonatype.org
+        # (legacy OSSRH, returns HTTP 402 when account is on Central Portal)
+        # to ossrh-staging-api.central.sonatype.com (Central Portal OSSRH
+        # Staging API compatibility endpoint).
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: ./gradlew :crypto:publish
+      - name: Transfer deployment to Central Portal
+        # After uploading artifacts via the OSSRH Staging API, the Central
+        # Portal requires an explicit POST to transfer the staged deployment
+        # from the compatibility service to the main Portal.
+        # Must come from the same IP as the upload (same CI runner).
+        # See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#ensuring-deployment-visibility
+        if: success()
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          NAMESPACE="ch.trancee.meshlink"
+          echo "Transferring staged deployment for namespace: $NAMESPACE"
+          STATUS=$(curl -sS -o /tmp/transfer-status.txt -w '%{http_code}' \
+            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            -X POST \
+            "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$NAMESPACE")
+          echo "Transfer to Central Portal status: $STATUS"
+          echo "Response: $(head -c 1000 /tmp/transfer-status.txt)"
+          if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 202 ]; then
+            echo "::error::Failed to transfer deployment to Central Portal"
+            exit 1
+          fi

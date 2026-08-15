@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Publish workflow `402 Payment Required` from `s01.oss.sonatype.org`: the Sonatype
+  account has migrated to the Central Portal. Migrated publishing repository URL
+  to `https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/`
+  (Central Portal OSSRH Staging API compatibility endpoint). Added credential
+  diagnostic step that tests against the new endpoint and identifies 401
+  (credentials are legacy OSSRH tokens — need Central Portal User Token) vs
+  other errors. Added post-upload `POST /manual/upload/defaultRepository/<namespace>`
+  transfer step required by the Central Portal to make staged deployments visible.
+
 ## [0.1.0] — 2026-08-15
 
 Initial release. All seven RFC-standard primitives with constant-time pure-K

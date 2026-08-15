@@ -200,13 +200,17 @@ publishing {
   }
 
   // Maven Central / Central Portal repository.
-  // Uses central-upload.sonatype.com (the new Central Portal) instead of
-  // s01.oss.sonatype.org (legacy OSSRH) because the account has migrated
-  // to the Central Portal and s01 returns HTTP 402 Payment Required.
+  // Migrated from s01.oss.sonatype.org (legacy OSSRH, returns HTTP 402
+  // Payment Required when account is on the Central Portal) to the
+  // Central Portal's OSSRH Staging API compatibility endpoint.
+  // Credentials must be Central Portal User Tokens (generated at
+  // https://central.sonatype.com/), NOT legacy OSSRH tokens.
+  // See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
   repositories {
     maven {
       name = "MavenCentral"
-      url = uri("https://central-upload.sonatype.com/")
+      url =
+          uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
       credentials {
         username =
             findProperty("MAVEN_CENTRAL_USERNAME") as String?
