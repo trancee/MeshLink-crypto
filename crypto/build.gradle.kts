@@ -219,16 +219,16 @@ publishing {
 }
 
 // Signing: PGP-sign all published artifacts.
-// In CI, signing config is passed via environment variables (SIGNING_KEY_ID,
-// SIGNING_KEY, SIGNING_KEY_PASSWORD) because the PGP key block is multi-line
-// and breaks -P flag shell expansion. Locally, set them in
-// ~/.gradle/gradle.properties or export as env vars.
+// In CI, signing config is passed via environment variables (SIGNING_KEY,
+// SIGNING_KEY_PASSWORD) because the PGP key block is multi-line and breaks
+// -P flag shell expansion. Locally, set them in ~/.gradle/gradle.properties
+// or export as env vars. The keyId is passed as null so the signing plugin
+// extracts it from the PGP private key block itself.
 signing {
   val signingKey: String? = findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
   val signingPassword: String? =
       findProperty("signingKeyPassword") as String? ?: System.getenv("SIGNING_KEY_PASSWORD")
   if (signingKey != null) {
-    // Pass null for keyId — the signing plugin extracts it from the PGP key itself.
     useInMemoryPgpKeys(null as String?, signingKey, signingPassword)
     sign(publishing.publications)
   }

@@ -27,6 +27,22 @@ jobs:
           sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0"
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+      - name: Validate PGP signing key
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          if [ -n "$SIGNING_KEY" ]; then
+            echo "SIGNING_KEY is set (length: ${#SIGNING_KEY})"
+            echo "$SIGNING_KEY" | head -1
+            echo "$SIGNING_KEY" | tail -1
+            echo "$SIGNING_KEY" > /tmp/signing-key.pgp
+            gpg --batch --import --import-options show-only /tmp/signing-key.pgp \
+              && echo "PGP key is valid" \
+              || echo "ERROR: PGP key is invalid or cannot be parsed"
+          else
+            echo "ERROR: SIGNING_KEY env var is not set"
+            exit 1
+          fi
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because
         # SIGNING_KEY is a multi-line PGP key block that breaks shell
