@@ -64,7 +64,8 @@ class TimingHarnessTest {
                 ByteArray(32) { 0x02 },
                 ByteArray(32) { 0x03 },
             ),
-        iterations = 1000,
+        iterations = 100_000,
+        warmup = 10_000,
     ) { input ->
       var acc = 0
       input.forEach { acc = acc xor it.toInt() }
@@ -88,6 +89,7 @@ class TimingHarnessTest {
         label = "variable-op",
         inputs = listOf(fast, slow),
         iterations = 1,
+        warmup = 0,
     ) { input ->
       if (input[0] == 0x02.toByte()) {
         Thread.sleep(50)

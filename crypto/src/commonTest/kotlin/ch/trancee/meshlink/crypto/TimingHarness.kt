@@ -44,14 +44,21 @@ class TimingHarness {
    * @param inputs Vary secret inputs (e.g. Wycheproof `tc.input` fields).
    * @param iterations Number of times [block] is invoked per input. Default 1000 so sub-microsecond
    *   per-call variance is observable without a statistical claim.
+   * @param warmup Number of untimed invocations per input to run before measurement begins. Warms
+   *   up JIT/CPU caches so the first sample isn't a cold-start outlier. Default 300. Pass 0 to
+   *   disable.
    * @param block The pure-K operation to time. Must be no-throw.
    */
   fun measure(
       label: String,
       inputs: List<ByteArray>,
       iterations: Int = 1000,
+      warmup: Int = 300,
       block: (ByteArray) -> Unit,
   ) {
+    if (warmup > 0) {
+      inputs.forEach { input -> repeat(warmup) { block(input) } }
+    }
     inputs.forEach { input ->
       val mark = TimeSource.Monotonic.markNow()
       repeat(iterations) { block(input) }
@@ -72,18 +79,19 @@ class TimingHarness {
    * Asserts that timing variance across all recorded samples for [label] is within [maxRatio] of
    * the median duration — a coarse constant-time violation detector (ADR-0003 §4).
    *
-   * Computes max(median) / min(median) across distinct input sizes. A ratio within [maxRatio] is
-   * necessary (but not sufficient) for constant-time: it does not prove constant-time execution,
-   * but a ratio exceeding [maxRatio] indicates input-dependent timing leakage.
+   * Computes max / median across all matching samples. A ratio near 1.0 indicates low timing
+   * variance; a ratio exceeding [maxRatio] indicates potential input-dependent timing leakage. This
+   * is necessary (but not sufficient) for constant-time: it does not prove constant-time execution.
    *
    * Default threshold of 3.0 accommodates typical CI jitter (JIT warmup, GC pauses, OS scheduling)
    * on JVM/Android while flagging obvious timing leaks (e.g. secret- dependent branches causing 3×+
    * slowdown for some inputs).
    *
    * @param label Human-readable name of the operation under test.
-   * @param maxRatio Maximum allowed ratio of longest to shortest median sample duration.
-   * @return The observed max-ratio for inspection.
-   * @throws AssertionError if the ratio exceeds [maxRatio] or fewer than 2 samples exist.
+   * @param maxRatio Maximum allowed ratio of longest sample to median sample duration.
+   * @return The observed max/median ratio, or 1.0 when durations are too small to measure
+   * @throws AssertionError if the ratio exceeds [maxRatio].
+   * @throws IllegalArgumentException if fewer than 2 samples exist for [label].
    */
   fun assertConstantTime(label: String, maxRatio: Double = 3.0): Double {
     val matching = samples.filter { it.label == label }
@@ -102,6 +110,11 @@ class TimingHarness {
               }
             }
     val maxNanos = matching.maxOf { it.totalDuration.inWholeNanoseconds }
+    // Guard: if durations are too small to measure (median truncates to 0 ns),
+    // we cannot detect timing variance. Return 1.0 (no measurable variance).
+    if (medianNanos <= 0.0) {
+      return 1.0
+    }
     val ratio = maxNanos.toDouble() / medianNanos
     if (ratio > maxRatio) {
       throw AssertionError(
