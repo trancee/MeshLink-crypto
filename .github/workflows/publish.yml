@@ -79,6 +79,7 @@ jobs:
           # See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
           STATUS=$(curl -sS -o /tmp/ossrh-status.txt -w '%{http_code}' \
             -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            -H "Accept: application/json" \
             "https://ossrh-staging-api.central.sonatype.com/service/local/staging/profiles")
           echo "OSSRH Staging API staging profiles: $STATUS"
           echo "  Response: $(head -c 500 /tmp/ossrh-status.txt)"
@@ -110,6 +111,22 @@ jobs:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: ./gradlew :crypto:publish
+      - name: Search for staged repositories (diagnostic)
+        # Lists all staging repositories on the OSSRH Staging API to verify
+        # the upload created one before we attempt the transfer.
+        # See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
+        if: success()
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          echo "=== Searching for staged repositories ==="
+          STATUS=$(curl -sS -o /tmp/staged-status.txt -w '%{http_code}' \
+            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            -H "Accept: application/json" \
+            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories")
+          echo "Search status: $STATUS"
+          echo "Response: $(cat /tmp/staged-status.txt)"
       - name: Transfer deployment to Central Portal
         # After uploading artifacts via the OSSRH Staging API, the Central
         # Portal requires an explicit POST to transfer the staged deployment
@@ -125,10 +142,25 @@ jobs:
           echo "Transferring staged deployment for namespace: $NAMESPACE"
           STATUS=$(curl -sS -o /tmp/transfer-status.txt -w '%{http_code}' \
             -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
             -X POST \
             "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$NAMESPACE")
           echo "Transfer to Central Portal status: $STATUS"
-          echo "Response: $(head -c 1000 /tmp/transfer-status.txt)"
+          echo "Response: $(cat /tmp/transfer-status.txt)"
+          if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 202 ]; then
+            # Retry after a short wait - the staging repo may need time to register
+            echo "First attempt failed, retrying in 10s..."
+            sleep 10
+            STATUS=$(curl -sS -o /tmp/transfer-status.txt -w '%{http_code}' \
+              -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$NAMESPACE")
+            echo "Transfer retry status: $STATUS"
+            echo "Response: $(cat /tmp/transfer-status.txt)"
+          fi
           if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 202 ]; then
             echo "::error::Failed to transfer deployment to Central Portal"
             exit 1
