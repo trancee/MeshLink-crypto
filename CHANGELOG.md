@@ -8,10 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Support for [0.1.0 release](https://github.com/trancee/MeshLink-crypto/releases/tag/v0.1.0)
-
 ## [0.1.0] — 2026-08-15
 
 Initial release. All seven RFC-standard primitives with constant-time pure-K
@@ -54,12 +50,19 @@ implementations and per-primitive native fallback:
   broke shell expansion when passed via `-P` flags — signing config now passed
   exclusively via environment variables
 - Signing key ID format validation: Gradle signing plugin rejects GPG
-  fingerprints — build config falls back to `null` and lets the plugin extract
+  fingerprints — build config passes `null` keyId and lets the plugin extract
   the key ID from the PGP key itself
+- PGP key normalization in signing block: normalizes CRLF→LF, converts
+  literal `\\n` escape sequences to real newlines, and auto-wraps key with
+  PGP ASCII armor headers if missing
+- Restored `sign(publishing.publications)` call that was accidentally dropped
+  during the key normalization edit — without it, no signing tasks were
+  created and artifacts were uploaded unsigned
+- Publish workflow: added PGP key validation step that tries parsing the
+  key as-is, with headers added, and with newline conversion; fails fast
+  if the key is invalid
 - `actions/checkout` upgraded from @v5 to @v7 across all workflows
-
 - `TimingHarnessTest` "constant-time operation" test no longer fails spuriously on CI — increased iterations to 100_000 and warmup to 10_000 so per-sample durations reach millisecond scale where `System.nanoTime()` measurement is stable; added zero-median guard in `assertConstantTime` to prevent NaN/Infinity from sub-nanosecond truncation
-- `.gitignore` now excludes `.env` and `.env.*` — prevents credential leaks
 - CODEOWNERS now points to `/crypto/src/` instead of the non-existent `/meshlink/src/`
 - CI uses `platforms;android-37.0` (not `platforms;android-37`) for SDK installation
 - GitHub Actions deprecated Node.js 20 — all actions upgraded to v4/v5 (checkout@v5, setup-java@v5, setup-android@v4, cache@v5)
