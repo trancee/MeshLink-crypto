@@ -1,0 +1,3 @@
+interface:
+  display_name: "Central Portal Publish"
+  short_description: "Publish artifacts to Maven Central via the Central Portal Publisher API"
