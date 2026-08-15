@@ -40,7 +40,6 @@ jobs:
 
           # Try as-is
           if gpg --batch --import --import-options show-only /tmp/signing-key-raw.asc 2>/dev/null; then
-            cp /tmp/signing-key-raw.asc /tmp/signing-key.asc
             echo "Key is valid as-is"
             exit 0
           fi
@@ -50,7 +49,6 @@ jobs:
             printf '-----BEGIN PGP PRIVATE KEY BLOCK-----\n\n%s\n-----END PGP PRIVATE KEY BLOCK-----\n' \
               "$(cat /tmp/signing-key-raw.asc)" > /tmp/signing-key-headers.asc
             if gpg --batch --import --import-options show-only /tmp/signing-key-headers.asc 2>/dev/null; then
-              cp /tmp/signing-key-headers.asc /tmp/signing-key.asc
               echo "Key is valid with headers added"
               exit 0
             fi
@@ -59,7 +57,6 @@ jobs:
           # Try converting literal \n to actual newlines
           printf '%b' "$SIGNING_KEY" > /tmp/signing-key-converted.asc
           if gpg --batch --import --import-options show-only /tmp/signing-key-converted.asc 2>/dev/null; then
-            cp /tmp/signing-key-converted.asc /tmp/signing-key.asc
             echo "Key is valid with newline conversion"
             exit 0
           fi
@@ -70,10 +67,34 @@ jobs:
           echo "  gpg --armor --export-secret-keys YOUR_KEY_ID > key.asc"
           echo "And copy the ENTIRE file contents (including BEGIN/END headers) into the SIGNING_KEY secret."
           exit 1
+      - name: Check Sonatype credentials
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          STATUS=$(curl -sS -o /tmp/sonatype-status.txt -w '%{http_code}' \
+            -u "$MAVEN_CENTRAL_USERNAME:$MAVEN_CENTRAL_PASSWORD" \
+            "https://s01.oss.sonatype.org/service/rest/organizations")
+          echo "Sonatype API status: $STATUS"
+          echo "Response: $(head -c 500 /tmp/sonatype-status.txt)"
+          if [ "$STATUS" -eq 401 ]; then
+            echo "::error::Maven Central credentials are invalid (401 Unauthorized)"
+            exit 1
+          elif [ "$STATUS" -eq 402 ]; then
+            echo "::error::Maven Central credentials accepted but account not provisioned (402 Payment Required)"
+            echo "Check: https://s01.oss.sonatype.org/ — account must be provisioned for ch.trancee namespace"
+            echo "If using new Central Portal: generate an access token at https://central.sonatype.com/"
+          elif [ "$STATUS" -eq 200 ]; then
+            echo "Credentials are valid"
+          fi
       - name: Build and publish
         # Signing config is passed via env vars (not -P flags) because
         # SIGNING_KEY is a multi-line PGP key block that breaks shell
         # command line expansion. See: docs/how-to/get-started.md#publishing
+        # The signing block normalizes line endings, converts literal \\n
+        # escape sequences to real newlines, and auto-wraps keys missing
+        # PGP ASCII armor headers. keyId is passed as null so the plugin
+        # extracts it from the PGP key itself.
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
