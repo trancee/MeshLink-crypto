@@ -97,20 +97,26 @@ jobs:
 
       - name: Upload bundle
         # POST /api/v1/publisher/upload (skill §3)
-        # Returns 201 with { deploymentId: "<uuid>" }
+        # Returns 201 with body = deployment ID (plain-text UUID, NOT JSON)
         id: upload
         run: |
           URL="https://central.sonatype.com/api/v1/publisher/upload"
-          RESP=$(curl -sS -X POST \
-            -H "Authorization: Bearer $(cat /tmp/bearer-token.txt)" \
+          TOKEN=$(cat /tmp/bearer-token.txt)
+          RESP=$(curl -sS -w '\n%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer $TOKEN" \
             -F bundle=@crypto/build/distributions/central-bundle.zip \
             "$URL?name=meshlink-crypto&publishingType=USER_MANAGED")
-          echo "$RESP"
-          ID=$(echo "$RESP" | jq -r '.deploymentId')
-          if [ -z "$ID" ] || [ "$ID" = "null" ]; then
-            echo "::error::Upload failed: $RESP"
+          HTTP_CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | head -n -1)
+          echo "HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" != "201" ]; then
+            echo "::error::Upload failed (HTTP $HTTP_CODE): $BODY"
             exit 1
           fi
+          echo "Upload response: $BODY"
+          # Central Portal returns the deployment ID as a plain-text UUID
+          ID=$(echo "$BODY" | tr -d '[:space:]')
           echo "deployment_id=$ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for validation
