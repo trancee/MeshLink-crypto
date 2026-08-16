@@ -55,8 +55,7 @@ jobs:
             echo "::error::SIGNING_KEY_PASSWORD secret is empty"
             exit 1
           fi
-          # Normalize CRLF → LF (secrets may carry Windows line endings
-          # that break grep pattern matching and PGP key parsing)
+          # Normalize CRLF → LF (secrets may carry Windows line endings)
           SIGNING_KEY=$(printf '%s' "$SIGNING_KEY" | tr -d '\r')
           # Verify the key starts with a PGP block header
           first=$(printf '%s' "$SIGNING_KEY" | grep -m1 'BEGIN')
@@ -65,12 +64,8 @@ jobs:
             echo "::error::SIGNING_KEY does not contain a PGP block header"
             exit 1
           fi
-          # Verify the key is a valid PGP key by parsing with gpg
-          printf '%s\n' "$SIGNING_KEY" | gpg --batch --show-keys --keyid-format LONG 2>&1 || {
-            echo "::error::SIGNING_KEY is not a valid PGP key"
-            exit 1
-          }
-          echo "PGP key is valid."
+          echo "Key length: ${#SIGNING_KEY} characters"
+          echo "PGP key format looks valid. Gradle signing plugin will validate further."
       - name: Build, sign, and bundle
         # Publishes all KMP publications (JVM, Android, iOS, KMP metadata)
         # with PGP signatures to a local file repository, then zips the

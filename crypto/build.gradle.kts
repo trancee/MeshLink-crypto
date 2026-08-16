@@ -263,7 +263,12 @@ publishing {
 // (GitHub Actions secrets may carry CRLF or stray whitespace). Locally, use
 // signing.keyId / signing.password / signing.secretKeyRingFile in gradle.properties.
 signing {
-  val key = (findProperty("signingInMemoryKey") as String?)?.replace("\r\n", "\n")?.trim()
+  val key =
+      (findProperty("signingInMemoryKey") as String?)
+          ?.replace("\uFEFF", "") // Strip UTF-8 BOM if present
+          ?.replace("\r\n", "\n")
+          ?.replace("\r", "\n")
+          ?.trim()
   val pass = findProperty("signingInMemoryKeyPassword") as String?
   if (key != null && key.isNotEmpty()) {
     useInMemoryPgpKeys(key, pass)
