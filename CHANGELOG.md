@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `derivePublicKey` API for X25519 (via `KeyExchange.deriveX25519PublicKey` / `Crypto.deriveX25519PublicKey`) and Ed25519 (via `Signer.ed25519PublicKeyFromPrivate` / `Crypto.ed25519PublicKeyFromPrivate`) — derives the public key from a private key without requiring a CryptoProvider injection. Routes through native (JCA / Security.framework) → CryptoProvider → PureK fallback chain.
 - `randomBytes(size)` is now part of the public API (was `internal`). Generates cryptographically secure random bytes via the platform CSPRNG — usable for generating private key seeds and symmetric keys.
+- Markdown API documentation bundled into the JVM `javadoc` JAR (`javadocJarJvm`) alongside the HTML docs — AI tooling can parse `.md` files from the standard javadoc artifact without a separate classifier.
 - `x25519PublicKeyFromPrivate(scalar)` to the `CryptoProvider` interface — optional platform-native public key derivation path for consuming apps that inject a CryptoKit / JCA provider.
 
 ### Fixed
