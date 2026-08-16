@@ -43,6 +43,15 @@ public interface CryptoProvider {
       u: ByteArray,
   ): ByteArray?
 
+  /**
+   * Derives the X25519 public key from the 32-byte private scalar.
+   *
+   * @return 32-byte public u-coordinate, or `null` if the provider cannot handle it.
+   */
+  public fun x25519PublicKeyFromPrivate(
+      scalar: ByteArray,
+  ): ByteArray?
+
   // -- Ed25519 (RFC 8032 §5.1) ----------------------------------------------
 
   /** Whether the provider can handle Ed25519 signing/verification. */

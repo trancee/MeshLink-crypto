@@ -24,9 +24,11 @@ Use the **unified `Crypto` object** for new code. It delegates to the per-primit
 | Hashing (SHA-256, SHA-512) | `Crypto.sha256()` / `Crypto.sha512()` or `Hasher` | `Crypto.sha256(data)` |
 | HMAC | `Crypto.hmacSha256()` / `Crypto.verifyHmacSha256()` or `Authenticator` | `Crypto.hmacSha256(key, msg)` |
 | Key derivation | `Crypto.hkdfSha256()` / `Crypto.extract()` / `Crypto.expand()` or `Kdf` | `Crypto.hkdfSha256(ikm, salt, info, 32)` |
-| Key agreement | `Crypto.x25519()` or `KeyExchange` | `Crypto.x25519(scalar, u)` |
-| Signing | `Crypto.ed25519Sign()` / `Crypto.ed25519Verify()` or `Signer` | `Crypto.ed25519Sign(key, msg)` |
-| Authenticated encryption | `Crypto.chacha20Poly1305Encrypt()` / `Crypto.chacha20Poly1305Decrypt()` or `Aead` | `Crypto.chacha20Poly1305Encrypt(key, msg)` |
+| Key agreement | `Crypto.x25519()` / `Crypto.deriveX25519PublicKey()` or `KeyExchange` | `Crypto.x25519(scalar, u)`, `Crypto.deriveX25519PublicKey(key)` |
+| Public key derivation | `Crypto.deriveX25519PublicKey()` / `Crypto.ed25519PublicKeyFromPrivate()` | `Crypto.deriveX25519PublicKey(key)`, `Crypto.ed25519PublicKeyFromPrivate(key)` |
+| Signing | `Crypto.ed25519Sign()` / `Crypto.ed25519Verify()` / `Crypto.ed25519PublicKeyFromPrivate()` or `Signer` | `Crypto.ed25519Sign(key, msg)`, `Crypto.ed25519PublicKeyFromPrivate(key)` |
+| Randomness | `Crypto.randomBytes()` | `Crypto.randomBytes(32)` |
+| Authenticated encryption | `Crypto.chacha20Poly1305Encrypt()` / `Crypto.chacha20Poly1305Decrypt()` or `Aead` | `Crypto.chacha20Poly1305Encrypt(key, msg)`|
 
 ## Key handle types
 
@@ -172,6 +174,30 @@ Computes the X25519 shared secret ([RFC 7748 §5](https://datatracker.ietf.org/d
 | `u` | The 32-byte peer public u-coordinate (little-endian). |
 | **Returns** | 32-byte shared secret on success; `Result.failure` on error. |
 
+### Public key derivation
+
+```kotlin
+fun deriveX25519PublicKey(privateKey: PrivateKey): Result<ByteArray>
+```
+
+Derives the X25519 public key from a private scalar: `publicKey = scalar * BASEPOINT` ([RFC 7748 §5](https://datatracker.ietf.org/doc/html/rfc7748#section-5)).
+
+| Parameter | Description |
+||---|---|
+| `privateKey` | The 32-byte private scalar (little-endian). |
+| **Returns** | 32-byte public u-coordinate on success; `Result.failure` on error. |
+
+```kotlin
+fun ed25519PublicKeyFromPrivate(secretKey: PrivateKey): Result<ByteArray>
+```
+
+Derives the Ed25519 public key from the 32-byte seed ([RFC 8032 §5.1.5](https://datatracker.ietf.org/doc/html/rfc8032#section-5.1.5)).
+
+| Parameter | Description |
+||---|---|
+| `secretKey` | The 32-byte Ed25519 seed. |
+| **Returns** | 32-byte public key on success; `Result.failure` on error. |
+
 ### Signatures
 
 ```kotlin
@@ -232,6 +258,23 @@ Decrypts and authenticates. The input must have the format produced by `chacha20
 | `ciphertext` | The blob from `chacha20Poly1305Encrypt`. Must be at least 28 bytes (12 nonce + 16 tag). |
 | **Returns** | `Result.success(plaintext)` if the tag verifies. `Result.success(null)` if authentication fails (the tag did not match — possible tampering). `Result.failure` if the input is malformed (wrong length). |
 
+### Randomness
+
+```kotlin
+fun randomBytes(size: Int): ByteArray
+```
+
+Generates `size` cryptographically secure random bytes from the platform CSPRNG. Use this for generating private key seeds (32 bytes for Ed25519/X25519) and symmetric keys (32 bytes for ChaCha20-Poly1305).
+
+| Parameter | Description |
+||---|---|
+| `size` | The number of bytes to generate. |
+| **Returns** | A byte array of `size` random bytes. |
+
+```kotlin
+val privateKey = PrivateKey(randomBytes(32))
+```
+
 ## Optional native provider injection
 
 ### `CryptoProvider`
@@ -248,6 +291,7 @@ Do not set a provider unless you need features the default native path cannot pr
 |---|---|
 | `supportsX25519()` | Returns `true` if the provider handles X25519 key agreement. |
 | `x25519(scalar, u)` | Returns the 32-byte shared secret, or `null` if unsupported. |
+| `x25519PublicKeyFromPrivate(scalar)` | Returns the 32-byte public u-coordinate derived from the 32-byte scalar, or `null`. |
 | `supportsEd25519()` | Returns `true` if the provider handles Ed25519 signing and verification. |
 | `ed25519PublicKeyFromPrivate(secretKey)` | Returns the 32-byte public key derived from the 32-byte seed, or `null`. |
 | `ed25519Sign(secretKey, message)` | Returns the 64-byte signature, or `null`. |
@@ -291,4 +335,4 @@ All public primitives are stateless and thread-safe. Key handles (`SecretKey`, `
 fun moduleVersion(): String
 ```
 
-Returns the current module version string (e.g. `0.1.0-SNAPSHOT`).
+Returns the current module version string (e.g. `0.1.1`).

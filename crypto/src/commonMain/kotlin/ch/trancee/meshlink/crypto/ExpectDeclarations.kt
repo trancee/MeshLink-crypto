@@ -64,6 +64,8 @@ internal expect object HKDF_SHA256 {
  */
 internal expect object X25519 {
   fun compute(@Secret scalar: ByteArray, @Secret u: ByteArray): ByteArray
+
+  fun derivePublicKey(scalar: ByteArray): ByteArray
 }
 
 /**

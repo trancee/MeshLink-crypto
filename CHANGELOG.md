@@ -6,6 +6,19 @@ All notable changes to this project are documented in this file.
 Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-08-16
+
+### Added
+
+- `derivePublicKey` API for X25519 (via `KeyExchange.deriveX25519PublicKey` / `Crypto.deriveX25519PublicKey`) and Ed25519 (via `Signer.ed25519PublicKeyFromPrivate` / `Crypto.ed25519PublicKeyFromPrivate`) — derives the public key from a private key without requiring a CryptoProvider injection. Routes through native (JCA / Security.framework) → CryptoProvider → PureK fallback chain.
+- `randomBytes(size)` is now part of the public API (was `internal`). Generates cryptographically secure random bytes via the platform CSPRNG — usable for generating private key seeds and symmetric keys.
+- Markdown API documentation bundled into the JVM `javadoc` JAR (`javadocJarJvm`) alongside the HTML docs — AI tooling can parse `.md` files from the standard javadoc artifact without a separate classifier.
+- `x25519PublicKeyFromPrivate(scalar)` to the `CryptoProvider` interface — optional platform-native public key derivation path for consuming apps that inject a CryptoKit / JCA provider.
+
+### Fixed
+
+- Empty Javadoc JAR (`meshlink-crypto-jvm-0.1.0-javadoc.jar` was 261 bytes, containing only `META-INF/MANIFEST.MF`). Root cause: `javadocJarJvm` used `from(tasks.named("dokkaGenerateHtml"))` which resolved to the task output property, not the output directory. Fixed to `from(layout.buildDirectory.dir("dokka/html"))` with `dependsOn("dokkaGenerateHtml")`.
+
 ## [Unreleased]
 
 ### Changed
@@ -125,5 +138,6 @@ implementations and per-primitive native fallback:
 - Broken external link in `docs/adr/0008-skie-excluded.md`: `https://skie.kotlinlang.org` → `https://skie.co`
 - YAML syntax and line-length issues in GitHub issue templates fixed
 
-[Unreleased]: https://github.com/trancee/MeshLink-crypto/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/trancee/MeshLink-crypto/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/trancee/MeshLink-crypto/releases/tag/v0.1.1
 [0.1.0]: https://github.com/trancee/MeshLink-crypto/releases/tag/v0.1.0

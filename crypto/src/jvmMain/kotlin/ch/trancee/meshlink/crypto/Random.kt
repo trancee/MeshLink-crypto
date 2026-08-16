@@ -7,7 +7,7 @@ import java.security.SecureRandom
 
 private val secureRandom = SecureRandom()
 
-internal actual fun randomBytes(size: Int): ByteArray {
+public actual fun randomBytes(size: Int): ByteArray {
   val bytes = ByteArray(size)
   secureRandom.nextBytes(bytes)
   return bytes

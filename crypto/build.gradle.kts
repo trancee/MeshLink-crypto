@@ -160,9 +160,14 @@ spotless {
 // module name from the project and creates the `dokkaGenerate` task.
 // Maven Central requires a Javadoc JAR for JVM publications (ADR-0007).
 // For Kotlin KMP projects, Dokka HTML output serves as the Javadoc replacement.
+// The Markdown API docs are bundled alongside the HTML so AI tooling can parse
+// .md files from the standard javadoc artifact (ADR-0007).
 tasks.register<Jar>("javadocJarJvm") {
   archiveClassifier.set("javadoc")
-  from(tasks.named("dokkaGenerateHtml"))
+  dependsOn("dokkaGenerateHtml")
+  from(layout.buildDirectory.dir("dokka/html"))
+  from(rootProject.file("docs/reference"))
+  from(rootProject.file("docs/how-to"))
 }
 
 // Sources JARs: Central Portal requires sources JARs for all publications.

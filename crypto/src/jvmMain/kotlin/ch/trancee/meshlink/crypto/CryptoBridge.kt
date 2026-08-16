@@ -122,6 +122,34 @@ internal fun x25519Native(scalar: ByteArray, u: ByteArray): ByteArray? {
   }
 }
 
+internal fun x25519DerivePublicKeyNative(scalar: ByteArray): ByteArray? {
+  val provider = cryptoProvider
+  if (provider?.supportsX25519() == true) {
+    return provider.x25519PublicKeyFromPrivate(scalar)
+  }
+  if (x25519Fallback) return null
+  return try {
+    val keyFactory = KeyFactory.getInstance("X25519")
+    val privateKey =
+        keyFactory.generatePrivate(XECPrivateKeySpec(NamedParameterSpec.X25519, scalar))
+    val x509Spec =
+        keyFactory.getKeySpec(
+            privateKey,
+            X509EncodedKeySpec::class.java,
+        )
+    x509Spec.encoded.copyOfRange(X509_PREFIX_LEN, X509_PREFIX_LEN + KEY_LEN)
+  } catch (e: NoSuchAlgorithmException) {
+    x25519Fallback = true
+    null
+  } catch (e: InvalidKeySpecException) {
+    null
+  } catch (e: InvalidKeyException) {
+    null
+  } catch (e: IllegalStateException) {
+    null
+  }
+}
+
 internal fun ed25519PublicKeyFromPrivateNative(secretKey: ByteArray): ByteArray? {
   val provider = cryptoProvider
   if (provider?.supportsEd25519() == true) {

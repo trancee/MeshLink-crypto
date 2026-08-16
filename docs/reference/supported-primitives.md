@@ -49,3 +49,13 @@ See [ADR-0002](../adr/0002-fallback-strategy.md) for the dispatch rationale and 
 | X25519 | 32 bytes | 32 bytes (scalar) |
 | Ed25519 | 64 bytes (signature) | 32 bytes (seed) |
 | ChaCha20-Poly1305 | Plaintext length + 28 bytes (12 nonce + 16 tag) | 32 bytes |
+
+## Public key derivation
+
+The library provides public key derivation as a convenience API layered on top of the X25519 and Ed25519 primitives. This is the same scalar multiplication used during key agreement and signing — the public key is derived from the private key material using the standard base point (X25519) or the RFC 8032 algorithm (Ed25519).
+
+| Operation | Facade | Input | Output |
+||---|---|---|
+| X25519 public key | `Crypto.deriveX25519PublicKey` / `KeyExchange.deriveX25519PublicKey` | `PrivateKey` (32-byte scalar) | 32-byte u-coordinate |
+| Ed25519 public key | `Crypto.ed25519PublicKeyFromPrivate` / `Signer.ed25519PublicKeyFromPrivate` | `PrivateKey` (32-byte seed) | 32-byte public key |
+| Random bytes | `Crypto.randomBytes` | `size: Int` | `size` random bytes |

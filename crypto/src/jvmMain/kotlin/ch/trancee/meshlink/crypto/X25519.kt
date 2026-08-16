@@ -19,4 +19,7 @@ internal actual object X25519 {
     }
     return result
   }
+
+  actual fun derivePublicKey(scalar: ByteArray): ByteArray =
+      x25519DerivePublicKeyNative(scalar) ?: X25519PureK.derivePublicKey(scalar)
 }

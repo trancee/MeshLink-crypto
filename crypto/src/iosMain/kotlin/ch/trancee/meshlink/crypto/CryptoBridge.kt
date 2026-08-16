@@ -104,6 +104,18 @@ internal fun x25519Native(scalar: ByteArray, u: ByteArray): ByteArray? {
   }
 }
 
+internal fun x25519DerivePublicKeyNative(scalar: ByteArray): ByteArray? {
+  val provider = cryptoProvider
+  if (provider?.supportsX25519() == true) {
+    return provider.x25519PublicKeyFromPrivate(scalar)
+  }
+  return try {
+    x25519PublicKeyFromPrivateSecKey(scalar)
+  } catch (e: Exception) {
+    null
+  }
+}
+
 internal fun ed25519PublicKeyFromPrivateNative(secretKey: ByteArray): ByteArray? {
   val provider = cryptoProvider
   if (provider?.supportsEd25519() == true) {
@@ -351,6 +363,28 @@ private fun x25519SecKey(
   val result = cfDataToBytes(shared)
   CFRelease(shared)
   CFRelease(peerPublicKey)
+  CFRelease(privateKey)
+  return result
+}
+
+private fun x25519PublicKeyFromPrivateSecKey(scalar: ByteArray): ByteArray? {
+  val privateKey = secKeyFromBytes(scalar, kSecAttrKeyTypeX25519CF, true) ?: return null
+  val publicKey =
+      SecKeyCopyPublicKey(privateKey)
+          ?: run {
+            CFRelease(privateKey)
+            return null
+          }
+  val extRep =
+      SecKeyCopyExternalRepresentation(publicKey, null)
+          ?: run {
+            CFRelease(publicKey)
+            CFRelease(privateKey)
+            return null
+          }
+  val result = cfDataToBytes(extRep)
+  CFRelease(extRep)
+  CFRelease(publicKey)
   CFRelease(privateKey)
   return result
 }

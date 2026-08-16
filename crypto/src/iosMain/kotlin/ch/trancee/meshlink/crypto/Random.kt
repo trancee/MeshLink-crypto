@@ -13,7 +13,7 @@ import platform.Security.SecRandomCopyBytes
 import platform.Security.kSecRandomDefault
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual fun randomBytes(size: Int): ByteArray {
+public actual fun randomBytes(size: Int): ByteArray {
   val bytes = ByteArray(size)
   bytes.usePinned { pinned ->
     val result =
