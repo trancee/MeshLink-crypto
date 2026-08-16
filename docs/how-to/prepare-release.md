@@ -64,15 +64,56 @@ This runs:
 
 All must pass. No shortcuts.
 
-## Step 3: Regenerate the ABI dump (if public API changed)
+## Step 3: Update ABI baseline (if public API changed)
 
 If you added, removed, or modified public API in `crypto/src/commonMain/`:
 
 ```bash
-./gradlew :crypto:apiDump --rerun-tasks --no-build-cache
+./gradlew :crypto:updateKotlinAbi --rerun-tasks --no-build-cache
 git add crypto/api/crypto.klib.api
-git commit -am "chore: regenerate ABI dump for 0.2.0"
+git commit -m "chore: update ABI baseline for 0.2.0"
 ```
+
+The build uses KGP's built-in `kotlin { abiValidation {} }` (not the standalone
+kx.binary-compatibility-validator plugin). The dump file lives at
+`crypto/api/crypto.klib.api` and `abiCheck` is part of the `check` task.
+
+## Step 3b: Verify docs alignment with code
+
+**This MUST pass before every release.** The javadoc JAR bundles hand-written
+markdown from `docs/reference/` and `docs/how-to/` alongside Dokka-generated
+HTML (ADR-0007). The markdown must reflect the current public API — stale or
+missing docs ship to Maven Central consumers.
+
+1. Generate Dokka HTML and the javadoc JAR:
+
+   ```bash
+   ./gradlew :crypto:javadocJarJvm --rerun-tasks --no-build-cache
+   ```
+
+2. Verify the JAR contains both HTML and markdown:
+
+   ```bash
+   jar tf crypto/build/libs/crypto-*-javadoc.jar | grep -c "\.html$"  # ≥ 10
+   jar tf crypto/build/libs/crypto-*-javadoc.jar | grep -c "\.md$"     # ≥ 5
+   ```
+
+3. Cross-check that every new public API method appears in
+   `docs/reference/api-reference.md`:
+
+   ```bash
+   # Extract public API from the Dokka HTML and diff against the markdown docs
+   # (manual review — spot-check method names in the reference)
+   ```
+
+4. Run markdown lint + link check on changed docs:
+
+   ```bash
+   npx markdownlint-cli2 "docs/reference/*.md"
+   ```
+
+If docs are missing or stale, update `docs/reference/api-reference.md` and
+`docs/reference/supported-primitives.md`, then re-run the quality gate.
 
 ## Step 4: Update the changelog
 
@@ -85,6 +126,31 @@ If artifact coordinates or API surface changed, update:
 - [API reference](../../docs/reference/api-reference.md)
 - [Supported primitives table](../../docs/reference/supported-primitives.md)
 - [Get started guide](get-started.md) — update version numbers and coordinates
+
+## Automated release script
+
+A repeatable release script is provided at [`../../scripts/release.sh`](../../scripts/release.sh).
+It automates version bump, quality gate, ABI update, docs verification,
+commit, branch creation, PR, and tagging:
+
+```bash
+./scripts/release.sh 0.2.0
+```
+
+The script enforces all quality gates before tagging and pushes the tag
+to trigger the publish workflow automatically. It creates a feature branch
+(never pushes directly to `main`) and opens a PR for review.
+
+## Branch protection
+
+`main` has protected branch rules that **block direct pushes**. Every release
+must follow the PR-based flow:
+
+1. Create a release branch: `git checkout -b release/v0.2.0`
+2. Push the branch: `git push -u origin release/v0.2.0`
+3. Open a PR: `gh pr create --title "release: v0.2.0" --base main`
+4. Merge the PR (requires admin/squash if auto-merge is not enabled)
+5. Switch to `main` and tag: `git checkout main && git tag -f v0.2.0 && git push origin v0.2.0`
 
 ## Step 6: Create and push the release tag
 
@@ -141,9 +207,29 @@ Expected artifacts:
 
 ## Troubleshooting
 
-### Missing Javadoc JAR
+### Missing or empty javadoc JAR
 
-The Central Portal requires a javadoc JAR for JVM publications. Ensure `javadocJarJvm` (built from Dokka HTML output) is attached to the JVM publication in `crypto/build.gradle.kts`.
+The Central Portal requires a javadoc JAR for JVM publications. The `javadocJarJvm`
+task bundles Dokka-generated HTML **and** markdown docs from `docs/reference/` + `docs/how-to/`
+into the JAR (ADR-0007). If the JAR is missing or empty:
+
+1. Ensure `javadocJarJvm` is registered and attached to the JVM publication in
+   `crypto/build.gradle.kts`:
+
+   ```kotlin
+   if (targetName == "jvm") {
+       artifact(tasks.named("javadocJarJvm"))
+   }
+   ```
+
+2. Verify the JAR contains HTML + markdown after building:
+
+   ```bash
+   jar tf crypto/build/libs/crypto-*-javadoc.jar | grep -c "\.html$"  # ≥ 10
+   jar tf crypto/build/libs/crypto-*-javadoc.jar | grep -c "\.md$"     # ≥ 5
+   ```
+
+3. Check `.dokka/` HTML output exists: `./gradlew :crypto:dokkaGenerateHtml`
 
 ### Missing sources JAR
 
