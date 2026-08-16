@@ -102,21 +102,19 @@ jobs:
         run: |
           URL="https://central.sonatype.com/api/v1/publisher/upload"
           TOKEN=$(cat /tmp/bearer-token.txt)
-          RESP=$(curl -sS -w '\n%{http_code}' \
+          HTTP_CODE=$(curl -sS -o /tmp/upload-response.txt -w '%{http_code}' \
             -X POST \
             -H "Authorization: Bearer $TOKEN" \
             -F bundle=@crypto/build/distributions/central-bundle.zip \
             "$URL?name=meshlink-crypto&publishingType=USER_MANAGED")
-          HTTP_CODE=$(echo "$RESP" | tail -1)
-          BODY=$(echo "$RESP" | head -n -1)
           echo "HTTP status: $HTTP_CODE"
           if [ "$HTTP_CODE" != "201" ]; then
-            echo "::error::Upload failed (HTTP $HTTP_CODE): $BODY"
+            echo "::error::Upload failed (HTTP $HTTP_CODE): $(cat /tmp/upload-response.txt)"
             exit 1
           fi
-          echo "Upload response: $BODY"
+          echo "Upload response: $(cat /tmp/upload-response.txt)"
           # Central Portal returns the deployment ID as a plain-text UUID
-          ID=$(echo "$BODY" | tr -d '[:space:]')
+          ID=$(tr -d '[:space:]' < /tmp/upload-response.txt)
           echo "deployment_id=$ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for validation
