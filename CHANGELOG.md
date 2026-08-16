@@ -56,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Javadocs must be provided but not found in entries` Central Portal validation error: javadoc JAR was not reliably attached when using the OSSRH Staging API. Now properly wired via `artifact(tasks.named("javadocJarJvm"))` in the local file repository flow.
 - Namespace mismatch (`ch.trancee.meshlink` Maven group vs `ch.trancee.meshlink.crypto` transfer namespace): eliminated by the Central Portal Publisher API, which derives the namespace from the authenticated token.
 - `publish.yml` build step now runs `./gradlew :crypto:check` (quality gate) before `:crypto:publish :crypto:centralBundle`, with `--rerun-tasks --no-build-cache` flags on all Gradle invocations.
+- PGP key parsing failure (`no valid OpenPGP data found` / `Could not read PGP secret key`): the `SIGNING_KEY` secret contained literal `\\n` (double-backslash-n) escape sequences instead of actual newlines. Added normalization in `crypto/build.gradle.kts` that replaces `\\n` → LF before passing the key to `useInMemoryPgpKeys()`. Also updated the GitHub secret and `.env` to use proper newline formatting.
+- `publish.yml` upload step `jq` parse error: Central Portal returns the deployment ID as a plain-text UUID, not JSON `{deploymentId: "..."}`. Replaced `jq -r '.deploymentId'` with `curl -o file -w '%{http_code}'` + `tr -d '[:space:]'`.
+- macOS portability: `head -n -1` (BSD head) fails with "illegal line count -- -1" on GitHub Actions `macos-latest`. Replaced with portable `curl -o /tmp/file -w '%{http_code}'` pattern.
+- Validation step shell syntax error: a missing `fi` caused "unexpected end of file" on macOS runners.
 
 ## [0.1.0] — 2026-08-15
 
