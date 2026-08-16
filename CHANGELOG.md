@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SIGNING_KEY_ID` env var is no longer consumed by the build — the signing
   plugin extracts the key ID from the PGP private key block automatically.
   The secret can be removed from GitHub without affecting the build.
+- Migrated publishing from the legacy OSSRH Staging API (`ossrh-staging-api.central.sonatype.com`) to the Central Portal Publisher API (`central.sonatype.com/api/v1/publisher/upload`) via bundle upload. The `publish.yml` workflow now builds, signs, and zips artifacts to a local file repository, then uploads the bundle with a Bearer token (Central Portal User Token).
+- Replaced the remote publishing repository in `crypto/build.gradle.kts` with a local file repository (`build/maven-bundle/`). The `centralBundle` Zip task packages this directory for upload.
+- Replaced the fragile `useInMemoryPgpKeys()` block (with 6-line key normalization) in `crypto/build.gradle.kts` with the standard `signingInMemoryKey` / `signingInMemoryKeyPassword` Gradle properties, which the signing plugin reads automatically from `ORG_GRADLE_PROJECT_*` env vars.
+- Added `sourcesJarJvm`, `sourcesJarAndroid`, and `centralBundle` Gradle tasks. Sources JARs are attached to the JVM and Android publications — required by the Central Portal alongside javadoc JARs and PGP signatures.
+- Removed `SIGNING_KEY_ID` from `.env.example` — the signing plugin extracts the key ID from the PGP key block automatically.
+- Rewrote `.github/workflows/publish.yml`: removed the PGP key validation, OSSRH credential check, stale staging repository drop, staging search, manual transfer (`POST /manual/upload/defaultRepository/<namespace>`), and post-transfer verification steps. Replaced with the Central Portal Publisher API flow: upload → poll status → publish deployment.
+- Fixed `--rerun` → `--rerun-tasks` across AGENTS.md, CONTRIBUTING.md, README.md, CONSTITUTION.md, and kotlin-polyglot-test-analysis SKILL.md (Gradle 9.x requires `--rerun-tasks`, not `--rerun`).
 
 ### Fixed
 
@@ -45,6 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Added post-transfer verification step that queries the staging API to confirm
   the deployment was accepted (state changes to "closed", `portal_deployment_id`
   becomes non-null).
+- `Task 'PGP' not found` CI error: the `useInMemoryPgpKeys()` call with a `null` key ID was incompatible with the signing plugin. Resolved by switching to property-based `signingInMemoryKey` / `signingInMemoryKeyPassword`.
+- `Javadocs must be provided but not found in entries` Central Portal validation error: javadoc JAR was not reliably attached when using the OSSRH Staging API. Now properly wired via `artifact(tasks.named("javadocJarJvm"))` in the local file repository flow.
+- Namespace mismatch (`ch.trancee.meshlink` Maven group vs `ch.trancee.meshlink.crypto` transfer namespace): eliminated by the Central Portal Publisher API, which derives the namespace from the authenticated token.
+- `publish.yml` build step now runs `./gradlew :crypto:check` (quality gate) before `:crypto:publish :crypto:centralBundle`, with `--rerun-tasks --no-build-cache` flags on all Gradle invocations.
 
 ## [0.1.0] — 2026-08-15
 

@@ -25,7 +25,7 @@ means for this repository. Code owners enforce it via CODEOWNERS review.
 - JDK 21 toolchain.
 - ktfmt for formatting, detekt for linting, kover for coverage,
   ABI validation via `kotlin { abiValidation {} }` (ADR-0007).
-- `./gradlew check --rerun --no-build-cache` must pass locally before PR.
+- `./gradlew check --rerun-tasks --no-build-cache` must pass locally before PR.
 
 ## 4. CI
 

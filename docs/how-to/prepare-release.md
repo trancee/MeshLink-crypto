@@ -107,18 +107,18 @@ gh run watch --repo trancee/MeshLink-crypto
 
 The workflow performs these steps:
 
-1. **Validate PGP signing key** — parses `SIGNING_KEY` via gpg in all formats (raw, with headers, with newline conversion)
-2. **Check Sonatype credentials** — verifies Central Portal User Token against the OSSRH Staging API
-3. **Drop stale staging repositories** — deletes any leftover "closed" staging repos from prior failed publishes
-4. **Build and publish** — `./gradlew :crypto:publish` signs and uploads all publications (JVM, Android, iOS, KMP metadata)
-5. **Search for staged repositories** — diagnostic step confirming a staging repo was created
-6. **Transfer deployment to Central Portal** — `POST /manual/upload/defaultRepository/ch.trancee.meshlink.crypto` transfers the staged deployment to the Central Portal with the namespace `ch.trancee.meshlink.crypto`.
+1. **Quality gate** — `./gradlew :crypto:check --rerun-tasks --no-build-cache` (detekt + kover + spotless + abiValidation + JVM tests)
+2. **Build, sign, and bundle** — `./gradlew :crypto:publish :crypto:centralBundle` publishes all KMP publications (JVM, Android, iOS, KMP metadata) with PGP signatures to a local file repository, then zips into `central-bundle.zip`
+3. **Authenticate** — computes a Bearer token from the Central Portal User Token (`base64(USERNAME:PASSWORD)`)
+4. **Upload bundle** — `POST https://central.sonatype.com/api/v1/publisher/upload` uploads the zip (skill §3)
+5. **Wait for validation** — polls `POST /api/v1/publisher/status?id=$ID` every 10s until the deployment reaches `VALIDATED` or `FAILED` (skill §4)
+6. **Publish deployment** — `POST /api/v1/publisher/deployment/$ID` (USER_MANAGED) transitions the deployment to `PUBLISHING → PUBLISHED` (skill §5)
+7. **Wait for publication** — polls status until `PUBLISHED`
 
-All steps must pass. If the transfer step fails:
+All steps must pass. If validation fails:
 
-- Check the error response in the workflow logs
-- Ensure no stale staging repos exist in the [Central Portal](https://central.sonatype.com/)
-- Re-tag and re-push if needed
+- Check the error response in the workflow logs (missing JARs, invalid POM, or signature issues)
+- Fix the issue and re-tag
 
 ## Step 8: Verify on Maven Central
 
@@ -135,31 +135,33 @@ curl -sS "https://search.maven.org/solrsearch/select?q=g:ch.trancee.meshlink&row
 Expected artifacts:
 
 - `ch.trancee.meshlink:meshlink-crypto` — main metadata (Gradle KMP consumers)
-- `ch.trancee.meshlink:meshlink-crypto-jvm` — JVM (with Javadoc JAR)
-- `ch.trancee.meshlink:meshlink-crypto-android` — Android
+- `ch.trancee.meshlink:meshlink-crypto-jvm` — JVM (with Javadoc JAR + sources JAR)
+- `ch.trancee.meshlink:meshlink-crypto-android` — Android (with sources JAR)
 - `ch.trancee.meshlink:meshlink-crypto-ios` — iOS arm64 (KLib)
 
 ## Troubleshooting
 
-### "Repository is in state closed and must be dropped"
+### Missing Javadoc JAR
 
-A previous failed publish left a staging repo in "closed" state. The workflow's "Drop stale staging repositories" step should handle this automatically. If it doesn't, manually drop the repo in the Central Portal UI.
+The Central Portal requires a javadoc JAR for JVM publications. Ensure `javadocJarJvm` (built from Dokka HTML output) is attached to the JVM publication in `crypto/build.gradle.kts`.
 
-### `402 Payment Required`
+### Missing sources JAR
 
-Your Sonatype account has been migrated from legacy OSSRH (`s01.oss.sonatype.org`) to the Central Portal. Ensure publishing uses the OSSRH Staging API endpoint (`ossrh-staging-api.central.sonatype.com`), not the legacy URL. Ensure credentials are Central Portal User Tokens, not legacy OSSRH tokens.
+The Central Portal requires a sources JAR for all publications. Ensure `sourcesJarJvm` and `sourcesJarAndroid` tasks are wired into the respective publications in `crypto/build.gradle.kts`.
 
-### Signing key format errors
+### Upload returns non-201 status
 
-The `SIGNING_KEY` secret must be an ASCII-armored PGP private key block. Export it correctly:
+Ensure `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD` are Central Portal User Tokens (not legacy OSSRH tokens). Generate at [central.sonatype.com/publishing/user-tokens](https://central.sonatype.com/publishing/user-tokens).
+
+### Signing key not recognized
+
+The `SIGNING_KEY` secret must be an ASCII-armored PGP private key block. The workflow passes it as `ORG_GRADLE_PROJECT_signingInMemoryKey` — the Gradle signing plugin reads it directly, no normalization needed. Export with:
 
 ```bash
 gpg --armor --export-secret-keys <KEY_ID>
 ```
 
-Copy the entire output, including the `-----BEGIN PGP PRIVATE KEY BLOCK-----` and `-----END PGP PRIVATE KEY BLOCK-----` lines, into the `SIGNING_KEY` secret.
-
-The workflow will try parsing the key as-is, with headers added, and with newline conversion — but a properly exported key should work on the first attempt.
+Copy the entire output (including `BEGIN`/`END` headers) into the `SIGNING_KEY` GitHub secret.
 
 ### yamllint failures in CI
 

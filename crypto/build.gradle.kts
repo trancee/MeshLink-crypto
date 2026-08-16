@@ -165,6 +165,22 @@ tasks.register<Jar>("javadocJarJvm") {
   from(tasks.named("dokkaGenerateHtml"))
 }
 
+// Sources JARs: Central Portal requires sources JARs for all publications.
+// KMP auto-generates <target>SourcesJar tasks (jvmSourcesJar, androidSourcesJar,
+// iosArm64SourcesJar, etc.) and attaches them to each target's publication.
+// We only need to manually attach the Javadoc JAR (Dokka HTML) for JVM.
+
+// Central Portal Publisher API bundle: zips the local Maven repo into a
+// single archive for upload via POST /api/v1/publisher/upload.
+// See: .agents/skills/central-portal-publish/SKILL.md
+tasks.register<Zip>("centralBundle") {
+  archiveFileName.set("central-bundle.zip")
+  from(layout.buildDirectory.dir("maven-bundle"))
+  destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+  // Ensure signed artifacts are written to the local repo before zipping.
+  dependsOn("publish")
+}
+
 // Publishing configuration for Maven Central.
 // KMP auto-registers MavenPublication per target. Configure shared POM metadata
 // and PGP signing. Credentials read from Gradle properties (set locally via
@@ -189,10 +205,13 @@ publishing {
           else -> targetName
         }
     )
-    // Attach Javadoc JAR to JVM publication for Maven Central requirement.
+    // Javadoc JAR: Central Portal requires it for JVM publications.
+    // Sources JARs are auto-attached by KMP (jvmSourcesJar, androidSourcesJar, etc.).
     if (targetName == "jvm") {
       artifact(tasks.named("javadocJarJvm"))
     }
+    // Android: KMP Android plugin already attaches androidSourcesJar to
+    // the "android" publication — no manual sources JAR needed (would conflict).
     pom {
       name.set("MeshLink-crypto")
       description.set(
@@ -221,56 +240,33 @@ publishing {
     }
   }
 
-  // Maven Central / Central Portal repository.
-  // Migrated from s01.oss.sonatype.org (legacy OSSRH, returns HTTP 402
-  // Payment Required when account is on the Central Portal) to the
-  // Central Portal's OSSRH Staging API compatibility endpoint.
-  // Credentials must be Central Portal User Tokens (generated at
-  // https://central.sonatype.com/), NOT legacy OSSRH tokens.
-  // See: https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/
+  // Local file repository for Central Portal Publisher API bundle upload.
+  // Artifacts (including PGP signatures, javadoc, and sources JARs) are
+  // written here, then zipped into central-bundle.zip and uploaded via
+  // POST /api/v1/publisher/upload. No remote credentials needed —
+  // authentication to the Central Portal happens via Bearer token in CI.
+  // See: .agents/skills/central-portal-publish/SKILL.md
   repositories {
     maven {
-      name = "MavenCentral"
-      url =
-          uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
-      credentials {
-        username =
-            findProperty("MAVEN_CENTRAL_USERNAME") as String?
-                ?: System.getenv("MAVEN_CENTRAL_USERNAME")
-                ?: ""
-        password =
-            findProperty("MAVEN_CENTRAL_PASSWORD") as String?
-                ?: System.getenv("MAVEN_CENTRAL_PASSWORD")
-                ?: ""
-      }
+      name = "localBundle"
+      url = uri(layout.buildDirectory.dir("maven-bundle"))
     }
   }
 }
 
 // Signing: PGP-sign all published artifacts.
-// In CI, signing config is passed via environment variables (SIGNING_KEY,
-// SIGNING_KEY_PASSWORD) because the PGP key block is multi-line and breaks
-// -P flag shell expansion. Locally, set them in ~/.gradle/gradle.properties
-// or export as env vars. The keyId is passed as null so the signing plugin
-// extracts it from the PGP private key block itself.
+// In CI, the signing key is passed as ORG_GRADLE_PROJECT_signingInMemoryKey /
+// _Password env vars → Gradle project properties "signingInMemoryKey" /
+// "signingInMemoryKeyPassword". The signing plugin auto-detects only
+// the dotted "signing.inMemoryKey" / "signing.password" properties, so we
+// wire the camelCase ones explicitly via useInMemoryPgpKeys() — no key
+// normalization block needed. Locally, set signing.keyId, signing.password,
+// and signing.secretKeyRingFile in ~/.gradle/gradle.properties.
 signing {
-  val signingKey: String? = findProperty("signingKey") as String? ?: System.getenv("SIGNING_KEY")
-  val signingPassword: String? =
-      findProperty("signingKeyPassword") as String? ?: System.getenv("SIGNING_KEY_PASSWORD")
-  if (signingKey != null) {
-    // Normalize line endings: GitHub Secrets may inject CRLF which BouncyCastle
-    // (used by the signing plugin) cannot parse, even though gpg handles it fine.
-    var normalizedKey = signingKey.trim().replace("\r\n", "\n").replace("\r", "\n")
-    // Some secret managers store keys with literal backslash-n sequences
-    // instead of actual newline characters. Convert them to real newlines.
-    normalizedKey = normalizedKey.replace("\\n", "\n").replace("\\r", "\n")
-    // Some secret managers store the key without ASCII armor headers.
-    // Wrap in standard PGP private key block delimiters if missing.
-    if (!normalizedKey.contains("BEGIN PGP")) {
-      normalizedKey =
-          "-----BEGIN PGP PRIVATE KEY BLOCK-----\n\n$normalizedKey\n-----END PGP PRIVATE KEY BLOCK-----"
-    }
-    useInMemoryPgpKeys(null as String?, normalizedKey, signingPassword)
-    sign(publishing.publications)
+  val key = findProperty("signingInMemoryKey") as String?
+  val pass = findProperty("signingInMemoryKeyPassword") as String?
+  if (key != null) {
+    useInMemoryPgpKeys(key, pass)
   }
+  sign(publishing.publications)
 }
