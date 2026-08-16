@@ -13,12 +13,12 @@ Before you start, read `CONTEXT.md` (domain glossary) and an ADR in `docs/adr/`.
 
 ## Build, test, and check
 
-Run from the repo root. Always pass `--rerun --no-build-cache` so no cached output
+Run from the repo root. Always pass `--rerun-tasks --no-build-cache` so no cached output
 hides a breakage (`docs/agents/build.md`).
 
 ```bash
 # Full gate: ktfmt + detekt (constant-time lint) + kover (100% pure-K) + ABI + tests
-./gradlew check --rerun --no-build-cache
+./gradlew check --rerun-tasks --no-build-cache
 ```
 
 ## Git hooks
@@ -32,5 +32,5 @@ git config core.hooksPath .githooks
 ## Pull requests
 
 - Conventional Commits.
-- Ensure `./gradlew check --rerun --no-build-cache` is green.
+- Ensure `./gradlew check --rerun-tasks --no-build-cache` is green.
 - CI runs on every pull request (`.github/workflows/ci.yml`, macOS + Android + iOS).

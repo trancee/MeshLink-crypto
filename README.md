@@ -120,7 +120,7 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 
 1. Open a GitHub issue first.
 2. Implement the primitive with test vectors, green constant-time lint, and 100% coverage on the pure-K path.
-3. Run `./gradlew check --rerun --no-build-cache` locally.
+3. Run `./gradlew check --rerun-tasks --no-build-cache` locally.
 4. Open a pull request with a Conventional Commit message.
 
 Code of conduct: be respectful. Security issues are reported via [SECURITY.md](SECURITY.md).

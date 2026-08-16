@@ -25,7 +25,7 @@ tailored for this Kotlin Multiplatform (KMP) cryptography project.
 | Static analysis | **detekt** (incl. custom constant-time lint via `:crypto-detekt-rules`) |
 | Formatting | **ktfmt** + spotless |
 | Test sources | `crypto/src/commonTest/kotlin/ch/trancee/meshlink/crypto/` |
-| Build convention | `./gradlew test --rerun --no-build-cache` (never use build cache) |
+| Build convention | `./gradlew test --rerun-tasks --no-build-cache` (never use build cache) |
 
 ## Installed Polyglot Skills
 
@@ -189,7 +189,7 @@ Kotlin extension data above to detect:
   assertion messages repeating the assertion, missing AAA separation
 - **Low**: unused setup/teardown, print debugging, inconsistent naming
 
-**Build command for verification**: `./gradlew :crypto:jvmTest --rerun --no-build-cache`
+**Build command for verification**: `./gradlew :crypto:jvmTest --rerun-tasks --no-build-cache`
 
 ### 2. Assertion quality — `assertion-quality`
 
@@ -224,9 +224,9 @@ should have at least one mutation that would be killed. Focus on:
 - Exception removal in guard clauses
 
 **Verification procedure**:
-1. Establish green baseline: `./gradlew :crypto:jvmTest --rerun --no-build-cache`
+1. Establish green baseline: `./gradlew :crypto:jvmTest --rerun-tasks --no-build-cache`
 2. Apply each candidate survivor as a real edit
-3. Re-run covering tests: `./gradlew :crypto:jvmTest --tests "*ClassName.testMethodName*" --rerun --no-build-cache`
+3. Re-run covering tests: `./gradlew :crypto:jvmTest --tests "*ClassName.testMethodName*" --rerun-tasks --no-build-cache`
 4. Revert immediately after each check
 5. Report: "N of M injected mutations were caught"
 

@@ -4,6 +4,9 @@ build/
 out/
 crypto-kmp/build/
 
+# Kotlin
+.kotlin/
+
 # Local SDK/IDE
 local.properties
 *.iml
