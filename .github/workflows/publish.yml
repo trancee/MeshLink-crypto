@@ -63,9 +63,26 @@ jobs:
           if [ -z "$first" ]; then
             echo "::error::SIGNING_KEY does not contain a PGP block header"
             exit 1
-          fi
           echo "Key length: ${#SIGNING_KEY} characters"
-          echo "PGP key format looks valid. Gradle signing plugin will validate further."
+          # Diagnose key type (PRIVATE vs PUBLIC vs other)
+          key_type=$(printf '%s' "$SIGNING_KEY" | grep -m1 'BEGIN PGP' | grep -oE 'PRIVATE|PUBLIC' || echo "UNKNOWN")
+          echo "Key type: $key_type"
+          # Verify the key block has a matching END marker
+          last=$(printf '%s' "$SIGNING_KEY" | grep -v '^$' | tail -1)
+          echo "Key footer: $last"
+          if ! printf '%s' "$SIGNING_KEY" | grep -q 'END'; then
+            echo "::error::SIGNING_KEY is missing PGP block footer"
+            exit 1
+          fi
+          # Verify key is PRIVATE (signing requires secret key)
+          if [ "$key_type" != "PRIVATE" ]; then
+            echo "::error::SIGNING_KEY is not a PRIVATE PGP key (need secret key for signing)"
+            exit 1
+          fi
+          # Try parsing with gpg import (more lenient than --show-keys)
+          gpg_import_output=$(printf '%s\n' "$SIGNING_KEY" \
+            | gpg --batch --import --import-options show-only 2>&1 || true)
+          echo "GPG import output: $gpg_import_output"
       - name: Build, sign, and bundle
         # Publishes all KMP publications (JVM, Android, iOS, KMP metadata)
         # with PGP signatures to a local file repository, then zips the
