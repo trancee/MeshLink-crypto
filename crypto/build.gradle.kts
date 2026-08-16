@@ -257,15 +257,15 @@ publishing {
 // Signing: PGP-sign all published artifacts.
 // In CI, the signing key is passed as ORG_GRADLE_PROJECT_signingInMemoryKey /
 // _Password env vars → Gradle project properties "signingInMemoryKey" /
-// "signingInMemoryKeyPassword". The signing plugin auto-detects only
-// the dotted "signing.inMemoryKey" / "signing.password" properties, so we
-// wire the camelCase ones explicitly via useInMemoryPgpKeys() — no key
-// normalization block needed. Locally, set signing.keyId, signing.password,
-// and signing.secretKeyRingFile in ~/.gradle/gradle.properties.
+// "signingInMemoryKeyPassword". We wire these explicitly via useInMemoryPgpKeys()
+// (the signing plugin auto-detects only dotted properties like signing.inMemoryKey,
+// which can't be set via env vars with dots). Key is normalized for CRLF + whitespace
+// (GitHub Actions secrets may carry CRLF or stray whitespace). Locally, use
+// signing.keyId / signing.password / signing.secretKeyRingFile in gradle.properties.
 signing {
-  val key = findProperty("signingInMemoryKey") as String?
+  val key = (findProperty("signingInMemoryKey") as String?)?.replace("\r\n", "\n")?.trim()
   val pass = findProperty("signingInMemoryKeyPassword") as String?
-  if (key != null) {
+  if (key != null && key.isNotEmpty()) {
     useInMemoryPgpKeys(key, pass)
   }
   sign(publishing.publications)
