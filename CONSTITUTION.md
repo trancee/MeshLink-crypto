@@ -41,4 +41,7 @@ means for this repository. Code owners enforce it via CODEOWNERS review.
 - Releases use Conventional Commits.
 - Publishing to Maven Central requires GPG-signed artifacts.
 - The release workflow (`.github/workflows/publish.yml`) runs on `v*` tags.
+- **Docs alignment:** `docs/reference/api-reference.md` and `docs/reference/supported-primitives.md` must reflect the current public API before every tag. The javadoc JAR bundles these markdown files alongside Dokka HTML (ADR-0007).
+- **ABI baseline:** `kotlin { abiValidation {} }` dump (`crypto/api/crypto.klib.api`) must be regenerated when public API changes. `abiCheck` gate is part of `check`.
+- **Branch protection:** `main` has protected branch rules — never push directly. Use the `scripts/release.sh` script to automate the branch → PR → merge → tag flow.
 - Security advisories are reported via `SECURITY.md`.
