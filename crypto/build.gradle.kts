@@ -162,7 +162,8 @@ spotless {
 // For Kotlin KMP projects, Dokka HTML output serves as the Javadoc replacement.
 tasks.register<Jar>("javadocJarJvm") {
   archiveClassifier.set("javadoc")
-  from(tasks.named("dokkaGenerateHtml"))
+  dependsOn("dokkaGenerateHtml")
+  from(layout.buildDirectory.dir("dokka/html"))
 }
 
 // Sources JARs: Central Portal requires sources JARs for all publications.

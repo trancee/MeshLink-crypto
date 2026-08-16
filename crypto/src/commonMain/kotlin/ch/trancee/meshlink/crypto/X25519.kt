@@ -41,6 +41,11 @@ internal object X25519PureK {
             }
           }
       )
+  /**
+   * Standard X25519 base point u=9 (RFC 7748 §5). 32-byte little-endian: [9, 0, ..., 0]. Used to
+   * derive the public key from a private scalar: publicKey = scalar * BASEPOINT.
+   */
+  private val BASEPOINT: ByteArray = ByteArray(32) { if (it == 0) 9 else 0 }
 
   /**
    * Returns true if [secret] is the all-zero 32-byte value — a weak X25519 shared secret (RFC 7748
@@ -48,6 +53,18 @@ internal object X25519PureK {
    */
   internal fun isAllZeroSharedSecret(secret: ByteArray): Boolean =
       secret.size == 32 && secret.all { it == 0.toByte() }
+
+  /**
+   * Derives the X25519 public key from a private scalar: publicKey = scalar * BASEPOINT (RFC 7748
+   * §5).
+   *
+   * @param scalar the 32-byte private scalar (little-endian). Must be exactly 32 bytes.
+   * @return the 32-byte public u-coordinate (little-endian).
+   */
+  fun derivePublicKey(scalar: ByteArray): ByteArray {
+    require(scalar.size == 32) { "scalar must be 32 bytes" }
+    return compute(scalar, BASEPOINT)
+  }
 
   /**
    * Computes X25519(scalar, u) per RFC 7748 §5 (Montgomery ladder).

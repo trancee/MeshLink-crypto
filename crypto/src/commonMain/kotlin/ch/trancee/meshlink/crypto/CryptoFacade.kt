@@ -102,6 +102,22 @@ public object KeyExchange {
   public fun x25519(scalar: PrivateKey, u: PublicKey): Result<ByteArray> = runCatching {
     X25519.compute(scalar.bytes, u.bytes)
   }
+
+  /**
+   * Derives the X25519 public key from a private scalar: publicKey = scalar * BASEPOINT (RFC 7748
+   * §5).
+   *
+   * Example:
+   * ```
+   * val privateKey = PrivateKey(randomBytes(32))
+   * val publicKey = KeyExchange.deriveX25519PublicKey(privateKey).getOrThrow()
+   * ```
+   *
+   * @return [Result.success] with the 32-byte public u-coordinate, or [Result.failure] on error.
+   */
+  public fun deriveX25519PublicKey(privateKey: PrivateKey): Result<ByteArray> = runCatching {
+    X25519.derivePublicKey(privateKey.bytes)
+  }
 }
 
 /**
@@ -134,6 +150,21 @@ public object Signer {
       message: ByteArray,
       signature: ByteArray,
   ): Result<Boolean> = runCatching { Ed25519.verify(publicKey.bytes, message, signature) }
+
+  /**
+   * Derives the Ed25519 public key from a private key.
+   *
+   * Example:
+   * ```
+   * val secretKey = PrivateKey(randomBytes(32))
+   * val publicKey = Signer.ed25519PublicKeyFromPrivate(secretKey).getOrThrow()
+   * ```
+   *
+   * @return [Result.success] with the 32-byte public key, or [Result.failure] on error.
+   */
+  public fun ed25519PublicKeyFromPrivate(secretKey: PrivateKey): Result<ByteArray> = runCatching {
+    Ed25519.publicKeyFromPrivate(secretKey.bytes)
+  }
 }
 
 /**

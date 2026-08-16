@@ -78,6 +78,13 @@ public object Crypto {
   public fun x25519(scalar: PrivateKey, u: PublicKey): Result<ByteArray> =
       KeyExchange.x25519(scalar, u)
 
+  /**
+   * Derives the X25519 public key from [privateKey]. Delegates to
+   * [KeyExchange.deriveX25519PublicKey].
+   */
+  public fun deriveX25519PublicKey(privateKey: PrivateKey): Result<ByteArray> =
+      KeyExchange.deriveX25519PublicKey(privateKey)
+
   // -- Ed25519 (RFC 8032 §5.1) -----------------------------------------
 
   /** Signs [message] with Ed25519 [secretKey]. Delegates to [Signer.ed25519Sign]. */
@@ -93,6 +100,16 @@ public object Crypto {
       message: ByteArray,
       signature: ByteArray,
   ): Result<Boolean> = Signer.ed25519Verify(publicKey, message, signature)
+
+  /**
+   * Derives the Ed25519 public key from [secretKey]. Delegates to
+   * [Signer.ed25519PublicKeyFromPrivate].
+   */
+  public fun ed25519PublicKeyFromPrivate(secretKey: PrivateKey): Result<ByteArray> =
+      Signer.ed25519PublicKeyFromPrivate(secretKey)
+
+  /** Generates [size] cryptographically secure random bytes. Delegates to the platform CSPRNG. */
+  public fun randomBytes(size: Int): ByteArray = ch.trancee.meshlink.crypto.randomBytes(size)
 
   // -- ChaCha20-Poly1305 (RFC 8439) ------------------------------------
 

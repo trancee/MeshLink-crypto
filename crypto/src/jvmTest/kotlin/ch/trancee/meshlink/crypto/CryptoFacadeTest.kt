@@ -436,7 +436,7 @@ class CryptoFacadeTest {
   @Test
   @Tag("positive")
   @Tag("edge-case")
-  fun `Kdf hkdfSha256 max output length (8160 bytes) succeeds`() {
+  fun `Kdf hkdfSha256 max output length 8160 bytes succeeds`() {
     // Arrange — 255 * 32 = 8160 per RFC 5869 §2.3
     val ikm = "input-key-material".encodeToByteArray()
     val salt = "salt-value".encodeToByteArray()
@@ -681,6 +681,91 @@ class CryptoFacadeTest {
 
     // Act
     val result = Crypto.chacha20Poly1305Decrypt(key, ciphertext)
+
+    // Assert — fail-fast: IllegalArgumentException wrapped as Result.failure
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> {
+      result.getOrThrow()
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Public key derivation tests (RFC 7748 §6.1 + RFC 8032 §7.1)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `KeyExchange deriveX25519PublicKey matches RFC 7748 Section 6p1 Alice public key`() {
+    // Arrange — Alice's private scalar and expected public key (RFC 7748 §6.1)
+    val aliceScalar = hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a")
+    val alicePublicKey = hex("8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a")
+
+    // Act
+    val result = KeyExchange.deriveX25519PublicKey(PrivateKey(aliceScalar))
+
+    // Assert — scalar * basepoint(9) must equal Alice's public key
+    assertContentEquals(alicePublicKey, result.getOrThrow())
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Signer ed25519PublicKeyFromPrivate matches RFC 8032 Section 7p1 TEST 1`() {
+    // Arrange — RFC 8032 §7.1 TEST 1 secret key and expected public key
+    val secretKey = hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+    val expectedPublicKey = hex("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+
+    // Act
+    val result = Signer.ed25519PublicKeyFromPrivate(PrivateKey(secretKey))
+
+    // Assert — the derived public key must match the RFC 8032 vector
+    assertContentEquals(expectedPublicKey, result.getOrThrow())
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade deriveX25519PublicKey delegates to KeyExchange`() {
+    val aliceScalar = hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a")
+    val expected = KeyExchange.deriveX25519PublicKey(PrivateKey(aliceScalar)).getOrThrow()
+    val actual = Crypto.deriveX25519PublicKey(PrivateKey(aliceScalar)).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade ed25519PublicKeyFromPrivate delegates to Signer`() {
+    val secretKey = hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+    val expected = Signer.ed25519PublicKeyFromPrivate(PrivateKey(secretKey)).getOrThrow()
+    val actual = Crypto.ed25519PublicKeyFromPrivate(PrivateKey(secretKey)).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto randomBytes returns correct length and is non-deterministic`() {
+    // Arrange + Act — generate two 32-byte random arrays
+    val a = Crypto.randomBytes(32)
+    val b = Crypto.randomBytes(32)
+
+    // Assert — correct length, and (statistically) never identical
+    assertEquals(32, a.size)
+    assertEquals(32, b.size)
+    assertFalse { a.contentEquals(b) }
+  }
+
+  @Test
+  @Tag("edge-case")
+  @Tag("negative")
+  fun `Crypto deriveX25519PublicKey with wrong-size scalar fails fast`() {
+    // Arrange — scalar must be 32 bytes; 16-byte input triggers require() failure
+    val shortScalar = PrivateKey(ByteArray(16) { 0x01 })
+
+    // Act
+    val result = Crypto.deriveX25519PublicKey(shortScalar)
 
     // Assert — fail-fast: IllegalArgumentException wrapped as Result.failure
     assertTrue(result.isFailure)

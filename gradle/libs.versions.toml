@@ -5,7 +5,7 @@
 # `kotlin { abiValidation {} }` (KGP 2.4.10) rather than the standalone
 # BCV plugin, which has compatibility issues with AGP 9.x. See ADR-0007.
 [versions]
-library = "0.1.0"
+library = "0.1.1"
 kotlin = "2.4.10"
 agp = "9.3.1"
 detekt = "2.0.0-alpha.6"
