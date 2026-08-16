@@ -266,6 +266,7 @@ signing {
   val key =
       (findProperty("signingInMemoryKey") as String?)
           ?.replace("\uFEFF", "") // Strip UTF-8 BOM if present
+          ?.replace("\\\\n", "\n") // Replace literal \\n (double-backslash-n) with real newlines
           ?.replace("\r\n", "\n")
           ?.replace("\r", "\n")
           ?.trim()
