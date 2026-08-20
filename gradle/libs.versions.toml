@@ -10,7 +10,7 @@ kotlin = "2.4.10"
 agp = "9.3.1"
 detekt = "2.0.0-alpha.6"
 kover = "0.9.9"
-spotless = "8.9.0"
+spotless = "8.10.0"
 dokka = "2.2.0"
 
 [plugins]
