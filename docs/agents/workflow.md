@@ -34,6 +34,7 @@ After completing a task, include a `Skills Used` summary listing which skill ins
 
 For agent-specific conventions, see:
 
+- [Benchmarking](benchmarking.md) — before/after performance comparison convention
 - [Issue tracker](issue-tracker.md) — local markdown issue/spec conventions
 - [Triage labels](triage-labels.md) — canonical label strings
 - [Domain docs](domain.md) — how to consume this repo's domain documentation
