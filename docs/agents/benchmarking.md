@@ -92,26 +92,20 @@ Present results in a Markdown table comparing **before** (buggy) vs. **after**
 
 | Input Size | Before (us/op) | After (us/op) | Before (MB/s) | After (MB/s) | Difference |
 |---|---|---|---|---|---|
-| 0 B | 13.49 | 6.10 | -- | -- | +/- noise |
-| 64 B | 5.70 | 5.33 | 10.7 | 11.4 | -6.5% (:warning:) |
+| 0 B | 13.49 | 6.10 | N/A | N/A | warmup-only |
+| 64 B | 5.70 | 5.33 | 10.7 | 11.4 | -6.5% |
+| 135 B | 4.99 | 4.94 | 25.8 | 26.0 | -1.0% |
 
 **Rules for Markdown tables in PR comments**:
 
-- The separator row (`|---|...`) must have the same number of columns as the
-  header row. GitHub silently fails to render tables with mismatched column
-  counts. Count the pipes.
-- Use plain ASCII in PR comment tables. Avoid Unicode operators like mu (us) or
-  em dash (--). Use `us` and `--` instead.
-- Flag rows where pct exceeds the +/-5% noise threshold with `:warning:` in the
-  Difference column. This makes potential regressions easy to spot at a glance.
-- The 0 B (empty input) row should be marked `±noise` since warm-up jitter
-  dominates at zero input size (no throughput).
-
-If all rows are within the +/-5% noise threshold, state that the change is
-performance-neutral.
-
-## How to document
-
-1. Add a **comment to the PR** with the before/after comparison table.
-2. Include a `Skills Used` summary in the completion report.
-3. Reference the benchmark in the commit message if performance is a concern.
+- The separator row must have the same number of columns as the header row.
+  GitHub silently fails to render tables with mismatched column counts.
+  Count the pipes.
+- Use plain ASCII for numbers (us, MB/s, --, +).
+- The 0 B (empty input) row should be marked "warmup-only" with N/A for
+  throughput. MB/s is undefined at zero input; timing is JVM warmup jitter.
+- Flag rows where pct exceeds the +/-5% noise threshold with the Unicode
+  warning emoji in the Difference column. This makes regressions easy to
+  spot at a glance.
+- If all rows are within the +/-5% noise threshold, state that the change is
+  performance-neutral.
