@@ -87,12 +87,13 @@ Output length: 64 bytes (standard SHAKE256 output).
 ## How to present results
 
 Present results in a Markdown table comparing **before** (buggy) vs. **after**
-(fixed), with a percentage change column (`pct` = (after-before)/before * 100):
+(fixed). The **Difference** column goes at the end of the table
+(pct = (after-before)/before * 100):
 
-| Input Size | Before (us/op) | After (us/op) | pct | Before (MB/s) | After (MB/s) |
+| Input Size | Before (us/op) | After (us/op) | Before (MB/s) | After (MB/s) | Difference |
 |---|---|---|---|---|---|
-| 0 B | 13.49 | 6.10 | +/- noise | -- | -- |
-| 64 B | 5.70 | 5.33 | -6.5% | 10.7 | 11.4 |
+| 0 B | 13.49 | 6.10 | -- | -- | +/- noise |
+| 64 B | 5.70 | 5.33 | 10.7 | 11.4 | -6.5% (:warning:) |
 
 **Rules for Markdown tables in PR comments**:
 
@@ -101,8 +102,12 @@ Present results in a Markdown table comparing **before** (buggy) vs. **after**
   counts. Count the pipes.
 - Use plain ASCII in PR comment tables. Avoid Unicode operators like mu (us) or
   em dash (--). Use `us` and `--` instead.
+- Flag rows where pct exceeds the +/-5% noise threshold with `:warning:` in the
+  Difference column. This makes potential regressions easy to spot at a glance.
+- The 0 B (empty input) row should be marked `±noise` since warm-up jitter
+  dominates at zero input size (no throughput).
 
-If the performance is within noise (+/-5%), state that the change is
+If all rows are within the +/-5% noise threshold, state that the change is
 performance-neutral.
 
 ## How to document
