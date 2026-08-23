@@ -112,6 +112,7 @@ kover {
       filters {
         excludes {
           classes(
+              "ch.trancee.meshlink.crypto.SHAKE256",
               "ch.trancee.meshlink.crypto.SHA256",
               "ch.trancee.meshlink.crypto.SHA512",
               "ch.trancee.meshlink.crypto.HMAC_SHA256",

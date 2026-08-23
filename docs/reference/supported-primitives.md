@@ -14,7 +14,7 @@ The library implements seven RFC-standard cryptographic primitives. Each primiti
 | HKDF-SHA256 | [RFC 5869](https://datatracker.ietf.org/doc/html/rfc5869) | Yes | JCA HMAC (`Mac`) | JCA HMAC (`Mac`) | CCHmac (`CCHmac`) |
 | X25519 | [RFC 7748 §5](https://datatracker.ietf.org/doc/html/rfc7748#section-5) | Yes | JCA (`KeyAgreement`) | JCA (`KeyAgreement`, API 29+) | Security.framework (`SecKeyCopyKeyExchangeResult`, iOS 14+) |
 | Ed25519 | [RFC 8032 §5.1](https://datatracker.ietf.org/doc/html/rfc8032#section-5.1) | Yes | JCA (`Signature`) | JCA (`Signature`, API 29+) | Security.framework (`SecKeyCreateSignature`, iOS 14+) |
-| ChaCha20-Poly1305 | [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | Yes | JCA (`Cipher`) | JCA (`Cipher`, API 29+) | CryptoKit provider only (see note) |
+| SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 
 ## Native availability by API level
 
@@ -48,7 +48,7 @@ See [ADR-0002](../adr/0002-fallback-strategy.md) for the dispatch rationale and 
 | HKDF-SHA256 | Variable (up to 8160 bytes) | Same as HMAC-SHA256 |
 | X25519 | 32 bytes | 32 bytes (scalar) |
 | Ed25519 | 64 bytes (signature) | 32 bytes (seed) |
-| ChaCha20-Poly1305 | Plaintext length + 28 bytes (12 nonce + 16 tag) | 32 bytes |
+| SHAKE256 | Variable (any positive byte count) | N/A |
 
 ## Public key derivation
 
