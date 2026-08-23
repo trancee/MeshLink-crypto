@@ -4,7 +4,7 @@
 
 Every change to a cryptographic primitive's implementation (constant-time logic,
 round functions, field arithmetic, permutation steps) **must** include a before/after
-benchmark comparison. This is a **hard requirement** — not optional.
+benchmark comparison. This is a **hard requirement** -- not optional.
 
 ## When to benchmark
 
@@ -49,21 +49,24 @@ class Temp<Primitive>Benchmark {
   @Test
   fun bench() {
     val sizes = listOf(0, 64, 135, 136, 137, 272, 273, 1024, 4096, 65536, 1_000_000)
-    val iters = if (size <= 1024) 10_000 else if (size <= 65536) 1_000 else 10
 
     for (size in sizes) {
+      val iters = if (size <= 1024) 10_000 else if (size <= 65536) 1_000 else 10
       val input = if (size == 0) byteArrayOf() else ByteArray(size) { 0x61 }
-      repeat(if (size <= 1024) 1000 else 10) { <Primitive>Impl.digest(input) }
+      val warmup = if (size <= 1024) 1000 else 10
+      repeat(warmup) { <Primitive>Impl.digest(input) }
       val elapsed = measureNanoTime {
         repeat(iters) { <Primitive>Impl.digest(input) }
       }
-      // Print throughput
+      val perOpUs = (elapsed / iters) / 1000.0
+      val mbps = if (size > 0) (size / 1024.0 / 1024.0) / (perOpUs / 1_000_000.0) else 0.0
+      println("BENCH | input=${size}B | ${perOpUs} us/op | ${mbps} MB/s")
     }
   }
 }
 ```
 
-Run twice — once with the **buggy** version (`git stash` the fix), once with the
+Run twice -- once with the **buggy** version (`git stash` the fix), once with the
 **fixed** version (restore the fix). Delete the temporary file after.
 
 ## What to benchmark
@@ -84,14 +87,22 @@ Output length: 64 bytes (standard SHAKE256 output).
 ## How to present results
 
 Present results in a Markdown table comparing **before** (buggy) vs. **after**
-(fixed):
+(fixed), with a percentage change column (`pct` = (after-before)/before * 100):
 
-| Input Size | Before (μs/op) | After (μs/op) | Δ | Before (MB/s) | After (MB/s) |
+| Input Size | Before (us/op) | After (us/op) | pct | Before (MB/s) | After (MB/s) |
 |---|---|---|---|---|---|
-| 0 B | 13.49 | 6.10 | (noise) | — | — |
+| 0 B | 13.49 | 6.10 | +/- noise | -- | -- |
 | 64 B | 5.70 | 5.33 | -6.5% | 10.7 | 11.4 |
 
-If the performance is within noise (±5%), state that the change is
+**Rules for Markdown tables in PR comments**:
+
+- The separator row (`|---|...`) must have the same number of columns as the
+  header row. GitHub silently fails to render tables with mismatched column
+  counts. Count the pipes.
+- Use plain ASCII in PR comment tables. Avoid Unicode operators like mu (us) or
+  em dash (--). Use `us` and `--` instead.
+
+If the performance is within noise (+/-5%), state that the change is
 performance-neutral.
 
 ## How to document
