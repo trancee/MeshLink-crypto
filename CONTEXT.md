@@ -10,7 +10,7 @@ A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implemen
 
 **Wycheproof**: Google's cryptographic test-vector corpus, used as the correctness oracle for every primitive.
 
-**Supported primitives**: X25519 (RFC 7748), Ed25519 (RFC 8032), ChaCha20-Poly1305 (RFC 8439), HKDF-SHA256 (RFC 5869), HMAC-SHA256 (RFC 2104), SHA-256 (RFC 6234).
+**Supported primitives**: X25519 (RFC 7748), Ed25519 (RFC 8032), ChaCha20-Poly1305 (RFC 8439), HKDF-SHA256 (RFC 5869), HMAC-SHA256 (RFC 2104), SHA-256 (RFC 6234), SHAKE256 (FIPS 202).
 
 **Target scope**: JVM + Android (API >= 21) + iOS arm64 (Darwin native). JS and Kotlin/Native WASM targets are out of scope. Use latest stable Kotlin Multiplatform only (2.4.10). No legacy `javax.crypto`/`BouncyCastle`/old Java — modern platform providers only. _Avoid_: JS/WASM, Android APIs < 21.
 
