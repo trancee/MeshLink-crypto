@@ -45,4 +45,16 @@ public object Hasher {
   public fun shake256(message: ByteArray, outputLength: Int): Result<ByteArray> = runCatching {
     SHAKE256.digest(message, outputLength)
   }
+
+  /**
+   * Computes SHAKE128 (FIPS 202 §8.3), an extendable-output function.
+   *
+   * @param message the bytes to hash.
+   * @param outputLength the number of output bytes to squeeze (any positive value).
+   * @return a [Result] containing [outputLength] pseudo-random bytes, or [Result.failure] if the
+   *   pure-K backend raises an error.
+   */
+  public fun shake128(message: ByteArray, outputLength: Int): Result<ByteArray> = runCatching {
+    SHAKE128.digest(message, outputLength)
+  }
 }

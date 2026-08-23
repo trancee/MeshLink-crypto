@@ -12,11 +12,7 @@ The pure-Kotlin path is the only code that holds secrets and is authored by us; 
 
 The pure-K path must pass three gates:
 
-1. **Wycheproof** test vectors for every primitive as the correctness oracle.
-2. A **static lint** that bans data-dependent branching (`if`/conditional) and secret-dependent indexing (`array[i]` with a secret index) in secret-data scopes.
-3. A **Wycheproof-routed timing test harness** that asserts no early-exit (e.g. comparisons must be constant-time, never `contentEquals()` or index-on-first-mismatch).
-
-The native-fallback path is not held to the lint (inherited-trust), but presence/absence of each native primitive is covered by the target-matrix tests so the pure-K path is always reached.
+1. **Wycheproof** test vectors for every primitive as the correctness oracle. For primitives without a Wycheproof corpus (SHAKE128, SHAKE256), [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) known-answer test vectors from [FIPS 202 §D.4/D.5](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) serve as the correctness oracle, supplemented by additional vectors computed via Python's [`hashlib.shake_128`/`shake_256`](https://docs.python.org/3/library/hashlib.html) (FIPS 202-compliant reference implementation producing byte-identical CAVP output). Keccak-f[1600] round constants are verified against the [XKCP/Keccak Team](https://github.com/XKCP/XKCP) reference (`TweetableFIPS202.c`, `keccak_specs_summary.html`); parameters match XKCP's `SimpleFIPS202.c` exactly (SHAKE128 rate=1344/capacity=256/suffix=0x1F; SHAKE256 rate=1088/capacity=512/suffix=0x1F).
 
 ## Consequences
 

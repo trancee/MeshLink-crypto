@@ -43,6 +43,10 @@ public object Crypto {
   public fun shake256(message: ByteArray, outputLength: Int): Result<ByteArray> =
       Hasher.shake256(message, outputLength)
 
+  /** Computes SHAKE128 (FIPS 202 §8.3). Delegates to [Hasher.shake128]. */
+  public fun shake128(message: ByteArray, outputLength: Int): Result<ByteArray> =
+      Hasher.shake128(message, outputLength)
+
   // -- HMAC (RFC 2104) -------------------------------------------------
 
   /** Computes HMAC-SHA256 over [message] using [key]. Delegates to [Authenticator.hmacSha256]. */

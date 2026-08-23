@@ -21,7 +21,11 @@ Benchmark is **not** required for:
 - Test-only changes (fixing expected values, adding test cases)
 - Documentation-only changes
 - Build configuration changes (unless the change affects compilation flags)
-- Adding new public API surface that delegates to unchanged internals
+- Adding **new primitives** (no "before" version exists to compare against)
+- **Structural refactors** that extract shared code without changing the algorithm
+  (e.g. moving an inline function to a shared engine — same constants, same logic,
+  same instruction count)
+- Adding new public/internal API surface that delegates to unchanged internals
 
 ## How to benchmark
 

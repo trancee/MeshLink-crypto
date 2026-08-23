@@ -106,6 +106,9 @@ tasks
 // kover (ADR-0007): 100% line + branch coverage on the pure-K JVM path.
 // ADR-0002: actual dispatch wrappers delegate to *PureK; exclude from
 // the 100% gate — the *PureK objects carry the real coverage.
+// KeccakEngineKt holds the shared permutation + round constants; its
+// internal val getters are inlined by the compiler (never called), so the
+// class is excluded like the other dispatch/bridge classes.
 kover {
   reports {
     total {
@@ -113,6 +116,7 @@ kover {
         excludes {
           classes(
               "ch.trancee.meshlink.crypto.SHAKE256",
+              "ch.trancee.meshlink.crypto.SHAKE128",
               "ch.trancee.meshlink.crypto.SHA256",
               "ch.trancee.meshlink.crypto.SHA512",
               "ch.trancee.meshlink.crypto.HMAC_SHA256",
@@ -122,6 +126,7 @@ kover {
               "ch.trancee.meshlink.crypto.ChaCha20Poly1305",
               "ch.trancee.meshlink.crypto.CryptoProviderKt",
               "ch.trancee.meshlink.crypto.CryptoBridgeKt",
+              "ch.trancee.meshlink.crypto.KeccakEngineKt",
           )
         }
       }

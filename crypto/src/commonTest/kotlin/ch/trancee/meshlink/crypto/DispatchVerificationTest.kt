@@ -173,4 +173,19 @@ internal class DispatchVerificationTest {
         )
     assertContentEquals(expected, SHAKE256.digest(input, 64))
   }
+
+  // ------------------------------------------------------------------
+  // SHAKE128 (FIPS 202 §8.3) — no native path; PureK fallback on all platforms
+  // ------------------------------------------------------------------
+  @Test
+  fun shake128_dispatchProducesCorrectDigest() {
+    println("DISPATCH_TEST: SHAKE128, path=PureK")
+    val input = "abc".encodeToByteArray()
+    val expected =
+        hex(
+            "5881092dd818bf5cf8a3ddb793fbcba74097d5c526a6d35f97b83351940f2cc8" +
+                "44c50af32acd3f2cdd066568706f509bc1bdde58295dae3f891a9a0fca578378"
+        )
+    assertContentEquals(expected, SHAKE128.digest(input, 64))
+  }
 }

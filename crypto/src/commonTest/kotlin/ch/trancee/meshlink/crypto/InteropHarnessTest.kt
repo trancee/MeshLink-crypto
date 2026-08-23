@@ -120,4 +120,17 @@ class InteropHarnessTest {
         SHAKE256.digest(input, 64),
     )
   }
+
+  @Test
+  fun shake128_matchesPureK() {
+    val input = "abc".encodeToByteArray()
+    assertContentEquals(
+        SHAKE128PureK.digest(input, 32),
+        SHAKE128.digest(input, 32),
+    )
+    assertContentEquals(
+        SHAKE128PureK.digest(input, 64),
+        SHAKE128.digest(input, 64),
+    )
+  }
 }
