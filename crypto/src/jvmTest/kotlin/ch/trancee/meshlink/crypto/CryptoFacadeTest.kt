@@ -557,6 +557,7 @@ class CryptoFacadeTest {
     assertContentEquals(expected, actual)
   }
 
+  @Test
   @Tag("positive")
   @Tag("critical-path")
   fun `Crypto facade shake256 delegates to Hasher`() {
