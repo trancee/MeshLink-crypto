@@ -105,3 +105,15 @@ internal expect object ChaCha20Poly1305 {
       ciphertextWithTag: ByteArray,
   ): ByteArray?
 }
+
+/**
+ * SHAKE256 extendable-output function (FIPS 202 §8.4).
+ *
+ * Dispatch entry point — native provider when available, otherwise [SHAKE256PureK]. On JDK 21,
+ * Android API 21+, and iOS there is no native SHAKE256 C-API or JCA provider that the library can
+ * use; the bridge functions return `null` and the pure-Kotlin path is always taken (ADR-0001,
+ * ticket 34).
+ */
+internal expect object SHAKE256 {
+  fun digest(@Secret message: ByteArray, outputLength: Int): ByteArray
+}

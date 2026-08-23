@@ -74,6 +74,7 @@ final object ch.trancee.meshlink.crypto/Crypto { // ch.trancee.meshlink.crypto/C
     final fun randomBytes(kotlin/Int): kotlin/ByteArray // ch.trancee.meshlink.crypto/Crypto.randomBytes|randomBytes(kotlin.Int){}[0]
     final fun sha256(kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.sha256|sha256(kotlin.ByteArray){}[0]
     final fun sha512(kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.sha512|sha512(kotlin.ByteArray){}[0]
+    final fun shake256(kotlin/ByteArray, kotlin/Int): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.shake256|shake256(kotlin.ByteArray;kotlin.Int){}[0]
     final fun verifyHmacSha256(ch.trancee.meshlink.crypto/SecretKey, kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/Crypto.verifyHmacSha256|verifyHmacSha256(ch.trancee.meshlink.crypto.SecretKey;kotlin.ByteArray;kotlin.ByteArray){}[0]
     final fun x25519(ch.trancee.meshlink.crypto/PrivateKey, ch.trancee.meshlink.crypto/PublicKey): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.x25519|x25519(ch.trancee.meshlink.crypto.PrivateKey;ch.trancee.meshlink.crypto.PublicKey){}[0]
 }
@@ -81,6 +82,7 @@ final object ch.trancee.meshlink.crypto/Crypto { // ch.trancee.meshlink.crypto/C
 final object ch.trancee.meshlink.crypto/Hasher { // ch.trancee.meshlink.crypto/Hasher|null[0]
     final fun sha256(kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Hasher.sha256|sha256(kotlin.ByteArray){}[0]
     final fun sha512(kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Hasher.sha512|sha512(kotlin.ByteArray){}[0]
+    final fun shake256(kotlin/ByteArray, kotlin/Int): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Hasher.shake256|shake256(kotlin.ByteArray;kotlin.Int){}[0]
 }
 
 final object ch.trancee.meshlink.crypto/Kdf { // ch.trancee.meshlink.crypto/Kdf|null[0]

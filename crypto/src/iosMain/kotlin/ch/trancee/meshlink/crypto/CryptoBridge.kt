@@ -244,6 +244,14 @@ internal fun sha512Native(message: ByteArray): ByteArray? {
   return digest
 }
 
+/**
+ * SHAKE256 (FIPS 202 §8.4) native dispatch.
+ *
+ * iOS provides no CommonCrypto or Security.framework C-API for SHAKE256. The pure-Kotlin path is
+ * always taken (ADR-0001, ticket 34).
+ */
+internal fun shake256Native(message: ByteArray, outputLength: Int): ByteArray? = null
+
 internal fun hmacSha256Native(key: ByteArray, message: ByteArray): ByteArray? {
   val mac = ByteArray(HMAC_SHA256_OUTPUT)
   key.usePinned { keyPin ->

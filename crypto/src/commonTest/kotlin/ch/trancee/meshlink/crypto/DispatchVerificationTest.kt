@@ -158,4 +158,19 @@ internal class DispatchVerificationTest {
         "tampered ciphertext must not decrypt",
     )
   }
+
+  // ------------------------------------------------------------------
+  // SHAKE256 (FIPS 202 §8.4) — no native path; PureK fallback on all platforms
+  // ------------------------------------------------------------------
+  @Test
+  fun shake256_dispatchProducesCorrectDigest() {
+    println("DISPATCH_TEST: SHAKE256, path=PureK")
+    val input = "abc".encodeToByteArray()
+    val expected =
+        hex(
+            "483366601360a8771c6863080cc4114d8db44530f8f1e1ee4f94ea37e78b5739" +
+                "d5a15bef186a5386c75744c0527e1faa9f8726e462a12a4feb06bd8801e751e4"
+        )
+    assertContentEquals(expected, SHAKE256.digest(input, 64))
+  }
 }

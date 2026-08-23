@@ -107,4 +107,17 @@ class InteropHarnessTest {
     assertNotNull(pt)
     assertContentEquals(plaintext, pt)
   }
+
+  @Test
+  fun shake256_matchesPureK() {
+    val input = "abc".encodeToByteArray()
+    assertContentEquals(
+        SHAKE256PureK.digest(input, 32),
+        SHAKE256.digest(input, 32),
+    )
+    assertContentEquals(
+        SHAKE256PureK.digest(input, 64),
+        SHAKE256.digest(input, 64),
+    )
+  }
 }

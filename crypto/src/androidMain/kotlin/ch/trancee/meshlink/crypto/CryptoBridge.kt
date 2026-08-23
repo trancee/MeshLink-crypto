@@ -306,6 +306,15 @@ internal fun sha512Native(message: ByteArray): ByteArray? {
   }
 }
 
+/**
+ * SHAKE256 (FIPS 202 §8.4) native dispatch.
+ *
+ * Android API 21+ JCA does not expose SHAKE256. The pure-Kotlin path is always taken (ADR-0001,
+ * ticket 34). The fallback-cache pattern used by sha256Native / sha512Native is unnecessary here:
+ * this function is a permanent no-op.
+ */
+internal fun shake256Native(message: ByteArray, outputLength: Int): ByteArray? = null
+
 internal fun hmacSha256Native(key: ByteArray, message: ByteArray): ByteArray? {
   if (hmacSha256Fallback) return null
   return try {

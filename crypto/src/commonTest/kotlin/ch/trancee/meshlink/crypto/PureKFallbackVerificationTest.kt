@@ -154,4 +154,18 @@ internal class PureKFallbackVerificationTest {
         "tampered ciphertext must not decrypt",
     )
   }
+
+  // ------------------------------------------------------------------
+  // SHAKE256 (FIPS 202 §8.4)
+  // ------------------------------------------------------------------
+  @Test
+  fun shake256_pureKFallbackProducesCorrectDigest() {
+    println("DISPATCH_TEST: SHAKE256, path=PureK")
+    val expected =
+        hex(
+            "483366601360a8771c6863080cc4114d8db44530f8f1e1ee4f94ea37e78b5739" +
+                "d5a15bef186a5386c75744c0527e1faa9f8726e462a12a4feb06bd8801e751e4"
+        )
+    assertContentEquals(expected, SHAKE256PureK.digest("abc".encodeToByteArray(), 64))
+  }
 }

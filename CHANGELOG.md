@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `SHAKE256` extendable-output function (FIPS 202 §8.4) — pure-Kotlin
+  Keccak-f[1600] engine with rate = 136 bytes, capacity = 512 bits, suffix 0x1F,
+  pad10*1 padding. Public API: `Crypto.shake256(message, outputLength)` and
+  `Hasher.shake256(message, outputLength)`, both returning `Result<ByteArray>`.
+  Includes the `SHAKE256Hasher` incremental hasher and known-answer tests covering
+  empty messages, single/multi-block squeeze, block boundaries, and a 1M-byte Monte
+  Carlo vector.
+
 ### Changed
 
 - Artifact coordinates changed from `ch.trancee.meshlink:crypto` to
