@@ -91,21 +91,22 @@ Present results in a Markdown table comparing **before** (buggy) vs. **after**
 (pct = (after-before)/before * 100):
 
 | Input Size | Before (us/op) | After (us/op) | Before (MB/s) | After (MB/s) | Difference |
-|---|---|---|---|---|---|
+|---:|---:|---:|---:|---:|---:|
 | 0 B | 13.49 | 6.10 | N/A | N/A | warmup-only |
-| 64 B | 5.70 | 5.33 | 10.7 | 11.4 | -6.5% |
+| 64 B | 5.70 | 5.33 | 10.7 | 11.4 | warning -6.5% |
 | 135 B | 4.99 | 4.94 | 25.8 | 26.0 | -1.0% |
 
 **Rules for Markdown tables in PR comments**:
 
+- Right-align ALL columns (separator: `---:` for every column).
 - The separator row must have the same number of columns as the header row.
   GitHub silently fails to render tables with mismatched column counts.
   Count the pipes.
 - Use plain ASCII for numbers (us, MB/s, --, +).
 - The 0 B (empty input) row should be marked "warmup-only" with N/A for
   throughput. MB/s is undefined at zero input; timing is JVM warmup jitter.
-- Flag rows where pct exceeds the +/-5% noise threshold with the Unicode
-  warning emoji in the Difference column. This makes regressions easy to
-  spot at a glance.
+- Flag rows where pct exceeds the +/-5% noise threshold by placing the Unicode
+  warning emoji on the LEFT of the percentage in the Difference column.
+  This makes regressions easy to spot at a glance.
 - If all rows are within the +/-5% noise threshold, state that the change is
   performance-neutral.
