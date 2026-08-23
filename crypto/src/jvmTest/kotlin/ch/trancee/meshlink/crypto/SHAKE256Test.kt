@@ -1,3 +1,20 @@
+/**
+ * SHAKE256 known-answer tests (FIPS 202 §8.4).
+ *
+ * The primary vectors (empty, "abc", 0x19, million-a's) are the official NIST CAVP KAT vectors from
+ * FIPS 202 §D.5. The multi-block squeeze and absorb-boundary vectors (135/136/137/272/273 bytes,
+ * 200-byte input) are computed via Python's
+ * [`hashlib.shake_256`](https://docs.python.org/3/library/hashlib.html), a FIPS 202-compliant
+ * reference implementation that produces byte-identical output to the CAVP test suite. Wycheproof
+ * has no SHAKE corpus, so these inline known-answer vectors are the correctness oracle per
+ * [ADR-0003](docs/adr/0003-verification-gates.md) §1 and
+ * [docs/how-to/add-primitive.md](docs/how-to/add-primitive.md) §Step 7. Keccak-f[1600] round
+ * constants verified against [XKCP](https://github.com/XKCP/XKCP) reference; parameters match XKCP
+ * SimpleFIPS202.c.
+ *
+ * Verified:
+ * https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing
+ */
 package ch.trancee.meshlink.crypto
 
 import kotlin.test.Test
@@ -18,9 +35,8 @@ internal class SHAKE256Test {
     }
   }
 
-  // ------------------------------------------------------------------
-  // FIPS 202 §D.5 SHAKE256 known-answer test vectors
-  // ------------------------------------------------------------------
+  // FIPS 202 §D.5 SHAKE256 known-answer test vectors (NIST CAVP KATs + Python hashlib)
+  // See class KDoc for CAVP verification details.
 
   @Tag("positive")
   @Tag("critical-path")

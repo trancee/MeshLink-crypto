@@ -6,7 +6,7 @@ MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for
 
 ## What it is
 
-MeshLink-crypto provides seven RFC-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider.
+MeshLink-crypto provides eight RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider.
 
 The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator)**. JS and WebAssembly targets are out of scope. Built with Kotlin 2.4.10.
 
@@ -21,6 +21,8 @@ The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator
 | X25519 | [RFC 7748 §5](https://datatracker.ietf.org/doc/html/rfc7748#section-5) | Yes | JCA KeyAgreement, Security.framework |
 | Ed25519 | [RFC 8032 §5.1](https://datatracker.ietf.org/doc/html/rfc8032#section-5.1) | Yes | JCA Signature, Security.framework |
 | ChaCha20-Poly1305 | [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | Yes | JCA Cipher, CryptoKit (iOS) |
+| SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
+| SHAKE128 | [FIPS 202 §8.3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
 
 ## How it works
 
@@ -32,11 +34,27 @@ The library has three layers of dispatch, per primitive:
 
 The pure-Kotlin path is the only code that holds secrets and is authored in-house. It is held to three verification gates:
 
-- **Wycheproof test vectors** as the correctness oracle.
+- **NIST CAVP test vectors** as the correctness oracle ([Wycheproof](https://github.com/google/wycheproof) for primitives with a corpus; [FIPS 202 §D.4/D.5](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) KAT vectors for SHAKE128/SHAKE256, verified against [Python `hashlib`](https://docs.python.org/3/library/hashlib.html) and cross-checked with the [XKCP](https://github.com/XKCP/XKCP) reference implementation).
 - **Custom constant-time lint** (`ConstantTimeRule`) that bans data-dependent branches and secret-indexed array access at compile time.
 - **Timing harness** that asserts no early-exit in secret comparisons.
 
 See [Architecture](docs/explanation/architecture.md) for the full design and [Constant-Time Discipline](docs/explanation/constant-time.md) for the security model.
+
+## External references
+
+| Reference | URL | Purpose in this repo |
+|---|---|---|
+| [FIPS 202](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | NIST FIPS 202 standard | Defines SHA-3, SHAKE128 (§8.3), SHAKE256 (§8.4) — the spec for our Keccak/XOF primitives |
+| [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) | Cryptographic Algorithm Validation Program | Known Answer Test vectors for SHAKE128/SHAKE256 — correctness oracle for primitives without a Wycheproof corpus |
+| [XKCP / Keccak Team](https://github.com/XKCP/XKCP) | eXtending Keccak Code Package | Reference implementation for Keccak-f[1600] round constants, rotation constants, and `SimpleFIPS202.c` — our implementation is verified byte-identical to XKCP parameters |
+| [Wycheproof](https://github.com/google/wycheproof) | Google's crypto test-vector corpus | Correctness oracle for primitives with a corpus: AES-GCM, Ed25519, HKDF-SHA256, HMAC-SHA256, X25519, ChaCha20-Poly1305 |
+| [Python `hashlib`](https://docs.python.org/3/library/hashlib.html) | Python standard library | Cross-check reference: SHAKE128/SHAKE256 outputs verified against `hashlib.shake_128`/`shake_256` (FIPS 202-compliant, byte-identical to CAVP) |
+| [RFC 6234](https://datatracker.ietf.org/doc/html/rfc6234) | SHA-2 Hashed Data | Defines SHA-256 (§5.1) and SHA-512 (§5.2) — our SHA-2 implementations |
+| [RFC 2104](https://datatracker.ietf.org/doc/html/rfc2104) | HMAC | Defines HMAC-SHA256 — our HMAC implementation |
+| [RFC 5869](https://datatracker.ietf.org/doc/html/rfc5869) | HKDF | Defines HKDF-SHA256 (Extract + Expand) — our KDF implementation |
+| [RFC 7748](https://datatracker.ietf.org/doc/html/rfc7748) | Curve25519 / X25519 | Defines X25519 key agreement — our key exchange primitive |
+| [RFC 8032](https://datatracker.ietf.org/doc/html/rfc8032) | EdDSA | Defines Ed25519 signing — our signature primitive |
+| [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | ChaCha20/Poly1305 | Defines ChaCha20-Poly1305 AEAD — our encryption primitive |
 
 ## Quick start
 
@@ -119,7 +137,7 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 ## Contributing
 
 1. Open a GitHub issue first.
-2. Implement the primitive with test vectors, green constant-time lint, and 100% coverage on the pure-K path.
+2. Implement the primitive with test vectors ([NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) / [FIPS 202](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) KAT vectors for FIPS primitives like SHAKE128/SHAKE256; [Wycheproof](https://github.com/google/wycheproof) vectors where a corpus exists), green constant-time lint, and 100% coverage on the pure-K path.
 3. Run `./gradlew check --rerun-tasks --no-build-cache` locally.
 4. Open a pull request with a Conventional Commit message.
 

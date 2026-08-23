@@ -30,8 +30,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Includes the `SHAKE256Hasher` incremental hasher and known-answer tests covering
   empty messages, single/multi-block squeeze, block boundaries, and a 1M-byte Monte
   Carlo vector.
+- `SHAKE128` extendable-output function (FIPS 202 §8.3) — pure-Kotlin Keccak-f[1600]
+  engine with rate = 168 bytes, capacity = 256 bits, suffix 0x1F, pad10*1 padding.
+  Public API: `Crypto.shake128(message, outputLength)` and
+  `Hasher.shake128(message, outputLength)`, both returning `Result<ByteArray>`.
+  Includes the `SHAKE128Hasher` incremental hasher and known-answer tests covering
+  empty messages, single/multi-block squeeze, block boundaries, and a 1M-byte Monte
+  Carlo vector.
 
 ### Changed
+
+- Extracted the shared `KeccakEngine.kt` (commonMain) containing `keccakF1600`,
+  `KeccakRoundConstants`, `KeccakRotationConstants`, `keccakRol64`, and `keccakL`
+  — all marked `internal`. `SHAKE256.kt` now calls the top-level `keccakF1600`
+  instead of its own private copy, eliminating duplicate permutation code that
+  future SHA3-256 / SHA3-512 primitives will share. Replaced hardcoded `136` and
+  `17` with `SHAKE256_RATE` and `SHAKE256_RATE / 8` named constants.
 
 - Artifact coordinates changed from `ch.trancee.meshlink:crypto` to
   `ch.trancee.meshlink:meshlink-crypto` (main metadata publication).
@@ -56,7 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `sourcesJarJvm`, `sourcesJarAndroid`, and `centralBundle` Gradle tasks. Sources JARs are attached to the JVM and Android publications — required by the Central Portal alongside javadoc JARs and PGP signatures.
 - Removed `SIGNING_KEY_ID` from `.env.example` — the signing plugin extracts the key ID from the PGP key block automatically.
 - Rewrote `.github/workflows/publish.yml`: removed the PGP key validation, OSSRH credential check, stale staging repository drop, staging search, manual transfer (`POST /manual/upload/defaultRepository/<namespace>`), and post-transfer verification steps. Replaced with the Central Portal Publisher API flow: upload → poll status → publish deployment.
-- Fixed `--rerun` → `--rerun-tasks` across AGENTS.md, CONTRIBUTING.md, README.md, CONSTITUTION.md, and kotlin-polyglot-test-analysis SKILL.md (Gradle 9.x requires `--rerun-tasks`, not `--rerun`).
+- Replaced the fragile `useInMemoryPgpKeys()` block (with 6-line key normalization) in `crypto/build.gradle.kts` with the standard `signingInMemoryKey` / `signingInMemoryKeyPassword` Gradle properties, which the signing plugin reads automatically from `ORG_GRADLE_PROJECT_*` env vars.
+- SHAKE128 and SHAKE256 test vectors verified against NIST CAVP: primary KAT vectors from FIPS 202 §D.4/D.5; additional boundary and multi-block vectors computed via Python `hashlib.shake_128`/`shake_256` (FIPS 202-compliant reference implementation). Wycheproof has no SHAKE corpus, so inline known-answer tests are the correctness oracle. Keccak-f[1600] round constants aligned with XKCP reference (`TweetableFIPS202.c`, `keccak_specs_summary.html`); parameters match XKCP `SimpleFIPS202.c` exactly.
 
 ### Fixed
 

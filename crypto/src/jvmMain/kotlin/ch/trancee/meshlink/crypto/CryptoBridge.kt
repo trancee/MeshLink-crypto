@@ -321,6 +321,16 @@ internal fun sha512Native(message: ByteArray): ByteArray? {
  */
 internal fun shake256Native(message: ByteArray, outputLength: Int): ByteArray? = null
 
+/**
+ * SHAKE128 (FIPS 202 §8.3) native dispatch.
+ *
+ * JDK 21's JCA does not expose SHAKE128 with a variable-length output API suitable for this
+ * library's interface. The pure-Kotlin path is always taken (ADR-0001, ticket 34). The
+ * fallback-cache pattern used by sha256Native / sha512Native is unnecessary here: this function is
+ * a permanent no-op.
+ */
+internal fun shake128Native(message: ByteArray, outputLength: Int): ByteArray? = null
+
 internal fun hmacSha256Native(key: ByteArray, message: ByteArray): ByteArray? {
   if (hmacSha256Fallback) return null
   return try {

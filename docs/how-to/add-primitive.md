@@ -75,10 +75,10 @@ public fun foo(key: ByteArray, message: ByteArray): ByteArray?
 ## Step 7: Add test vectors
 
 - Place Wycheproof vectors (if available) in `crypto/src/jvmTest/resources/wycheproof/`.
-- Place RFC known-answer vectors (or test vectors without a Wycheproof corpus) as inline test functions.
+- For primitives without a Wycheproof corpus ([XKCP](https://github.com/XKCP/XKCP) reference), use [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) known-answer test vectors ([FIPS 202 §D.4/D.5](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) for SHAKE128/SHAKE256) or RFC known-answer test vectors as inline test functions. Verify all vectors against a FIPS-compliant reference implementation (e.g. [Python `hashlib`](https://docs.python.org/3/library/hashlib.html)). Each test should have a KDoc comment citing the vector source (e.g. "NIST CAVP KAT, FIPS 202 §D.4").
 - Tag tests with `@Tag("positive")` and `@Tag("critical-path")` for correctness vectors. Add `@Tag("timing")` for timing assertions.
 
-Reference: `SHA256Test.kt`, `X25519Test.kt`, `ChaCha20Poly1305Test.kt`.
+Reference: `SHA256Test.kt`, `SHAKE128Test.kt`, `SHAKE256Test.kt`, `X25519Test.kt`, `ChaCha20Poly1305Test.kt`.
 
 ## Step 8: Run the gates
 

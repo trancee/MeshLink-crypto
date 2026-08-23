@@ -1,8 +1,8 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * SHAKE256 extendable-output function (FIPS 202 §8.4).
+ * SHAKE128 extendable-output function (FIPS 202 §8.3).
  *
- * Pure-Kotlin Keccak-f[1600] engine: rate = 136 bytes (1088 bits), capacity = 64 bytes (512 bits),
+ * Pure-Kotlin Keccak-f[1600] engine: rate = 168 bytes (1344 bits), capacity = 32 bytes (256 bits),
  * domain separation suffix 0x1F, pad10*1 padding (0x80 in the last rate byte). All 64-bit lane
  * arithmetic uses Kotlin [Long]; XOR absorbs and extracts bytes in little-endian lane order.
  *
@@ -11,39 +11,39 @@
  * lets the `:crypto-detekt-rules` `ConstantTimeRule` statically reject any data-dependent
  * `if`/`when` or secret-indexed array access in this file.
  *
- * No native SHAKE256 API exists on JDK 21 (JCA has no SHAKE in the supported provider set for this
+ * No native SHAKE128 API exists on JDK 21 (JCA has no SHAKE in the supported provider set for this
  * library), Android API 21+, or iOS CommonCrypto / Security.framework — the pure-Kotlin path is the
  * only implementation (ADR-0001, ticket 34).
  */
 package ch.trancee.meshlink.crypto
 
-/** Rate block size for SHAKE256: 136 bytes = 1088 bits (FIPS 202 §8.4). */
-internal const val SHAKE256_RATE = 136
+/** Rate block size for SHAKE128: 168 bytes = 1344 bits (FIPS 202 §8.3). */
+internal const val SHAKE128_RATE = 168
 
 /**
- * SHAKE256 extendable-output function (FIPS 202 §8.4).
+ * SHAKE128 extendable-output function (FIPS 202 §8.3).
  *
- * Pure-Kotlin Keccak-f[1600] engine using the shared [keccakF1600] permutation. Rate = 136 bytes
- * (1088 bits), capacity = 64 bytes (512 bits), domain separation suffix 0x1F, pad10*1 padding.
+ * Pure-Kotlin Keccak-f[1600] engine using the shared [keccakF1600] permutation. Rate = 168 bytes
+ * (1344 bits), capacity = 32 bytes (256 bits), domain separation suffix 0x1F, pad10*1 padding.
  */
-internal object SHAKE256PureK {
+internal object SHAKE128PureK {
 
   /**
-   * Computes SHAKE256 of [message], producing [outputLength] bytes of output.
+   * Computes SHAKE128 of [message], producing [outputLength] bytes of output.
    *
    * @param message the (possibly secret) bytes to hash.
    * @param outputLength the number of output bytes to squeeze (any positive value).
    * @return `[outputLength]` pseudo-random bytes derived from the message.
    */
   fun digest(@Secret message: ByteArray, outputLength: Int): ByteArray {
-    val hasher = SHAKE256Hasher()
+    val hasher = SHAKE128Hasher()
     hasher.update(message, 0, message.size)
     return hasher.digest(outputLength)
   }
 }
 
 /**
- * Incremental SHAKE256 hasher (FIPS 202 §8.4) for internal composition.
+ * Incremental SHAKE128 hasher (FIPS 202 §8.3) for internal composition.
  *
  * Holds mutable Keccak state across [update] calls and finalises via [digest], which applies the
  * pad10*1 domain-separation padding and squeezes the requested number of output bytes (multiple
@@ -52,20 +52,20 @@ internal object SHAKE256PureK {
  * Constant-time discipline is inherited from the public API's `@Secret` annotation: no
  * data-dependent branch or indexing touches secret material (ADR-0003).
  */
-internal class SHAKE256Hasher {
+internal class SHAKE128Hasher {
 
   /** 25 x 64-bit lanes (1600 bits), initialised to zero. */
   private val state = LongArray(25)
 
   /** Leftover bytes from the previous block, buffered until a full rate block is available. */
-  private val buffer = ByteArray(SHAKE256_RATE)
+  private val buffer = ByteArray(SHAKE128_RATE)
 
   private var bufferLen = 0
 
   /**
    * Feeds [length] bytes of [data] starting at [offset] into the sponge.
    *
-   * Data is accumulated in a [SHAKE256_RATE]-byte block buffer; whenever a full rate block is ready
+   * Data is accumulated in a [SHAKE128_RATE]-byte block buffer; whenever a full rate block is ready
    * it is XORed into the state and Keccak-f[1600] is applied. Remaining bytes stay buffered for the
    * next call or the final [digest].
    */
@@ -73,12 +73,12 @@ internal class SHAKE256Hasher {
     var pos = offset
     var remaining = length
     while (remaining > 0) {
-      val toCopy = minOf(remaining, SHAKE256_RATE - bufferLen)
+      val toCopy = minOf(remaining, SHAKE128_RATE - bufferLen)
       data.copyInto(buffer, bufferLen, pos, pos + toCopy)
       bufferLen += toCopy
       pos += toCopy
       remaining -= toCopy
-      if (bufferLen == SHAKE256_RATE) {
+      if (bufferLen == SHAKE128_RATE) {
         absorbBlock(buffer)
         bufferLen = 0
       }
@@ -86,18 +86,18 @@ internal class SHAKE256Hasher {
   }
 
   /**
-   * Finalises the sponge: appends the SHAKE256 domain-suffix byte (0x1F) and pad10*1 (0x80 at the
+   * Finalises the sponge: appends the SHAKE128 domain-suffix byte (0x1F) and pad10*1 (0x80 at the
    * last rate byte), absorbs the padded block, then squeezes [outputLength] bytes.
    *
    * The hasher must not be used after this call.
    */
   fun digest(outputLength: Int): ByteArray {
     // --- Step 1: zero stale data beyond the buffered message --------------
-    for (i in bufferLen until SHAKE256_RATE) buffer[i] = 0
+    for (i in bufferLen until SHAKE128_RATE) buffer[i] = 0
 
     // --- Step 2: domain-separation suffix 0x1F + pad10*1 (0x80) -----------
     buffer[bufferLen] = 0x1F.toByte()
-    buffer[SHAKE256_RATE - 1] = (buffer[SHAKE256_RATE - 1].toInt() xor 0x80).toByte()
+    buffer[SHAKE128_RATE - 1] = (buffer[SHAKE128_RATE - 1].toInt() xor 0x80).toByte()
 
     // --- Step 3: absorb the padded block -----------------------------------
     absorbBlock(buffer)
@@ -106,7 +106,7 @@ internal class SHAKE256Hasher {
     val result = ByteArray(outputLength)
     var produced = 0
     while (produced < outputLength) {
-      val chunk = minOf(outputLength - produced, SHAKE256_RATE)
+      val chunk = minOf(outputLength - produced, SHAKE128_RATE)
       for (i in 0 until chunk) {
         val lane = i / 8
         val byteOffset = i % 8
@@ -118,14 +118,12 @@ internal class SHAKE256Hasher {
     return result
   }
 
-  // Absorb: XOR rate bytes into state lanes and permute
-
   /**
-   * XORs [block] ([SHAKE256_RATE] bytes / 17 lanes) into the rate portion of the state and applies
+   * XORs [block] ([SHAKE128_RATE] bytes / 21 lanes) into the rate portion of the state and applies
    * the full Keccak-f[1600] permutation from [KeccakEngine.kt].
    */
   private fun absorbBlock(block: ByteArray) {
-    for (lane in 0 until SHAKE256_RATE / 8) {
+    for (lane in 0 until SHAKE128_RATE / 8) {
       val base = lane * 8
       var value = 0L
       for (byte in 0 until 8) {

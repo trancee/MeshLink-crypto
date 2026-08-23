@@ -122,6 +122,25 @@ class CryptoFacadeTest {
     assertEquals(1000, Hasher.shake256(input, 1000).getOrThrow().size)
   }
 
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Hasher shake128 matches PureK interop`() {
+    val input = "The quick brown fox jumps over the lazy dog".encodeToByteArray()
+    val facade = Hasher.shake128(input, 64).getOrThrow()
+    assertContentEquals(SHAKE128PureK.digest(input, 64), facade)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Hasher shake128 returns requested output length`() {
+    val input = "abc".encodeToByteArray()
+    assertEquals(32, Hasher.shake128(input, 32).getOrThrow().size)
+    assertEquals(169, Hasher.shake128(input, 169).getOrThrow().size)
+    assertEquals(1000, Hasher.shake128(input, 1000).getOrThrow().size)
+  }
+
   // ------------------------------------------------------------------
   // Authenticator (HMAC-SHA256)
   // ------------------------------------------------------------------
@@ -564,6 +583,16 @@ class CryptoFacadeTest {
     val input = "abc".encodeToByteArray()
     val expected = Hasher.shake256(input, 64).getOrThrow()
     val actual = Crypto.shake256(input, 64).getOrThrow()
+    assertContentEquals(expected, actual)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto facade shake128 delegates to Hasher`() {
+    val input = "abc".encodeToByteArray()
+    val expected = Hasher.shake128(input, 64).getOrThrow()
+    val actual = Crypto.shake128(input, 64).getOrThrow()
     assertContentEquals(expected, actual)
   }
 

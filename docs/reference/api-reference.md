@@ -21,7 +21,7 @@ Use the **unified `Crypto` object** for new code. It delegates to the per-primit
 
 | Operation | Use | Example |
 |---|---|---|
-| Hashing (SHA-256, SHA-512, SHAKE256) | `Crypto.sha256()` / `Crypto.sha512()` / `Crypto.shake256()` or `Hasher` | `Crypto.sha256(data)` |
+| Hashing (SHA-256, SHA-512, SHAKE256, SHAKE128) | `Crypto.sha256()` / `Crypto.sha512()` / `Crypto.shake256()` / `Crypto.shake128()` or `Hasher` | `Crypto.sha256(data)` |
 | HMAC | `Crypto.hmacSha256()` / `Crypto.verifyHmacSha256()` or `Authenticator` | `Crypto.hmacSha256(key, msg)` |
 | Key derivation | `Crypto.hkdfSha256()` / `Crypto.extract()` / `Crypto.expand()` or `Kdf` | `Crypto.hkdfSha256(ikm, salt, info, 32)` |
 | Key agreement | `Crypto.x25519()` / `Crypto.deriveX25519PublicKey()` or `KeyExchange` | `Crypto.x25519(scalar, u)`, `Crypto.deriveX25519PublicKey(key)` |
@@ -101,6 +101,18 @@ fun shake256(message: ByteArray, outputLength: Int): Result<ByteArray>
 ```
 
 Computes SHAKE256 (FIPS 202 §8.4), an extendable-output function (XOF) based on the Keccak-f[1600] permutation. Pure-Kotlin implementation with rate = 136 bytes and capacity = 512 bits.
+
+| Parameter | Description |
+|---|---|
+| `message` | The bytes to hash. Any length. |
+| `outputLength` | The number of output bytes to squeeze. Any positive value. |
+| **Returns** | `outputLength` bytes of output on success; `Result.failure` on error. |
+
+\`\`\`kotlin
+fun shake128(message: ByteArray, outputLength: Int): Result<ByteArray>
+\`\`\`
+
+Computes SHAKE128 (FIPS 202 §8.3), an extendable-output function (XOF) based on the Keccak-f[1600] permutation. Pure-Kotlin implementation with rate = 168 bytes and capacity = 256 bits.
 
 | Parameter | Description |
 |---|---|

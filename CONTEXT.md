@@ -1,6 +1,6 @@
 # crypto-kmp
 
-A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implementations of RFC-standard primitives, with fallback to a target's native crypto provider when available. Spec texts live in `docs/rfcs/`; test vectors come from the Wycheproof corpus.
+A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implementations of [RFC](https://datatracker.ietf.org)/[FIPS 202](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)-standard primitives, with fallback to a target's native crypto provider when available. Spec texts live in `docs/rfcs/`; test vectors come from [Wycheproof](https://github.com/google/wycheproof) (for primitives with a corpus) and [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) known-answer tests (FIPS 202 §D.4/D.5 for SHAKE128/SHAKE256, which lack a Wycheproof corpus, cross-checked against [Python `hashlib`](https://docs.python.org/3/library/hashlib.html)).
 
 ## Language
 
@@ -8,9 +8,9 @@ A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implemen
 
 **pure Kotlin**: An implementation with zero external dependencies that compiles for every KMP target. _Avoid_: `java.security`, `javax.crypto`, BouncyCastle, any native binding that pulls a dependency. (This term governs the **pure-K path only**; the native-fallback path may use the modern platform provider — see Fallback.)
 
-**Wycheproof**: Google's cryptographic test-vector corpus, used as the correctness oracle for every primitive.
+**Wycheproof**: [Google's](https://github.com/google/wycheproof) cryptographic test-vector corpus, used as the correctness oracle for primitives with a corpus. Primitives without a Wycheproof corpus (SHAKE128, SHAKE256) use [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) known-answer test vectors from [FIPS 202 §D.4/D.5](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf), cross-checked against [Python `hashlib`](https://docs.python.org/3/library/hashlib.html).
 
-**Supported primitives**: X25519 (RFC 7748), Ed25519 (RFC 8032), ChaCha20-Poly1305 (RFC 8439), HKDF-SHA256 (RFC 5869), HMAC-SHA256 (RFC 2104), SHA-256 (RFC 6234), SHAKE256 (FIPS 202).
+**Supported primitives**: X25519 (RFC 7748), Ed25519 (RFC 8032), ChaCha20-Poly1305 (RFC 8439), HKDF-SHA256 (RFC 5869), HMAC-SHA256 (RFC 2104), SHA-256 (RFC 6234), SHAKE256 (FIPS 202 §8.4), SHAKE128 (FIPS 202 §8.3).
 
 **Target scope**: JVM + Android (API >= 21) + iOS arm64 (Darwin native). JS and Kotlin/Native WASM targets are out of scope. Use latest stable Kotlin Multiplatform only (2.4.10). No legacy `javax.crypto`/`BouncyCastle`/old Java — modern platform providers only. _Avoid_: JS/WASM, Android APIs < 21.
 
@@ -22,7 +22,7 @@ A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implemen
 
 - ADR-0001 — Field arithmetic: radix-2^26, 10 limbs, no `BigInteger` (shared engine for X25519 + Ed25519).
 - ADR-0002 — Fallback strategy: per-primitive, native-or-pure-K.
-- ADR-0003 — Verification gates: Wycheproof + constant-time lint + per-target test harness.
+- ADR-0003 — Verification gates: NIST CAVP + Wycheproof + constant-time lint + per-target test harness.
 - ADR-0004 — Secure storage is out of core scope (separate module).
 - ADR-0005 — API surface: typed, no-throw, internal nonce, transparent fallback.
 - ADR-0006 — Module layout: single shared KMP module.
