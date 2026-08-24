@@ -86,6 +86,10 @@ private const val KEY_LEN = 32
 
 @Volatile private var sha512Fallback: Boolean = false
 
+@Volatile private var sha3_256Fallback: Boolean = false
+
+@Volatile private var sha3_512Fallback: Boolean = false
+
 @Volatile private var hmacSha256Fallback: Boolean = false
 
 // ---------------------------------------------------------------------------
@@ -307,6 +311,26 @@ internal fun sha512Native(message: ByteArray): ByteArray? {
     MessageDigest.getInstance("SHA-512").digest(message)
   } catch (e: NoSuchAlgorithmException) {
     sha512Fallback = true
+    null
+  }
+}
+
+internal fun sha3_256Native(message: ByteArray): ByteArray? {
+  if (sha3_256Fallback) return null
+  return try {
+    MessageDigest.getInstance("SHA3-256").digest(message)
+  } catch (e: NoSuchAlgorithmException) {
+    sha3_256Fallback = true
+    null
+  }
+}
+
+internal fun sha3_512Native(message: ByteArray): ByteArray? {
+  if (sha3_512Fallback) return null
+  return try {
+    MessageDigest.getInstance("SHA3-512").digest(message)
+  } catch (e: NoSuchAlgorithmException) {
+    sha3_512Fallback = true
     null
   }
 }

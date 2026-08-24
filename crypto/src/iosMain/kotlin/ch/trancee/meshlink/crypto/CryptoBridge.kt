@@ -244,6 +244,17 @@ internal fun sha512Native(message: ByteArray): ByteArray? {
   return digest
 }
 
+internal fun sha3_256Native(message: ByteArray): ByteArray? = null
+
+/**
+ * SHA3-512 (FIPS 202 §6.2) native dispatch.
+ *
+ * iOS provides no CommonCrypto or Security.framework C-API for SHA3-512 accessible via cinterop
+ * (CryptoKit is Swift-only, corecrypto SHA3 is private). The pure-Kotlin path is always taken
+ * (ADR-0001, ticket 34).
+ */
+internal fun sha3_512Native(message: ByteArray): ByteArray? = null
+
 /**
  * SHAKE256 (FIPS 202 §8.4) native dispatch.
  *

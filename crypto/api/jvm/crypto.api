@@ -24,6 +24,8 @@ public final class ch/trancee/meshlink/crypto/Crypto {
 	public final fun hmacSha256-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
 	public final fun randomBytes (I)[B
 	public final fun sha256-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sha3_256-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sha3_512-IoAF18A ([B)Ljava/lang/Object;
 	public final fun sha512-IoAF18A ([B)Ljava/lang/Object;
 	public final fun shake128-gIAlu-s ([BI)Ljava/lang/Object;
 	public final fun shake256-gIAlu-s ([BI)Ljava/lang/Object;
@@ -51,6 +53,8 @@ public final class ch/trancee/meshlink/crypto/CryptoProviderKt {
 public final class ch/trancee/meshlink/crypto/Hasher {
 	public static final field INSTANCE Lch/trancee/meshlink/crypto/Hasher;
 	public final fun sha256-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sha3_256-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sha3_512-IoAF18A ([B)Ljava/lang/Object;
 	public final fun sha512-IoAF18A ([B)Ljava/lang/Object;
 	public final fun shake128-gIAlu-s ([BI)Ljava/lang/Object;
 	public final fun shake256-gIAlu-s ([BI)Ljava/lang/Object;

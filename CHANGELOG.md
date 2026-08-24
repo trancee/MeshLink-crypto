@@ -23,6 +23,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `SHA3-256` message digest (FIPS 202 §6.1) — pure-Kotlin Keccak-f[1600] engine
+  reusing the shared `keccakF1600` permutation from `KeccakEngine.kt` with domain
+  separation suffix `0x06` (vs SHAKE's `0x1F`). Parameters: rate = 136 bytes,
+  capacity = 512 bits, fixed 32-byte output. Native dispatch via JCA (`SHA3-256`)
+  on JVM and Android (API 28+ Conscrypt), pure-Kotlin on iOS. Public API:
+  `Crypto.sha3_256(message)` and `Hasher.sha3_256(message)` returning `Result<ByteArray>`.
+  Known-answer tests covering empty messages, NIST KAT vectors ("abc", 1M-byte Monte
+  Carlo), block boundaries (135/136/137/272/273 bytes), incremental hashing, and
+  public API facade coverage.
+- `SHA3-512` message digest (FIPS 202 §6.2) — pure-Kotlin Keccak-f[1600] engine
+  with rate = 72 bytes, capacity = 1024 bits, suffix `0x06`, fixed 64-byte output.
+  Native dispatch via JCA (`SHA3-512`) on JVM and Android (API 28+), pure-Kotlin
+  on iOS. Public API: `Crypto.sha3_512(message)` and `Hasher.sha3_512(message)`.
+  Same test coverage pattern as SHA3-256 (empty, KAT, block boundaries at 71/72/73/144/145,
+  incremental, facade).
 - `SHAKE256` extendable-output function (FIPS 202 §8.4) — pure-Kotlin
   Keccak-f[1600] engine with rate = 136 bytes, capacity = 512 bits, suffix 0x1F,
   pad10*1 padding. Public API: `Crypto.shake256(message, outputLength)` and

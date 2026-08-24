@@ -39,6 +39,12 @@ public object Crypto {
   /** Computes SHA-512 (RFC 6234 §5.2). Delegates to [Hasher.sha512]. */
   public fun sha512(message: ByteArray): Result<ByteArray> = Hasher.sha512(message)
 
+  /** Computes SHA3-256 (FIPS 202 §6.1). Delegates to [Hasher.sha3_256]. */
+  public fun sha3_256(message: ByteArray): Result<ByteArray> = Hasher.sha3_256(message)
+
+  /** Computes SHA3-512 (FIPS 202 §6.2). Delegates to [Hasher.sha3_512]. */
+  public fun sha3_512(message: ByteArray): Result<ByteArray> = Hasher.sha3_512(message)
+
   /** Computes SHAKE256 (FIPS 202 §8.4). Delegates to [Hasher.shake256]. */
   public fun shake256(message: ByteArray, outputLength: Int): Result<ByteArray> =
       Hasher.shake256(message, outputLength)
