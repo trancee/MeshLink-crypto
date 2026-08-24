@@ -20,10 +20,12 @@ in its body. Paste the checklist into `gh issue create --body`.
 
 This checklist is part of the definition of done. It is not optional.
 
-- [ ] **Correctness vectors.** Add the right test vectors and confirm they pass.
+- [ ] **Correctness vectors.** Add the right test vectors and confirm they pass. Test all parameter combinations, edge cases (empty input, block boundaries), and context strings where applicable (e.g. ML-DSA FIPS 204 context parameter).
   - Use Wycheproof for primitives that have a Wycheproof corpus.
+  - For FIPS 202 primitives (SHAKE128/SHAKE256), use NIST CAVP KAT vectors.
+  - For FIPS 204 primitives (ML-DSA), use Wycheproof NistCavp test vectors.
 - [ ] **Constant-time lint.** Confirm detekt is clean on the changed pure-K path (ADR-0003).
-- [ ] **Coverage.** Confirm kover is 100% on the pure-K path.
+- [ ] **Coverage.** Confirm kover is 100% on the pure-K path. Document any statistically unreachable paths (e.g. rejection-sampling refill loops) with exclusion justification.
 
 ## Pull requests as a triage surface
 

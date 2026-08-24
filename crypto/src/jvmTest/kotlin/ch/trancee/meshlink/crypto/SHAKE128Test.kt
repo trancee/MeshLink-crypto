@@ -395,4 +395,31 @@ internal class SHAKE128Test {
         "all samples carry the SHAKE128 label",
     )
   }
+
+  @Tag("security")
+  @Test
+  fun `update after finalize throws`() {
+    val hasher = SHAKE128Hasher()
+    hasher.update("test".toByteArray())
+    hasher.finalize()
+    try {
+      hasher.update("more".toByteArray())
+      assert(false) { "update after finalize should throw" }
+    } catch (e: IllegalStateException) {
+      // Expected
+    }
+  }
+
+  @Tag("security")
+  @Test
+  fun `squeeze before finalize throws`() {
+    val hasher = SHAKE128Hasher()
+    hasher.update("test".toByteArray())
+    try {
+      hasher.squeeze(32)
+      assert(false) { "squeeze before finalize should throw" }
+    } catch (e: IllegalStateException) {
+      // Expected
+    }
+  }
 }

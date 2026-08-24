@@ -253,7 +253,7 @@ Verifies an Ed25519 signature.
 | `signature` | The 64-byte signature to verify. |
 | **Returns** | `Result.success(true)` if valid; `Result.success(false)` if invalid. |
 
-### AEAD
+> **ML-DSA-44 (FIPS 204)** is implemented as a pure-Kotlin, constant-time engine (`MLDSA44PureK`) and verified against Wycheproof test vectors, but has not yet been wired into the public `Crypto` facade. The implementation supports the FIPS 204 context parameter (`pre = {0, ctxlen, ctx}`), deterministic signing via SHAKE256, and the full NTT-based verification path. Public API exposure and `CryptoProvider` integration are planned.
 
 ```kotlin
 fun chacha20Poly1305Encrypt(key: SecretKey, message: ByteArray): Result<ByteArray>

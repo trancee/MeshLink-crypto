@@ -4,7 +4,7 @@
 
 ## What the library is
 
-The library is a Kotlin Multiplatform (KMP) cryptography library. It provides seven RFC-standard primitives as pure-Kotlin, constant-time implementations. It also offers a native fallback path where the host platform already provides the same operation.
+The library is a Kotlin Multiplatform (KMP) cryptography library. It provides nine RFC/FIPS-standard primitives as pure-Kotlin, constant-time implementations. It also offers a native fallback path where the host platform already provides the same operation.
 
 The library targets JVM, Android (API 21+), and iOS (arm64 + simulator). JS and WebAssembly targets are out of scope. See [CONTEXT.md](../../CONTEXT.md) for the full terminology glossary.
 
@@ -56,12 +56,13 @@ The thin `actual` objects (e.g. `jvmMain/.../X25519.kt`) contain no `@Secret`-an
 
 ## The pure-Kotlin engine
 
-The pure-Kotlin implementations live in `commonMain`. Two arithmetic engines serve all primitives:
+The pure-Kotlin implementations live in `commonMain`. Three arithmetic engines serve all primitives:
 
 - **Radix-2^26 field engine** (`FieldElement`) — serves X25519 and Ed25519. Operates over GF(2^255−19). Uses 10 limbs, bitwise `cswap`, and no `BigInteger` (see [ADR-0001](../adr/0001-field-arithmetic-radix-2-26.md)). Both X25519 and Ed25519 share this engine.
 - **32-bit / 64-bit word engine** — serves SHA-256, SHA-512, HMAC-SHA256, HKDF-SHA256, ChaCha20, Poly1305, and ChaCha20-Poly1305. Uses fixed-round arithmetic with no `BigInteger`.
+- **NTT engine** (`MLDSANtt.kt`) — serves ML-DSA-44 (FIPS 204). Implements the number-theoretic transform over Z_q (q = 8380417) with 256 precomputed zetas, branch-free Montgomery and Barrett reduction. The first NTT-based primitive; future lattice primitives will share it.
 
-The field engine and the word engines are independent. They do not share code.
+The engines are independent. They do not share code.
 
 ## The @Secret annotation and the detekt rule
 
@@ -84,5 +85,8 @@ SKIE is excluded from the build (see [ADR-0008](../adr/0008-skie-excluded.md)). 
 - [ADR-0005](../adr/0005-api-surface.md) — API surface
 - [ADR-0006](../adr/0006-module-layout.md) — Module layout
 - [ADR-0007](../adr/0007-build-quality-toolchain.md) — Build toolchain
-- [ADR-0008](../adr/0008-skie-excluded.md) — SKIE exclusion
 - [Proposal: iOS Native Crypto](../proposals/0001-cryptokit-ios-native.md)
+- [RFC 9794](https://datatracker.ietf.org/doc/html/rfc9794) — Terminology for post-quantum traditional hybrid schemes (PQ transition reference)
+- [RFC 9958](https://datatracker.ietf.org/doc/html/rfc9958) — Post-Quantum Cryptography for Engineers (deployment guidance)
+- [RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180) — Hybrid Public Key Encryption (HPKE-ML-KEM reference for future KEM support)
+- [RFC 9861](https://datatracker.ietf.org/doc/html/rfc9861) — KangarooTwelve and TurboSHAKE (Keccak family extensions reference)
