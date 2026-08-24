@@ -119,6 +119,8 @@ kover {
               "ch.trancee.meshlink.crypto.SHAKE128",
               "ch.trancee.meshlink.crypto.SHA256",
               "ch.trancee.meshlink.crypto.SHA512",
+              "ch.trancee.meshlink.crypto.SHA3_256",
+              "ch.trancee.meshlink.crypto.SHA3_512",
               "ch.trancee.meshlink.crypto.HMAC_SHA256",
               "ch.trancee.meshlink.crypto.HKDF_SHA256",
               "ch.trancee.meshlink.crypto.X25519",

@@ -6,7 +6,7 @@ MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for
 
 ## What it is
 
-MeshLink-crypto provides nine RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
+MeshLink-crypto provides eleven RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
 
 The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator)**. JS and WebAssembly targets are out of scope. Built with Kotlin 2.4.10.
 
@@ -16,6 +16,8 @@ The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator
 |---|---|---|---|
 | SHA-256 | [RFC 6234 §5.1](https://datatracker.ietf.org/doc/html/rfc6234#section-5.1) | Yes | JCA, CommonCrypto |
 | SHA-512 | [RFC 6234 §5.2](https://datatracker.ietf.org/doc/html/rfc6234#section-5.2) | Yes | JCA, CommonCrypto |
+| SHA3-256 | [FIPS 202 §6.1](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | JCA (JDK 9+, API 28+); Pure-K (iOS) |
+| SHA3-512 | [FIPS 202 §6.2](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | JCA (JDK 9+, API 28+); Pure-K (iOS) |
 | HMAC-SHA256 | [RFC 2104](https://datatracker.ietf.org/doc/html/rfc2104) | Yes | JCA Mac, CCHmac |
 | HKDF-SHA256 | [RFC 5869](https://datatracker.ietf.org/doc/html/rfc5869) | Yes | Platform HMAC |
 | X25519 | [RFC 7748 §5](https://datatracker.ietf.org/doc/html/rfc7748#section-5) | Yes | JCA KeyAgreement, Security.framework |

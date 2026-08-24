@@ -21,7 +21,7 @@ Use the **unified `Crypto` object** for new code. It delegates to the per-primit
 
 | Operation | Use | Example |
 |---|---|---|
-| Hashing (SHA-256, SHA-512, SHAKE256, SHAKE128) | `Crypto.sha256()` / `Crypto.sha512()` / `Crypto.shake256()` / `Crypto.shake128()` or `Hasher` | `Crypto.sha256(data)` |
+| Hashing (SHA-256, SHA-512, SHA3-256, SHA3-512, SHAKE256, SHAKE128) | `Crypto.sha256()` / `Crypto.sha512()` / `Crypto.sha3_256()` / `Crypto.sha3_512()` / `Crypto.shake256()` / `Crypto.shake128()` or `Hasher` | `Crypto.sha256(data)` |
 | HMAC | `Crypto.hmacSha256()` / `Crypto.verifyHmacSha256()` or `Authenticator` | `Crypto.hmacSha256(key, msg)` |
 | Key derivation | `Crypto.hkdfSha256()` / `Crypto.extract()` / `Crypto.expand()` or `Kdf` | `Crypto.hkdfSha256(ikm, salt, info, 32)` |
 | Key agreement | `Crypto.x25519()` / `Crypto.deriveX25519PublicKey()` or `KeyExchange` | `Crypto.x25519(scalar, u)`, `Crypto.deriveX25519PublicKey(key)` |
@@ -90,6 +90,28 @@ fun sha512(message: ByteArray): Result<ByteArray>
 ```
 
 Computes SHA-512 ([RFC 6234 §5.2](https://datatracker.ietf.org/doc/html/rfc6234#section-5.2)).
+
+| Parameter | Description |
+|---|---|
+| `message` | The bytes to hash. Any length. |
+| **Returns** | 64-byte digest on success; `Result.failure` on error. |
+
+```kotlin
+fun sha3_256(message: ByteArray): Result<ByteArray>
+```
+
+Computes SHA3-256 ([FIPS 202 §6.1](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)). Pure-Kotlin Keccak-f[1600] engine with rate = 136 bytes, capacity = 512 bits, and domain separation suffix 0x06. Native dispatch via JCA on JVM (JDK 9+) and Android (API 28+ Conscrypt); pure-Kotlin on iOS.
+
+| Parameter | Description |
+|---|---|
+| `message` | The bytes to hash. Any length. |
+| **Returns** | 32-byte digest on success; `Result.failure` on error. |
+
+```kotlin
+fun sha3_512(message: ByteArray): Result<ByteArray>
+```
+
+Computes SHA3-512 ([FIPS 202 §6.2](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)). Pure-Kotlin Keccak-f[1600] engine with rate = 72 bytes, capacity = 1024 bits, and domain separation suffix 0x06. Native dispatch via JCA on JVM (JDK 9+) and Android (API 28+ Conscrypt); pure-Kotlin on iOS.
 
 | Parameter | Description |
 |---|---|

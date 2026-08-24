@@ -107,6 +107,24 @@ internal expect object ChaCha20Poly1305 {
 }
 
 /**
+ * SHA3-256 message digest (FIPS 202 §6.1).
+ *
+ * Dispatch entry point — native provider when available, otherwise [SHA3_256PureK].
+ */
+internal expect object SHA3_256 {
+  fun digest(@Secret message: ByteArray): ByteArray
+}
+
+/**
+ * SHA3-512 message digest (FIPS 202 §6.2).
+ *
+ * Dispatch entry point — native provider when available, otherwise [SHA3_512PureK].
+ */
+internal expect object SHA3_512 {
+  fun digest(@Secret message: ByteArray): ByteArray
+}
+
+/**
  * SHAKE256 extendable-output function (FIPS 202 §8.4).
  *
  * Dispatch entry point — native provider when available, otherwise [SHAKE256PureK]. On JDK 21,

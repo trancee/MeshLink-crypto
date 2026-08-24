@@ -35,6 +35,26 @@ public object Hasher {
   public fun sha512(message: ByteArray): Result<ByteArray> = runCatching { SHA512.digest(message) }
 
   /**
+   * Computes SHA3-256 (FIPS 202 §6.1).
+   *
+   * @return a [Result] containing the 32-byte digest, or [Result.failure] if the native or pure-K
+   *   backend raises an error.
+   */
+  public fun sha3_256(message: ByteArray): Result<ByteArray> = runCatching {
+    SHA3_256.digest(message)
+  }
+
+  /**
+   * Computes SHA3-512 (FIPS 202 §6.2).
+   *
+   * @return a [Result] containing the 64-byte digest, or [Result.failure] if the native or pure-K
+   *   backend raises an error.
+   */
+  public fun sha3_512(message: ByteArray): Result<ByteArray> = runCatching {
+    SHA3_512.digest(message)
+  }
+
+  /**
    * Computes SHAKE256 (FIPS 202 §8.4), an extendable-output function.
    *
    * @param message the bytes to hash.
