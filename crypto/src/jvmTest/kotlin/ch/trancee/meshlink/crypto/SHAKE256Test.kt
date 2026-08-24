@@ -376,7 +376,33 @@ internal class SHAKE256Test {
     assertEquals(6, harness.samples().size, "one sample per varied input")
     assertTrue(
         harness.samples().all { it.label == "SHAKE256" },
-        "all samples carry the SHAKE256 label",
     )
+  }
+
+  @Tag("security")
+  @Test
+  fun `update after finalize throws`() {
+    val hasher = SHAKE256Hasher()
+    hasher.update("test".toByteArray())
+    hasher.finalize()
+    try {
+      hasher.update("more".toByteArray())
+      assert(false) { "update after finalize should throw" }
+    } catch (e: IllegalStateException) {
+      // Expected
+    }
+  }
+
+  @Tag("security")
+  @Test
+  fun `squeeze before finalize throws`() {
+    val hasher = SHAKE256Hasher()
+    hasher.update("test".toByteArray())
+    try {
+      hasher.squeeze(32)
+      assert(false) { "squeeze before finalize should throw" }
+    } catch (e: IllegalStateException) {
+      // Expected
+    }
   }
 }

@@ -6,7 +6,7 @@ MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for
 
 ## What it is
 
-MeshLink-crypto provides eight RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider.
+MeshLink-crypto provides nine RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
 
 The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator)**. JS and WebAssembly targets are out of scope. Built with Kotlin 2.4.10.
 
@@ -23,6 +23,7 @@ The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator
 | ChaCha20-Poly1305 | [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | Yes | JCA Cipher, CryptoKit (iOS) |
 | SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
 | SHAKE128 | [FIPS 202 §8.3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
+| ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes | Pure-K only (in development) |
 
 ## How it works
 
@@ -47,7 +48,7 @@ See [Architecture](docs/explanation/architecture.md) for the full design and [Co
 | [FIPS 202](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | NIST FIPS 202 standard | Defines SHA-3, SHAKE128 (§8.3), SHAKE256 (§8.4) — the spec for our Keccak/XOF primitives |
 | [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) | Cryptographic Algorithm Validation Program | Known Answer Test vectors for SHAKE128/SHAKE256 — correctness oracle for primitives without a Wycheproof corpus |
 | [XKCP / Keccak Team](https://github.com/XKCP/XKCP) | eXtending Keccak Code Package | Reference implementation for Keccak-f[1600] round constants, rotation constants, and `SimpleFIPS202.c` — our implementation is verified byte-identical to XKCP parameters |
-| [Wycheproof](https://github.com/google/wycheproof) | Google's crypto test-vector corpus | Correctness oracle for primitives with a corpus: AES-GCM, Ed25519, HKDF-SHA256, HMAC-SHA256, X25519, ChaCha20-Poly1305 |
+| [Wycheproof](https://github.com/google/wycheproof) | Google's crypto test-vector corpus | Correctness oracle for primitives with a corpus: AES-GCM, Ed25519, HKDF-SHA256, HMAC-SHA256, X25519, ChaCha20-Poly1305, ML-DSA-44, ML-KEM-512 |
 | [Python `hashlib`](https://docs.python.org/3/library/hashlib.html) | Python standard library | Cross-check reference: SHAKE128/SHAKE256 outputs verified against `hashlib.shake_128`/`shake_256` (FIPS 202-compliant, byte-identical to CAVP) |
 | [RFC 6234](https://datatracker.ietf.org/doc/html/rfc6234) | SHA-2 Hashed Data | Defines SHA-256 (§5.1) and SHA-512 (§5.2) — our SHA-2 implementations |
 | [RFC 2104](https://datatracker.ietf.org/doc/html/rfc2104) | HMAC | Defines HMAC-SHA256 — our HMAC implementation |
@@ -55,6 +56,14 @@ See [Architecture](docs/explanation/architecture.md) for the full design and [Co
 | [RFC 7748](https://datatracker.ietf.org/doc/html/rfc7748) | Curve25519 / X25519 | Defines X25519 key agreement — our key exchange primitive |
 | [RFC 8032](https://datatracker.ietf.org/doc/html/rfc8032) | EdDSA | Defines Ed25519 signing — our signature primitive |
 | [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | ChaCha20/Poly1305 | Defines ChaCha20-Poly1305 AEAD — our encryption primitive |
+| [FIPS 204](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | ML-DSA (CRYSTALS-Dilithium) | Defines ML-DSA-44 post-quantum signature scheme — our post-quantum signature primitive |
+| [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | ML-KEM (CRYSTALS-Kyber) | Defines ML-KEM-512/768/1024 key-encapsulation mechanisms — referenced for future PQC KEM support; spec stored in `docs/rfcs/crypto/fips203.pdf` |
+| [RFC 9688](https://datatracker.ietf.org/doc/html/rfc9688) | SHA3 in CMS | Use of SHA3 one-way hash functions in CMS — reference for SHA3 integration (not yet implemented) |
+| [RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180) | HPKE | Hybrid Public Key Encryption — reference for PQC KEM integration (HPKE-ML-KEM, not yet implemented) |
+| [RFC 9629](https://datatracker.ietf.org/doc/html/rfc9629) | KEM in CMS | Using Key Encapsulation Mechanism (KEM) Algorithms in CMS — reference for future PQC KEM support |
+| [RFC 9861](https://datatracker.ietf.org/doc/html/rfc9861) | KangarooTwelve / TurboSHAKE | Defines KangarooTwelve and TurboSHAKE XOFs based on Keccak — reference for Keccak family extensions |
+| [RFC 9794](https://datatracker.ietf.org/doc/html/rfc9794) | PQ hybrid terminology | Terminology for post-quantum traditional hybrid schemes — reference for PQ transition design |
+| [RFC 9958](https://datatracker.ietf.org/doc/html/rfc9958) | PQC for engineers | Practical guidance on post-quantum cryptography deployment — engineering reference |
 
 ## Quick start
 
@@ -132,7 +141,7 @@ See [How to Get Started](docs/how-to/get-started.md) for adding the dependency t
 - [CONTEXT.md](CONTEXT.md) — domain glossary and terminology
 - [SECURITY.md](SECURITY.md) — vulnerability reporting policy
 - [docs/proposals/](docs/proposals/) — design proposals
-- [docs/rfcs/](docs/rfcs/) — RFC spec texts used as references
+- [docs/rfcs/](docs/rfcs/) — RFC spec texts and FIPS publications used as references (FIPS 202/203/204, RFC 2104/5869/6234/7748/8032/8439/9180/9629/9688/9794/9861/9958)
 
 ## Contributing
 

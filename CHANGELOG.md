@@ -98,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `publish.yml` upload step `jq` parse error: Central Portal returns the deployment ID as a plain-text UUID, not JSON `{deploymentId: "..."}`. Replaced `jq -r '.deploymentId'` with `curl -o file -w '%{http_code}'` + `tr -d '[:space:]'`.
 - macOS portability: `head -n -1` (BSD head) fails with "illegal line count -- -1" on GitHub Actions `macos-latest`. Replaced with portable `curl -o /tmp/file -w '%{http_code}'` pattern.
 - Validation step shell syntax error: a missing `fi` caused "unexpected end of file" on macOS runners.
+- ML-DSA-44: added `context` parameter to `MLDSA44PureK.sign` and `MLDSA44PureK.verify` per FIPS 204 §7.3. Previously, both functions hardcoded `pre = {0, 0}` (empty context), causing Wycheproof test case tcId=3 (with `ctx="Context"`) to fail verification. Now constructs `pre = {0, ctxlen, ctx_bytes}` and supports empty context for backward compatibility. Replaced `System.arraycopy` with KMP-compatible `copyInto` to fix iOS compilation. Added kover exclusion for statistically unreachable rejection-sampling refill loops in `MLDSASamplingKt`. Updated documentation across README, supported-primitives, api-reference, architecture, and CONTEXT.md.
 
 ## [0.1.0] — 2026-08-15
 

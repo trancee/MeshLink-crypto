@@ -49,6 +49,9 @@ internal object SHAKE256PureK {
  * pad10*1 domain-separation padding and squeezes the requested number of output bytes (multiple
  * Keccak-f[1600] calls if the output spans more than one rate block).
  *
+ * The [finalize] / [squeeze] pair enables incremental squeezing after finalization — required by
+ * ML-DSA sampling routines that consume blocks one at a time through rejection sampling.
+ *
  * Constant-time discipline is inherited from the public API's `@Secret` annotation: no
  * data-dependent branch or indexing touches secret material (ADR-0003).
  */
@@ -62,6 +65,11 @@ internal class SHAKE256Hasher {
 
   private var bufferLen = 0
 
+  private var finalized = false
+
+  /** Whether the current permutation state has already been (partially) squeezed. */
+  private var squeezed = false
+
   /**
    * Feeds [length] bytes of [data] starting at [offset] into the sponge.
    *
@@ -70,6 +78,7 @@ internal class SHAKE256Hasher {
    * next call or the final [digest].
    */
   fun update(data: ByteArray, offset: Int = 0, length: Int = data.size - offset) {
+    check(!finalized) { "hasher already finalized" }
     var pos = offset
     var remaining = length
     while (remaining > 0) {
@@ -87,25 +96,27 @@ internal class SHAKE256Hasher {
 
   /**
    * Finalises the sponge: appends the SHAKE256 domain-suffix byte (0x1F) and pad10*1 (0x80 at the
-   * last rate byte), absorbs the padded block, then squeezes [outputLength] bytes.
-   *
-   * The hasher must not be used after this call.
+   * last rate byte), absorbs the padded block. Must be called before [squeeze].
    */
-  fun digest(outputLength: Int): ByteArray {
-    // --- Step 1: zero stale data beyond the buffered message --------------
+  fun finalize() {
+    check(!finalized) { "hasher already finalized" }
     for (i in bufferLen until SHAKE256_RATE) buffer[i] = 0
-
-    // --- Step 2: domain-separation suffix 0x1F + pad10*1 (0x80) -----------
     buffer[bufferLen] = 0x1F.toByte()
     buffer[SHAKE256_RATE - 1] = (buffer[SHAKE256_RATE - 1].toInt() xor 0x80).toByte()
-
-    // --- Step 3: absorb the padded block -----------------------------------
     absorbBlock(buffer)
+    finalized = true
+  }
 
-    // --- Step 4: squeeze output (multi-block if needed) --------------------
+  /**
+   * Squeezes [outputLength] bytes from the sponge after [finalize] has been called. Can be called
+   * multiple times to squeeze incrementally.
+   */
+  fun squeeze(outputLength: Int): ByteArray {
+    check(finalized) { "hasher not finalized" }
     val result = ByteArray(outputLength)
     var produced = 0
     while (produced < outputLength) {
+      if (squeezed) keccakF1600(state)
       val chunk = minOf(outputLength - produced, SHAKE256_RATE)
       for (i in 0 until chunk) {
         val lane = i / 8
@@ -113,12 +124,19 @@ internal class SHAKE256Hasher {
         result[produced + i] = (state[lane] ushr (byteOffset * 8)).toByte()
       }
       produced += chunk
-      if (produced < outputLength) keccakF1600(state)
+      squeezed = true
     }
     return result
   }
 
-  // Absorb: XOR rate bytes into state lanes and permute
+  /**
+   * Finalises the sponge and squeezes [outputLength] bytes in one call. Convenience method
+   * equivalent to `finalize(); squeeze(outputLength)`.
+   */
+  fun digest(outputLength: Int): ByteArray {
+    finalize()
+    return squeeze(outputLength)
+  }
 
   /**
    * XORs [block] ([SHAKE256_RATE] bytes / 17 lanes) into the rate portion of the state and applies
@@ -134,5 +152,6 @@ internal class SHAKE256Hasher {
       state[lane] = state[lane] xor value
     }
     keccakF1600(state)
+    squeezed = false
   }
 }

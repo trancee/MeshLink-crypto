@@ -127,7 +127,13 @@ kover {
               "ch.trancee.meshlink.crypto.CryptoProviderKt",
               "ch.trancee.meshlink.crypto.CryptoBridgeKt",
               "ch.trancee.meshlink.crypto.KeccakEngineKt",
+              "ch.trancee.meshlink.crypto.MLDSASamplingKt",
           )
+          // MLDSASamplingKt contains rejection-sampling refill loops that are
+          // statistically unreachable for ML-DSA-44 (Q=8380417, acceptance
+          // ~99.9%; refill requires a ~45-sigma event). Main paths are
+          // exercised by Wycheproof vectors; only refill loops cannot be
+          // deterministically covered.
         }
       }
       xml { onCheck = true }
