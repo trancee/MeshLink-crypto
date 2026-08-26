@@ -108,6 +108,8 @@ final object ch.trancee.meshlink.crypto/Signer { // ch.trancee.meshlink.crypto/S
     final fun ed25519Verify(ch.trancee.meshlink.crypto/PublicKey, kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/Signer.ed25519Verify|ed25519Verify(ch.trancee.meshlink.crypto.PublicKey;kotlin.ByteArray;kotlin.ByteArray){}[0]
 }
 
+final fun ch.trancee.meshlink.crypto/leBytesToLong(kotlin/ByteArray, kotlin/Int): kotlin/Long // ch.trancee.meshlink.crypto/leBytesToLong|leBytesToLong(kotlin.ByteArray;kotlin.Int){}[0]
+final fun ch.trancee.meshlink.crypto/longToLEBytes(kotlin/Long, kotlin/ByteArray, kotlin/Int) // ch.trancee.meshlink.crypto/longToLEBytes|longToLEBytes(kotlin.Long;kotlin.ByteArray;kotlin.Int){}[0]
 final fun ch.trancee.meshlink.crypto/moduleVersion(): kotlin/String // ch.trancee.meshlink.crypto/moduleVersion|moduleVersion(){}[0]
 final fun ch.trancee.meshlink.crypto/randomBytes(kotlin/Int): kotlin/ByteArray // ch.trancee.meshlink.crypto/randomBytes|randomBytes(kotlin.Int){}[0]
 final fun ch.trancee.meshlink.crypto/setCryptoProvider(ch.trancee.meshlink.crypto/CryptoProvider?) // ch.trancee.meshlink.crypto/setCryptoProvider|setCryptoProvider(ch.trancee.meshlink.crypto.CryptoProvider?){}[0]

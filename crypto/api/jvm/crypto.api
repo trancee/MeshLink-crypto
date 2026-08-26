@@ -10,6 +10,11 @@ public final class ch/trancee/meshlink/crypto/Authenticator {
 	public final fun verify-0E7RQCE (Lch/trancee/meshlink/crypto/SecretKey;[B[B)Ljava/lang/Object;
 }
 
+public final class ch/trancee/meshlink/crypto/ByteConversionKt {
+	public static final fun leBytesToLong ([BI)J
+	public static final fun longToLEBytes (J[BI)V
+}
+
 public final class ch/trancee/meshlink/crypto/Crypto {
 	public static final field INSTANCE Lch/trancee/meshlink/crypto/Crypto;
 	public final fun chacha20Poly1305Decrypt-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;

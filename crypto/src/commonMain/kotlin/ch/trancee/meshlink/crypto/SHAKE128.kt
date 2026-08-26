@@ -25,20 +25,75 @@ internal const val SHAKE128_RATE = 168
  *
  * Pure-Kotlin Keccak-f[1600] engine using the shared [keccakF1600] permutation. Rate = 168 bytes
  * (1344 bits), capacity = 32 bytes (256 bits), domain separation suffix 0x1F, pad10*1 padding.
+ *
+ * The one-shot [digest] function absorbs full rate blocks directly from the message without going
+ * through the [SHAKE128Hasher] object, eliminating per-call object allocation and virtual dispatch
+ * overhead for the common case of hashing a complete message in one call.
+ *
+ * Platform-optimized byte conversion: `leBytesToLong` / `longToLEBytes` use `java.nio.ByteBuffer`
+ * on JVM/Android (zero-copy view, no Unsafe), and manual shl/or/and chains on iOS.
  */
 internal object SHAKE128PureK {
 
   /**
    * Computes SHAKE128 of [message], producing [outputLength] bytes of output.
    *
+   * Absorbs full rate blocks directly from the message (skipping buffer copy), applies pad10*1
+   * padding, then squeezes the requested output. Uses platform-optimized [leBytesToLong] /
+   * [longToLEBytes] for byte-level I/O (ByteBuffer on JVM).
+   *
    * @param message the (possibly secret) bytes to hash.
    * @param outputLength the number of output bytes to squeeze (any positive value).
    * @return `[outputLength]` pseudo-random bytes derived from the message.
    */
   fun digest(@Secret message: ByteArray, outputLength: Int): ByteArray {
-    val hasher = SHAKE128Hasher()
-    hasher.update(message, 0, message.size)
-    return hasher.digest(outputLength)
+    val rateLanes = SHAKE128_RATE / 8 // 21
+    val state = LongArray(25)
+
+    // Absorb full rate blocks directly from the message, skipping buffer copy
+    var pos = 0
+    var remaining = message.size
+    while (remaining >= SHAKE128_RATE) {
+      for (lane in 0 until rateLanes) {
+        val b = pos + lane * 8
+        state[lane] = state[lane] xor leBytesToLong(message, b)
+      }
+      keccakF1600(state)
+      pos += SHAKE128_RATE
+      remaining -= SHAKE128_RATE
+    }
+
+    // Final block: copy remaining bytes, apply padding, absorb
+    val padded = ByteArray(SHAKE128_RATE)
+    message.copyInto(padded, 0, pos, pos + remaining)
+    padded[remaining] = 0x1F.toByte()
+    padded[SHAKE128_RATE - 1] = (padded[SHAKE128_RATE - 1].toInt() xor 0x80).toByte()
+    for (lane in 0 until rateLanes) {
+      val b = lane * 8
+      state[lane] = state[lane] xor leBytesToLong(padded, b)
+    }
+    keccakF1600(state)
+
+    // Squeeze output
+    val result = ByteArray(outputLength)
+    var produced = 0
+    while (produced < outputLength) {
+      if (produced > 0) keccakF1600(state)
+      val chunk = minOf(outputLength - produced, SHAKE128_RATE)
+      var lane = 0
+      while (lane < chunk / 8) {
+        val off = produced + lane * 8
+        longToLEBytes(state[lane], result, off)
+        lane++
+      }
+      // Handle remaining bytes when chunk is not a multiple of 8
+      val remStart = lane * 8
+      for (i in remStart until chunk) {
+        result[produced + i] = (state[i / 8] ushr ((i % 8) * 8)).toByte()
+      }
+      produced += chunk
+    }
+    return result
   }
 }
 
