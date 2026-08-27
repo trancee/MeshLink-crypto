@@ -12,7 +12,7 @@ package ch.trancee.meshlink.crypto
  * Uses fully unrolled manual byte extraction on all platforms — no ByteBuffer allocation, no
  * Unsafe, no VarHandle. The JIT eliminates bounds checks in hot loops.
  */
-internal expect fun leBytesToLong(data: ByteArray, offset: Int): Long
+internal expect inline fun leBytesToLong(data: ByteArray, offset: Int): Long
 
 /** Writes [value] as 8 little-endian bytes into [data] starting at [offset]. */
-internal expect fun longToLEBytes(value: Long, data: ByteArray, offset: Int)
+internal expect inline fun longToLEBytes(value: Long, data: ByteArray, offset: Int)

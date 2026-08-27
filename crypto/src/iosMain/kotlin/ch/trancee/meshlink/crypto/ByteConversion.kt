@@ -8,7 +8,7 @@
 package ch.trancee.meshlink.crypto
 
 @PublishedApi
-internal actual fun leBytesToLong(data: ByteArray, offset: Int): Long =
+internal actual inline fun leBytesToLong(data: ByteArray, offset: Int): Long =
     ((data[offset].toLong() and 0xFFL) or
         ((data[offset + 1].toLong() and 0xFFL) shl 8) or
         ((data[offset + 2].toLong() and 0xFFL) shl 16) or
@@ -19,7 +19,7 @@ internal actual fun leBytesToLong(data: ByteArray, offset: Int): Long =
         ((data[offset + 7].toLong() and 0xFFL) shl 56))
 
 @PublishedApi
-internal actual fun longToLEBytes(value: Long, data: ByteArray, offset: Int) {
+internal actual inline fun longToLEBytes(value: Long, data: ByteArray, offset: Int) {
   data[offset] = (value and 0xFFL).toByte()
   data[offset + 1] = (value ushr 8).toByte()
   data[offset + 2] = (value ushr 16).toByte()

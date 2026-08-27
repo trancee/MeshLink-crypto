@@ -50,14 +50,33 @@ internal object SHAKE128PureK {
     val rateLanes = SHAKE128_RATE / 8 // 21
     val state = LongArray(25)
 
-    // Absorb full rate blocks directly from the message, skipping buffer copy
+    // Absorb full rate blocks directly from the message, skipping buffer copy.
+    // The absorption loop is unrolled (21 lanes per block) to eliminate loop overhead
+    // and array-bounds-check chaining the JIT cannot always elide.
     var pos = 0
     var remaining = message.size
     while (remaining >= SHAKE128_RATE) {
-      for (lane in 0 until rateLanes) {
-        val b = pos + lane * 8
-        state[lane] = state[lane] xor leBytesToLong(message, b)
-      }
+      state[0] = state[0] xor leBytesToLong(message, pos + 0)
+      state[1] = state[1] xor leBytesToLong(message, pos + 8)
+      state[2] = state[2] xor leBytesToLong(message, pos + 16)
+      state[3] = state[3] xor leBytesToLong(message, pos + 24)
+      state[4] = state[4] xor leBytesToLong(message, pos + 32)
+      state[5] = state[5] xor leBytesToLong(message, pos + 40)
+      state[6] = state[6] xor leBytesToLong(message, pos + 48)
+      state[7] = state[7] xor leBytesToLong(message, pos + 56)
+      state[8] = state[8] xor leBytesToLong(message, pos + 64)
+      state[9] = state[9] xor leBytesToLong(message, pos + 72)
+      state[10] = state[10] xor leBytesToLong(message, pos + 80)
+      state[11] = state[11] xor leBytesToLong(message, pos + 88)
+      state[12] = state[12] xor leBytesToLong(message, pos + 96)
+      state[13] = state[13] xor leBytesToLong(message, pos + 104)
+      state[14] = state[14] xor leBytesToLong(message, pos + 112)
+      state[15] = state[15] xor leBytesToLong(message, pos + 120)
+      state[16] = state[16] xor leBytesToLong(message, pos + 128)
+      state[17] = state[17] xor leBytesToLong(message, pos + 136)
+      state[18] = state[18] xor leBytesToLong(message, pos + 144)
+      state[19] = state[19] xor leBytesToLong(message, pos + 152)
+      state[20] = state[20] xor leBytesToLong(message, pos + 160)
       keccakF1600(state)
       pos += SHAKE128_RATE
       remaining -= SHAKE128_RATE
