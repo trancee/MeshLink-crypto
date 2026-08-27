@@ -2,15 +2,15 @@
  * SPDX-License-Identifier: Apache-2.0
  * Platform-optimized little-endian byte-to-Long conversion (ADR-0001).
  *
- * platform-specific intrinsics: java.nio.ByteBuffer on JVM/Android, manual shl/or on iOS.
+ * platform-specific intrinsics: fully unrolled manual shl/or/and chains on all platforms (no ByteBuffer, no Unsafe, no VarHandle).
  */
 package ch.trancee.meshlink.crypto
 
 /**
  * Reads 8 little-endian bytes from [data] starting at [offset] as a 64-bit Long.
  *
- * On JVM/Android, uses java.nio.ByteBuffer for a zero-copy 8-byte little-endian read. On iOS, uses
- * a manual shl/or chain (no ByteBuffer available).
+ * Uses fully unrolled manual byte extraction on all platforms — no ByteBuffer allocation, no
+ * Unsafe, no VarHandle. The JIT eliminates bounds checks in hot loops.
  */
 internal expect fun leBytesToLong(data: ByteArray, offset: Int): Long
 
