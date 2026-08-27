@@ -63,7 +63,7 @@ tasks
 
 // JUnit 5 trait-tag filter (ADR-0003, seam 3). Tests carry @Tag annotations.
 tasks.named<org.gradle.api.tasks.testing.Test>("jvmTest") {
-  jvmArgs("-XX:+UnlockDiagnosticVMOptions", "-XX:FreqInlineSize=32000", "-XX:MaxInlineSize=1000", "-XX:InlineSmallCode=5000", "-XX:+PrintInlining")
+  jvmArgs("-XX:+UnlockDiagnosticVMOptions", "-XX:FreqInlineSize=32000", "-XX:MaxInlineSize=1000", "-XX:InlineSmallCode=5000")
   useJUnitPlatform {
     // includeTags("positive", "critical-path")
     // includeTags("timing")  // opt-in: timing variance assertions (ADR-0003 §4)
