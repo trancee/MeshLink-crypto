@@ -6,7 +6,7 @@ MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for
 
 ## What it is
 
-MeshLink-crypto provides eleven RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
+MeshLink-crypto provides twelve RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
 
 The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator)**. JS and WebAssembly targets are out of scope. Built with Kotlin 2.4.10.
 
@@ -26,6 +26,7 @@ The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator
 | SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
 | SHAKE128 | [FIPS 202 §8.3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
 | ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes | Pure-K only (in development) |
+| ML-KEM-512 | [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | Yes | Pure-K only (Wycheproof-verified) |
 
 ## How it works
 
@@ -59,6 +60,7 @@ See [Architecture](docs/explanation/architecture.md) for the full design and [Co
 | [RFC 8032](https://datatracker.ietf.org/doc/html/rfc8032) | EdDSA | Defines Ed25519 signing — our signature primitive |
 | [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | ChaCha20/Poly1305 | Defines ChaCha20-Poly1305 AEAD — our encryption primitive |
 | [FIPS 204](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | ML-DSA (CRYSTALS-Dilithium) | Defines ML-DSA-44 post-quantum signature scheme — our post-quantum signature primitive |
+| [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | ML-KEM (CRYSTALS-Kyber) | Defines ML-KEM-512 key-encapsulation mechanism — our post-quantum KEM primitive |
 | [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | ML-KEM (CRYSTALS-Kyber) | Defines ML-KEM-512/768/1024 key-encapsulation mechanisms — referenced for future PQC KEM support; spec stored in `docs/rfcs/crypto/fips203.pdf` |
 | [RFC 9688](https://datatracker.ietf.org/doc/html/rfc9688) | SHA3 in CMS | Use of SHA3 one-way hash functions in CMS — reference for SHA3 integration (not yet implemented) |
 | [RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180) | HPKE | Hybrid Public Key Encryption — reference for PQC KEM integration (HPKE-ML-KEM, not yet implemented) |

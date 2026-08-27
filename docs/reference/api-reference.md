@@ -17,7 +17,7 @@ All public entry points follow four rules (see [ADR-0005](../adr/0005-api-surfac
 
 ## Choosing an entry point
 
-Use the **unified `Crypto` object** for new code. It delegates to the per-primitive facade objects without adding logic. The individual facade objects (`Hasher`, `Authenticator`, `Kdf`, `KeyExchange`, `Signer`, `Aead`) are equivalent entry points retained for backward compatibility.
+Use the **unified `Crypto` object** for new code. It delegates to the per-primitive facade objects without adding logic. The individual facade objects (`Hasher`, `Authenticator`, `Kdf`, `KeyExchange`, `Signer`, `Aead`, `Kem`) are equivalent entry points retained for backward compatibility.
 
 | Operation | Use | Example |
 |---|---|---|
@@ -29,6 +29,7 @@ Use the **unified `Crypto` object** for new code. It delegates to the per-primit
 | Signing | `Crypto.ed25519Sign()` / `Crypto.ed25519Verify()` / `Crypto.ed25519PublicKeyFromPrivate()` or `Signer` | `Crypto.ed25519Sign(key, msg)`, `Crypto.ed25519PublicKeyFromPrivate(key)` |
 | Randomness | `Crypto.randomBytes()` | `Crypto.randomBytes(32)` |
 | Authenticated encryption | `Crypto.chacha20Poly1305Encrypt()` / `Crypto.chacha20Poly1305Decrypt()` or `Aead` | `Crypto.chacha20Poly1305Encrypt(key, msg)`|
+| Key encapsulation (ML-KEM-512) | `Crypto.mlkem512KeyPair()` / `Crypto.mlkem512Encaps()` / `Crypto.mlkem512Decaps()` or `Kem` | `Crypto.mlkem512Encaps(pk)` |
 
 ## Key handle types
 
@@ -320,6 +321,42 @@ Generates `size` cryptographically secure random bytes from the platform CSPRNG.
 ```kotlin
 val privateKey = PrivateKey(randomBytes(32))
 ```
+
+### Key encapsulation (ML-KEM-512)
+
+```kotlin
+fun mlkem512KeyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>>
+```
+
+Generates an ML-KEM-512 ([FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf)) keypair from 64 bytes of randomness. Returns a pair of `(publicKey, privateKey)`.
+
+| Parameter | Description |
+||---|---|
+| `seed` | 64 bytes of randomness (64 bytes required; uses `randomBytes(64)` if you don't have your own entropy source). |
+| **Returns** | `Pair<ByteArray, ByteArray>` of (publicKey 800 bytes, privateKey 1632 bytes). |
+
+```kotlin
+fun mlkem512Encaps(publicKey: ByteArray): Result<Pair<ByteArray, ByteArray>>
+```
+
+Encapsulates a shared secret using the other party's ML-KEM-512 public key. Returns `(ciphertext, sharedSecret)`.
+
+| Parameter | Description |
+||---|---|
+| `publicKey` | 800-byte ML-KEM-512 public key. |
+| **Returns** | `Pair<ByteArray, ByteArray>` of (ciphertext 768 bytes, shared secret 32 bytes). |
+
+```kotlin
+fun mlkem512Decaps(privateKey: ByteArray, ciphertext: ByteArray): Result<ByteArray>
+```
+
+Decapsulates a shared secret from an ML-KEM-512 ciphertext using the private key. Implements implicit rejection per FIPS 203 §7.3 — on failure, returns a pseudorandom key derived from the secret and ciphertext rather than revealing the error.
+
+| Parameter | Description |
+||---|---|
+| `privateKey` | 1632-byte ML-KEM-512 secret key. |
+| `ciphertext` | 768-byte ML-KEM-512 ciphertext. |
+| **Returns** | 32-byte shared secret on success. On ciphertext validation failure, returns an implicit-rejection key (same length). |
 
 ## Optional native provider injection
 

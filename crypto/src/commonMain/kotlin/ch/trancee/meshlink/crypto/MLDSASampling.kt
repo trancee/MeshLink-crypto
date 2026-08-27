@@ -29,7 +29,7 @@ package ch.trancee.meshlink.crypto
  * Reads 3-byte groups from [buf] (little-endian), masks to 23 bits (0x7FFFFF), and accepts
  * coefficients < Q into [out]. Returns the count of accepted coefficients.
  */
-private fun rejUniform(out: IntArray, outOff: Int, buf: ByteArray, bufLen: Int): Int {
+private fun rejUniformMldsa(out: IntArray, outOff: Int, buf: ByteArray, bufLen: Int): Int {
   var ctr = 0
   var pos = 0
   while (outOff + ctr < 256 && pos + 3 <= bufLen) {
@@ -94,7 +94,7 @@ internal fun polyUniform(out: IntArray, seed: ByteArray, nonce: Int) {
   var buf = hasher.squeeze(5 * SHAKE128_RATE)
   var bufLen = buf.size
 
-  var ctr = rejUniform(out, 0, buf, bufLen)
+  var ctr = rejUniformMldsa(out, 0, buf, bufLen)
 
   // Refill loop: squeeze one block at a time, carry over leftover bytes.
   while (ctr < 256) {
@@ -109,7 +109,7 @@ internal fun polyUniform(out: IntArray, seed: ByteArray, nonce: Int) {
     }
     buf = combined
     bufLen = combined.size
-    ctr += rejUniform(out, ctr, buf, bufLen)
+    ctr += rejUniformMldsa(out, ctr, buf, bufLen)
   }
 }
 

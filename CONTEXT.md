@@ -10,7 +10,7 @@ A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implemen
 
 **Wycheproof**: [Google's](https://github.com/google/wycheproof) cryptographic test-vector corpus, used as the correctness oracle for primitives with a corpus. Primitives without a Wycheproof corpus (SHAKE128, SHAKE256) use [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing) known-answer test vectors from [FIPS 202 §D.4/D.5](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf), cross-checked against [Python `hashlib`](https://docs.python.org/3/library/hashlib.html).
 
-**Supported primitives**: X25519 (RFC 7748), Ed25519 (RFC 8032), ChaCha20-Poly1305 (RFC 8439), HKDF-SHA256 (RFC 5869), HMAC-SHA256 (RFC 2104), SHA-256 (RFC 6234), SHAKE256 (FIPS 202 §8.4), SHAKE128 (FIPS 202 §8.3), and ML-DSA-44 (FIPS 204) — the latter in pure-Kotlin-only mode with no native fallback. ML-DSA-44 uses the NIST PQC CAVP test vectors (Wycheproof `mldsa_44_*`) as the correctness oracle.
+**Supported primitives**: X25519 (RFC 7748), Ed25519 (RFC 8032), ChaCha20-Poly1305 (RFC 8439), HKDF-SHA256 (RFC 5869), HMAC-SHA256 (RFC 2104), SHA-256 (RFC 6234), SHAKE256 (FIPS 202 §8.4), SHAKE128 (FIPS 202 §8.3), ML-DSA-44 (FIPS 204) — pure-Kotlin-only with no native fallback, and ML-KEM-512 (FIPS 203) — pure-Kotlin-only, verified against C2SP/wycheproof vectors. ML-DSA-44 uses the NIST PQC CAVP test vectors (Wycheproof `mldsa_44_*`) as the correctness oracle.
 
 **Target scope**: JVM + Android (API >= 21) + iOS arm64 (Darwin native). JS and Kotlin/Native WASM targets are out of scope. Use latest stable Kotlin Multiplatform only (2.4.10). No legacy `javax.crypto`/`BouncyCastle`/old Java — modern platform providers only. _Avoid_: JS/WASM, Android APIs < 21.
 
@@ -27,7 +27,7 @@ A Kotlin Multiplatform cryptography library: pure-Kotlin, constant-time implemen
 - ADR-0005 — API surface: typed, no-throw, internal nonce, transparent fallback.
 - ADR-0006 — Module layout: single shared KMP module.
 - ADR-0007 — Build toolchain: ktfmt + detekt (incl. const-time lint) + kover (100% coverage, pure-K path).
-- Post-quantum support: FIPS 202 (SHAKE) is used by ML-DSA-44 (FIPS 204 §7). ML-DSA-44 is implemented as pure-Kotlin; ML-KEM-512 (FIPS 203) is planned. FIPS 203/204 specs stored in `docs/rfcs/crypto/`.
+- Post-quantum support: FIPS 202 (SHAKE) is used by ML-DSA-44 (FIPS 204 §7) and ML-KEM-512 (FIPS 203). ML-DSA-44 is implemented as pure-Kotlin; ML-KEM-512 is implemented and Wycheproof-verified (all 563 vectors pass). FIPS 203/204 specs stored in `docs/rfcs/crypto/`.
 
 ## Rules
 
