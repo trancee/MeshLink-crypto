@@ -7,7 +7,7 @@
 [versions]
 library = "0.1.1"
 kotlin = "2.4.10"
-agp = "9.3.1"
+agp = "9.3.2"
 detekt = "2.0.0-alpha.6"
 kover = "0.9.9"
 spotless = "8.10.0"
