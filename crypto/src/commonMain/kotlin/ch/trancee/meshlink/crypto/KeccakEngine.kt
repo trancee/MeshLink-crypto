@@ -21,7 +21,7 @@ package ch.trancee.meshlink.crypto
  * Kotlin disallows hex Long literals whose unsigned value exceeds Long.MAX_VALUE (high bit set), so
  * each round constant is assembled from two 32-bit hex halves.
  */
-internal fun keccakL(hi: Long, lo: Long): Long = (hi shl 32) or (lo and 0xFFFFFFFFL)
+// Round constants pre-computed as Long literals to avoid keccakL function call overhead.
 
 /**
  * Keccak-f[1600] round constants (24 values, one per round).
@@ -32,30 +32,30 @@ internal fun keccakL(hi: Long, lo: Long): Long = (hi shl 32) or (lo and 0xFFFFFF
  */
 internal val KeccakRoundConstants: LongArray =
     longArrayOf(
-        keccakL(0x00000000L, 0x00000001L),
-        keccakL(0x00000000L, 0x00008082L),
-        keccakL(0x80000000L, 0x0000808aL),
-        keccakL(0x80000000L, 0x80008000L),
-        keccakL(0x00000000L, 0x0000808bL),
-        keccakL(0x00000000L, 0x80000001L),
-        keccakL(0x80000000L, 0x80008081L),
-        keccakL(0x80000000L, 0x00008009L),
-        keccakL(0x00000000L, 0x0000008aL),
-        keccakL(0x00000000L, 0x00000088L),
-        keccakL(0x00000000L, 0x80008009L),
-        keccakL(0x00000000L, 0x8000000aL),
-        keccakL(0x00000000L, 0x8000808bL),
-        keccakL(0x80000000L, 0x0000008bL),
-        keccakL(0x80000000L, 0x00008089L),
-        keccakL(0x80000000L, 0x00008003L),
-        keccakL(0x80000000L, 0x00008002L),
-        keccakL(0x80000000L, 0x00000080L),
-        keccakL(0x00000000L, 0x0000800aL),
-        keccakL(0x80000000L, 0x8000000aL),
-        keccakL(0x80000000L, 0x80008081L),
-        keccakL(0x80000000L, 0x00008080L),
-        keccakL(0x00000000L, 0x80000001L),
-        keccakL(0x80000000L, 0x80008008L),
+        1L,
+        32898L,
+        -9223372036854742902L,
+        -9223372034707259392L,
+        32907L,
+        2147483649L,
+        -9223372034707259263L,
+        -9223372036854743031L,
+        138L,
+        136L,
+        2147516425L,
+        2147483658L,
+        2147516555L,
+        -9223372036854775669L,
+        -9223372036854742903L,
+        -9223372036854743037L,
+        -9223372036854743038L,
+        -9223372036854775680L,
+        32778L,
+        -9223372034707292150L,
+        -9223372034707259263L,
+        -9223372036854742912L,
+        2147483649L,
+        -9223372034707259384L,
     )
 
 /**
@@ -247,7 +247,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x00000001L)
+  a00 = a00 xor 1L
 
   // Round 1
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -335,7 +335,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x00008082L)
+  a00 = a00 xor 32898L
 
   // Round 2
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -423,7 +423,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x0000808AL)
+  a00 = a00 xor -9223372036854742902L
 
   // Round 3
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -511,7 +511,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x80008000L)
+  a00 = a00 xor -9223372034707259392L
 
   // Round 4
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -599,7 +599,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x0000808BL)
+  a00 = a00 xor 32907L
 
   // Round 5
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -687,7 +687,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x80000001L)
+  a00 = a00 xor 2147483649L
 
   // Round 6
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -775,7 +775,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x80008081L)
+  a00 = a00 xor -9223372034707259263L
 
   // Round 7
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -863,7 +863,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x00008009L)
+  a00 = a00 xor -9223372036854743031L
 
   // Round 8
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -951,7 +951,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x0000008AL)
+  a00 = a00 xor 138L
 
   // Round 9
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1039,7 +1039,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x00000088L)
+  a00 = a00 xor 136L
 
   // Round 10
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1127,7 +1127,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x80008009L)
+  a00 = a00 xor 2147516425L
 
   // Round 11
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1215,7 +1215,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x8000000AL)
+  a00 = a00 xor 2147483658L
 
   // Round 12
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1303,7 +1303,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x8000808BL)
+  a00 = a00 xor 2147516555L
 
   // Round 13
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1391,7 +1391,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x0000008BL)
+  a00 = a00 xor -9223372036854775669L
 
   // Round 14
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1479,7 +1479,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x00008089L)
+  a00 = a00 xor -9223372036854742903L
 
   // Round 15
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1567,7 +1567,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x00008003L)
+  a00 = a00 xor -9223372036854743037L
 
   // Round 16
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1655,7 +1655,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x00008002L)
+  a00 = a00 xor -9223372036854743038L
 
   // Round 17
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1743,7 +1743,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x00000080L)
+  a00 = a00 xor -9223372036854775680L
 
   // Round 18
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1831,7 +1831,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x0000800aL)
+  a00 = a00 xor 32778L
 
   // Round 19
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -1919,7 +1919,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x8000000AL)
+  a00 = a00 xor -9223372034707292150L
 
   // Round 20
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -2007,7 +2007,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x80008081L)
+  a00 = a00 xor -9223372034707259263L
 
   // Round 21
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -2095,7 +2095,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x00008080L)
+  a00 = a00 xor -9223372036854742912L
 
   // Round 22
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -2183,7 +2183,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x00000000L, 0x80000001L)
+  a00 = a00 xor 2147483649L
 
   // Round 23
   c0 = a00 xor a01 xor a02 xor a03 xor a04
@@ -2271,7 +2271,7 @@ internal fun keccakF1600(state: LongArray) {
   a24 = b24 xor ((b34.inv()) and b44)
   a34 = b34 xor ((b44.inv()) and b04)
   a44 = b44 xor ((b04.inv()) and b14)
-  a00 = a00 xor keccakL(0x80000000L, 0x80008008L)
+  a00 = a00 xor -9223372034707259384L
 
   state[0] = a00
   state[1] = a10
