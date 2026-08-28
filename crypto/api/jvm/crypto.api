@@ -27,6 +27,9 @@ public final class ch/trancee/meshlink/crypto/Crypto {
 	public final fun extract-gIAlu-s ([B[B)Ljava/lang/Object;
 	public final fun hkdfSha256-BWLJW6A ([B[B[BI)Ljava/lang/Object;
 	public final fun hmacSha256-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun mlkem512Decaps-gIAlu-s ([B[B)Ljava/lang/Object;
+	public final fun mlkem512Encaps-IoAF18A ([B)Ljava/lang/Object;
+	public final fun mlkem512KeyPair-IoAF18A ([B)Ljava/lang/Object;
 	public final fun randomBytes (I)[B
 	public final fun sha256-IoAF18A ([B)Ljava/lang/Object;
 	public final fun sha3_256-IoAF18A ([B)Ljava/lang/Object;
@@ -72,10 +75,29 @@ public final class ch/trancee/meshlink/crypto/Kdf {
 	public final fun hkdfSha256-BWLJW6A ([B[B[BI)Ljava/lang/Object;
 }
 
+public final class ch/trancee/meshlink/crypto/Kem {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/Kem;
+	public final fun mlkem512Decaps-gIAlu-s ([B[B)Ljava/lang/Object;
+	public final fun mlkem512Encaps-IoAF18A ([B)Ljava/lang/Object;
+	public final fun mlkem512KeyPair-IoAF18A ([B)Ljava/lang/Object;
+}
+
 public final class ch/trancee/meshlink/crypto/KeyExchange {
 	public static final field INSTANCE Lch/trancee/meshlink/crypto/KeyExchange;
 	public final fun deriveX25519PublicKey-IoAF18A (Lch/trancee/meshlink/crypto/PrivateKey;)Ljava/lang/Object;
 	public final fun x25519-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;Lch/trancee/meshlink/crypto/PublicKey;)Ljava/lang/Object;
+}
+
+public final class ch/trancee/meshlink/crypto/MLKEM512 {
+	public static final field CIPHERTEXT_BYTES I
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/MLKEM512;
+	public static final field PUBLIC_KEY_BYTES I
+	public static final field SECRET_KEY_BYTES I
+	public static final field SHARED_SECRET_BYTES I
+	public final fun decaps-gIAlu-s ([B[B)Ljava/lang/Object;
+	public final fun encaps-IoAF18A ([B)Ljava/lang/Object;
+	public final fun encapsDerand-gIAlu-s ([B[B)Ljava/lang/Object;
+	public final fun keyPair-IoAF18A ([B)Ljava/lang/Object;
 }
 
 public final class ch/trancee/meshlink/crypto/PrivateKey : java/lang/AutoCloseable {

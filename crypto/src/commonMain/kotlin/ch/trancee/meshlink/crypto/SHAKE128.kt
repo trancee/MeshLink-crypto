@@ -30,8 +30,8 @@ internal const val SHAKE128_RATE = 168
  * through the [SHAKE128Hasher] object, eliminating per-call object allocation and virtual dispatch
  * overhead for the common case of hashing a complete message in one call.
  *
- * Platform-optimized byte conversion: `leBytesToLong` / `longToLEBytes` use `java.nio.ByteBuffer`
- * on JVM/Android (zero-copy view, no Unsafe), and manual shl/or/and chains on iOS.
+ * Platform-optimized byte conversion: `leBytesToLong` / `longToLEBytes` use fully unrolled
+ * shl/or/and chains (zero-allocation, JIT-friendly) on all platforms.
  */
 internal object SHAKE128PureK {
 
@@ -39,8 +39,8 @@ internal object SHAKE128PureK {
    * Computes SHAKE128 of [message], producing [outputLength] bytes of output.
    *
    * Absorbs full rate blocks directly from the message (skipping buffer copy), applies pad10*1
-   * padding, then squeezes the requested output. Uses platform-optimized [leBytesToLong] /
-   * [longToLEBytes] for byte-level I/O (ByteBuffer on JVM).
+   * padding in-place on the state lanes (no temporary buffer allocation), then squeezes the
+   * requested output. Uses platform-optimized [leBytesToLong] / [longToLEBytes] for byte-level I/O.
    *
    * @param message the (possibly secret) bytes to hash.
    * @param outputLength the number of output bytes to squeeze (any positive value).
@@ -50,28 +50,66 @@ internal object SHAKE128PureK {
     val rateLanes = SHAKE128_RATE / 8 // 21
     val state = LongArray(25)
 
-    // Absorb full rate blocks directly from the message, skipping buffer copy
+    // Absorb full rate blocks directly from the message, skipping buffer copy.
+    // The absorption loop is unrolled (21 lanes per block) to eliminate loop overhead
+    // and array-bounds-check chaining the JIT cannot always elide.
     var pos = 0
     var remaining = message.size
     while (remaining >= SHAKE128_RATE) {
-      for (lane in 0 until rateLanes) {
-        val b = pos + lane * 8
-        state[lane] = state[lane] xor leBytesToLong(message, b)
-      }
+      state[0] = state[0] xor leBytesToLong(message, pos + 0)
+      state[1] = state[1] xor leBytesToLong(message, pos + 8)
+      state[2] = state[2] xor leBytesToLong(message, pos + 16)
+      state[3] = state[3] xor leBytesToLong(message, pos + 24)
+      state[4] = state[4] xor leBytesToLong(message, pos + 32)
+      state[5] = state[5] xor leBytesToLong(message, pos + 40)
+      state[6] = state[6] xor leBytesToLong(message, pos + 48)
+      state[7] = state[7] xor leBytesToLong(message, pos + 56)
+      state[8] = state[8] xor leBytesToLong(message, pos + 64)
+      state[9] = state[9] xor leBytesToLong(message, pos + 72)
+      state[10] = state[10] xor leBytesToLong(message, pos + 80)
+      state[11] = state[11] xor leBytesToLong(message, pos + 88)
+      state[12] = state[12] xor leBytesToLong(message, pos + 96)
+      state[13] = state[13] xor leBytesToLong(message, pos + 104)
+      state[14] = state[14] xor leBytesToLong(message, pos + 112)
+      state[15] = state[15] xor leBytesToLong(message, pos + 120)
+      state[16] = state[16] xor leBytesToLong(message, pos + 128)
+      state[17] = state[17] xor leBytesToLong(message, pos + 136)
+      state[18] = state[18] xor leBytesToLong(message, pos + 144)
+      state[19] = state[19] xor leBytesToLong(message, pos + 152)
+      state[20] = state[20] xor leBytesToLong(message, pos + 160)
       keccakF1600(state)
       pos += SHAKE128_RATE
       remaining -= SHAKE128_RATE
     }
 
-    // Final block: copy remaining bytes, apply padding, absorb
-    val padded = ByteArray(SHAKE128_RATE)
-    message.copyInto(padded, 0, pos, pos + remaining)
-    padded[remaining] = 0x1F.toByte()
-    padded[SHAKE128_RATE - 1] = (padded[SHAKE128_RATE - 1].toInt() xor 0x80).toByte()
-    for (lane in 0 until rateLanes) {
-      val b = lane * 8
-      state[lane] = state[lane] xor leBytesToLong(padded, b)
+    // Absorb remaining bytes + pad10*1 padding directly into state lanes.
+    // This avoids allocating a 168-byte temporary buffer. Bytes beyond [remaining]
+    // in the rate are zero (XOR with 0 is a no-op), so we only need to XOR:
+    //   (a) the remaining message bytes,
+    //   (b) the domain-separation suffix byte (0x1F at rate position [remaining]),
+    //   (c) the pad10*1 terminal bit (0x80 at rate position [SHAKE128_RATE - 1]).
+    var lane = 0
+    val fullLanes = remaining / 8
+    while (lane < fullLanes) {
+      val b = pos + lane * 8
+      state[lane] = state[lane] xor leBytesToLong(message, b)
+      lane++
     }
+    // Partial lane: XOR remaining bytes one at a time into the current lane
+    val partialStart = lane * 8
+    for (i in partialStart until remaining) {
+      val byteOff = i % 8
+      state[lane] = state[lane] xor ((message[pos + i].toLong() and 0xFFL) shl (byteOff * 8))
+    }
+
+    // Domain-separation suffix 0x1F (FIPS 202 §8.3)
+    val suffixLane = remaining / 8
+    state[suffixLane] = state[suffixLane] xor (0x1FL shl ((remaining % 8) * 8))
+
+    // Pad10*1: terminal bit 0x80 at the last rate byte
+    val padBytePos = SHAKE128_RATE - 1
+    state[padBytePos / 8] = state[padBytePos / 8] xor (0x80L shl ((padBytePos % 8) * 8))
+
     keccakF1600(state)
 
     // Squeeze output
@@ -80,14 +118,14 @@ internal object SHAKE128PureK {
     while (produced < outputLength) {
       if (produced > 0) keccakF1600(state)
       val chunk = minOf(outputLength - produced, SHAKE128_RATE)
-      var lane = 0
-      while (lane < chunk / 8) {
-        val off = produced + lane * 8
-        longToLEBytes(state[lane], result, off)
-        lane++
+      var outLane = 0
+      while (outLane < chunk / 8) {
+        val off = produced + outLane * 8
+        longToLEBytes(state[outLane], result, off)
+        outLane++
       }
       // Handle remaining bytes when chunk is not a multiple of 8
-      val remStart = lane * 8
+      val remStart = outLane * 8
       for (i in remStart until chunk) {
         result[produced + i] = (state[i / 8] ushr ((i % 8) * 8)).toByte()
       }

@@ -2,32 +2,31 @@
  * SPDX-License-Identifier: Apache-2.0
  * JVM actual for platform-optimized little-endian byte-to-Long conversion (ADR-0001).
  *
- * Uses java.nio.ByteBuffer.wrap to create a zero-copy view over the byte array, then reads/writes
- * a 64-bit long in little-endian order. No data copy, no Unsafe reflection, no VarHandle.
- *
- * Rationale: ByteBuffer.wrap(data, offset, 8) creates a view buffer backed by the existing byte
- * array (no allocation of the underlying memory). The .order(ByteOrder.LITTLE_ENDIAN) call sets
- * the byte order in place (returns the same buffer object). The .getLong() / .putLong() call reads
- * or writes 8 bytes at the current position (which is `offset`) in the specified byte order.
- *
- * The JIT (C2 on JVM, ART on Android) optimizes ByteBuffer view operations on heap buffers to
- * direct array access with bounds checks eliminated, matching Unsafe.getLong performance for
- * this access pattern.
- *
- * See: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/ByteBuffer.html
+ * Uses fully unrolled manual byte extraction — no ByteBuffer allocation.
+ * The JIT (C2) inlines this function and eliminates bounds checks in hot
+ * loops (e.g. Keccak absorption/squeeze), producing optimal machine code.
  */
 package ch.trancee.meshlink.crypto
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-
-private val LE: ByteOrder = ByteOrder.LITTLE_ENDIAN
+@PublishedApi
+internal actual inline fun leBytesToLong(data: ByteArray, offset: Int): Long =
+    ((data[offset].toLong() and 0xFFL) or
+        ((data[offset + 1].toLong() and 0xFFL) shl 8) or
+        ((data[offset + 2].toLong() and 0xFFL) shl 16) or
+        ((data[offset + 3].toLong() and 0xFFL) shl 24) or
+        ((data[offset + 4].toLong() and 0xFFL) shl 32) or
+        ((data[offset + 5].toLong() and 0xFFL) shl 40) or
+        ((data[offset + 6].toLong() and 0xFFL) shl 48) or
+        ((data[offset + 7].toLong() and 0xFFL) shl 56))
 
 @PublishedApi
-internal actual fun leBytesToLong(data: ByteArray, offset: Int): Long =
-    ByteBuffer.wrap(data, offset, Long.SIZE_BITS / Byte.SIZE_BITS).order(LE).getLong()
-
-@PublishedApi
-internal actual fun longToLEBytes(value: Long, data: ByteArray, offset: Int) {
-  ByteBuffer.wrap(data, offset, Long.SIZE_BITS / Byte.SIZE_BITS).order(LE).putLong(value)
+internal actual inline fun longToLEBytes(value: Long, data: ByteArray, offset: Int) {
+  data[offset] = (value and 0xFFL).toByte()
+  data[offset + 1] = (value ushr 8).toByte()
+  data[offset + 2] = (value ushr 16).toByte()
+  data[offset + 3] = (value ushr 24).toByte()
+  data[offset + 4] = (value ushr 32).toByte()
+  data[offset + 5] = (value ushr 40).toByte()
+  data[offset + 6] = (value ushr 48).toByte()
+  data[offset + 7] = (value ushr 56).toByte()
 }

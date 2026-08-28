@@ -71,6 +71,9 @@ final object ch.trancee.meshlink.crypto/Crypto { // ch.trancee.meshlink.crypto/C
     final fun extract(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.extract|extract(kotlin.ByteArray;kotlin.ByteArray){}[0]
     final fun hkdfSha256(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/Int): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.hkdfSha256|hkdfSha256(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.Int){}[0]
     final fun hmacSha256(ch.trancee.meshlink.crypto/SecretKey, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.hmacSha256|hmacSha256(ch.trancee.meshlink.crypto.SecretKey;kotlin.ByteArray){}[0]
+    final fun mlkem512Decaps(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.mlkem512Decaps|mlkem512Decaps(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun mlkem512Encaps(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Crypto.mlkem512Encaps|mlkem512Encaps(kotlin.ByteArray){}[0]
+    final fun mlkem512KeyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Crypto.mlkem512KeyPair|mlkem512KeyPair(kotlin.ByteArray){}[0]
     final fun randomBytes(kotlin/Int): kotlin/ByteArray // ch.trancee.meshlink.crypto/Crypto.randomBytes|randomBytes(kotlin.Int){}[0]
     final fun sha256(kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.sha256|sha256(kotlin.ByteArray){}[0]
     final fun sha3_256(kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.sha3_256|sha3_256(kotlin.ByteArray){}[0]
@@ -97,9 +100,31 @@ final object ch.trancee.meshlink.crypto/Kdf { // ch.trancee.meshlink.crypto/Kdf|
     final fun hkdfSha256(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/Int): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Kdf.hkdfSha256|hkdfSha256(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.Int){}[0]
 }
 
+final object ch.trancee.meshlink.crypto/Kem { // ch.trancee.meshlink.crypto/Kem|null[0]
+    final fun mlkem512Decaps(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Kem.mlkem512Decaps|mlkem512Decaps(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun mlkem512Encaps(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Kem.mlkem512Encaps|mlkem512Encaps(kotlin.ByteArray){}[0]
+    final fun mlkem512KeyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Kem.mlkem512KeyPair|mlkem512KeyPair(kotlin.ByteArray){}[0]
+}
+
 final object ch.trancee.meshlink.crypto/KeyExchange { // ch.trancee.meshlink.crypto/KeyExchange|null[0]
     final fun deriveX25519PublicKey(ch.trancee.meshlink.crypto/PrivateKey): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/KeyExchange.deriveX25519PublicKey|deriveX25519PublicKey(ch.trancee.meshlink.crypto.PrivateKey){}[0]
     final fun x25519(ch.trancee.meshlink.crypto/PrivateKey, ch.trancee.meshlink.crypto/PublicKey): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/KeyExchange.x25519|x25519(ch.trancee.meshlink.crypto.PrivateKey;ch.trancee.meshlink.crypto.PublicKey){}[0]
+}
+
+final object ch.trancee.meshlink.crypto/MLKEM512 { // ch.trancee.meshlink.crypto/MLKEM512|null[0]
+    final const val CIPHERTEXT_BYTES // ch.trancee.meshlink.crypto/MLKEM512.CIPHERTEXT_BYTES|{}CIPHERTEXT_BYTES[0]
+        final fun <get-CIPHERTEXT_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLKEM512.CIPHERTEXT_BYTES.<get-CIPHERTEXT_BYTES>|<get-CIPHERTEXT_BYTES>(){}[0]
+    final const val PUBLIC_KEY_BYTES // ch.trancee.meshlink.crypto/MLKEM512.PUBLIC_KEY_BYTES|{}PUBLIC_KEY_BYTES[0]
+        final fun <get-PUBLIC_KEY_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLKEM512.PUBLIC_KEY_BYTES.<get-PUBLIC_KEY_BYTES>|<get-PUBLIC_KEY_BYTES>(){}[0]
+    final const val SECRET_KEY_BYTES // ch.trancee.meshlink.crypto/MLKEM512.SECRET_KEY_BYTES|{}SECRET_KEY_BYTES[0]
+        final fun <get-SECRET_KEY_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLKEM512.SECRET_KEY_BYTES.<get-SECRET_KEY_BYTES>|<get-SECRET_KEY_BYTES>(){}[0]
+    final const val SHARED_SECRET_BYTES // ch.trancee.meshlink.crypto/MLKEM512.SHARED_SECRET_BYTES|{}SHARED_SECRET_BYTES[0]
+        final fun <get-SHARED_SECRET_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLKEM512.SHARED_SECRET_BYTES.<get-SHARED_SECRET_BYTES>|<get-SHARED_SECRET_BYTES>(){}[0]
+
+    final fun decaps(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/MLKEM512.decaps|decaps(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun encaps(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/MLKEM512.encaps|encaps(kotlin.ByteArray){}[0]
+    final fun encapsDerand(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/MLKEM512.encapsDerand|encapsDerand(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun keyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/MLKEM512.keyPair|keyPair(kotlin.ByteArray){}[0]
 }
 
 final object ch.trancee.meshlink.crypto/Signer { // ch.trancee.meshlink.crypto/Signer|null[0]
@@ -108,8 +133,8 @@ final object ch.trancee.meshlink.crypto/Signer { // ch.trancee.meshlink.crypto/S
     final fun ed25519Verify(ch.trancee.meshlink.crypto/PublicKey, kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/Signer.ed25519Verify|ed25519Verify(ch.trancee.meshlink.crypto.PublicKey;kotlin.ByteArray;kotlin.ByteArray){}[0]
 }
 
-final fun ch.trancee.meshlink.crypto/leBytesToLong(kotlin/ByteArray, kotlin/Int): kotlin/Long // ch.trancee.meshlink.crypto/leBytesToLong|leBytesToLong(kotlin.ByteArray;kotlin.Int){}[0]
-final fun ch.trancee.meshlink.crypto/longToLEBytes(kotlin/Long, kotlin/ByteArray, kotlin/Int) // ch.trancee.meshlink.crypto/longToLEBytes|longToLEBytes(kotlin.Long;kotlin.ByteArray;kotlin.Int){}[0]
 final fun ch.trancee.meshlink.crypto/moduleVersion(): kotlin/String // ch.trancee.meshlink.crypto/moduleVersion|moduleVersion(){}[0]
 final fun ch.trancee.meshlink.crypto/randomBytes(kotlin/Int): kotlin/ByteArray // ch.trancee.meshlink.crypto/randomBytes|randomBytes(kotlin.Int){}[0]
 final fun ch.trancee.meshlink.crypto/setCryptoProvider(ch.trancee.meshlink.crypto/CryptoProvider?) // ch.trancee.meshlink.crypto/setCryptoProvider|setCryptoProvider(ch.trancee.meshlink.crypto.CryptoProvider?){}[0]
+final inline fun ch.trancee.meshlink.crypto/leBytesToLong(kotlin/ByteArray, kotlin/Int): kotlin/Long // ch.trancee.meshlink.crypto/leBytesToLong|leBytesToLong(kotlin.ByteArray;kotlin.Int){}[0]
+final inline fun ch.trancee.meshlink.crypto/longToLEBytes(kotlin/Long, kotlin/ByteArray, kotlin/Int) // ch.trancee.meshlink.crypto/longToLEBytes|longToLEBytes(kotlin.Long;kotlin.ByteArray;kotlin.Int){}[0]

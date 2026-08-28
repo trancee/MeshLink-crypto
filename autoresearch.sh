@@ -19,7 +19,7 @@ if [ -f "$OUTPUT_FILE" ]; then
   echo "$METRIC_LINE"
   
   # Extract the metric value
-  METRIC_VALUE=$(echo "$METRIC_LINE" | grep -oP 'shake128_throughput_mbps=\K[\d.]+')
+  METRIC_VALUE=$(echo "$METRIC_LINE" | sed -n 's/.*shake128_throughput_mbps=\([0-9.]*\).*/\1/p')
   echo "RESULT: shake128_throughput_mbps=${METRIC_VALUE}"
 else
   echo "ERROR: benchmark output not found"

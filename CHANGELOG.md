@@ -52,6 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Includes the `SHAKE128Hasher` incremental hasher and known-answer tests covering
   empty messages, single/multi-block squeeze, block boundaries, and a 1M-byte Monte
   Carlo vector.
+- ML-KEM-512 key encapsulation (FIPS 203) — pure-Kotlin implementation with NTT,
+  polynomial compression, and FO (Fujisaki-Okamoto) transform. Parameters: K=2,
+  N=256, Q=3329, ntt K=16 (not shared with ML-DSA's K=64), public key 800 bytes,
+  secret key 1632 bytes, ciphertext 768 bytes, shared secret 32 bytes. Native
+  dispatch via JCA on JVM, pure-Kotlin on all platforms. Public API:
+  `Crypto.mlkem512KeyPair(seed)`, `Crypto.mlkem512Encaps(pk)`, `Crypto.mlkem512Decaps(sk, ct)`
+  and `Kem.mlkem512*` equivalents. Verified against all 563 C2SP/wycheproof
+  ML-KEM-512 test vectors (100 keygen, 261 encaps, 153 round-trip, 3 semi-expanded).
 
 ### Changed
 
@@ -113,7 +121,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `publish.yml` upload step `jq` parse error: Central Portal returns the deployment ID as a plain-text UUID, not JSON `{deploymentId: "..."}`. Replaced `jq -r '.deploymentId'` with `curl -o file -w '%{http_code}'` + `tr -d '[:space:]'`.
 - macOS portability: `head -n -1` (BSD head) fails with "illegal line count -- -1" on GitHub Actions `macos-latest`. Replaced with portable `curl -o /tmp/file -w '%{http_code}'` pattern.
 - Validation step shell syntax error: a missing `fi` caused "unexpected end of file" on macOS runners.
-- ML-DSA-44: added `context` parameter to `MLDSA44PureK.sign` and `MLDSA44PureK.verify` per FIPS 204 §7.3. Previously, both functions hardcoded `pre = {0, 0}` (empty context), causing Wycheproof test case tcId=3 (with `ctx="Context"`) to fail verification. Now constructs `pre = {0, ctxlen, ctx_bytes}` and supports empty context for backward compatibility. Replaced `System.arraycopy` with KMP-compatible `copyInto` to fix iOS compilation. Added kover exclusion for statistically unreachable rejection-sampling refill loops in `MLDSASamplingKt`. Updated documentation across README, supported-primitives, api-reference, architecture, and CONTEXT.md.
+- ML-KEM-512: `verify()` constant-time comparison produced false "equal" results
+  when byte arrays differed in bytes with the high bit set. Kotlin's `Byte.toInt()`
+  sign-extends to 32-bit, making the OR-accumulator `r` negative; `-(r.toLong())`
+  then became positive, and `shr 63` returned 0 (false equal). Fixed by masking
+  each XOR operand with `and 0xFF` to keep `r` in `[0, 255]`, matching the C
+  reference's `uint8_t r` accumulator. This bug caused `decaps` to use the wrong
+  key from an incorrect `mPrime` instead of the implicit-rejection key, producing
+  wrong shared secrets (K) for Wycheproof round-trip test vectors.
+- ML-KEM-512: `polySub` argument order in `indcpaDecrypt` was inverted — was
+  `polySub(mp, mp, v)` (computing `mp = mp - v`) instead of
+  `polySub(mp, v, mp)` (computing `mp = v - mp` per ref/indcpa.c
+  `poly_sub(&mp, &v, &mp)`). Fixed to match C reference. This caused `mPrime`
+  to be computed backwards, producing wrong ciphertexts in the re-encryption
+  check and wrong shared secrets on decapsulation.
+- ML-KEM-512: `roundTripWycheproofVectors` and
+  `semiExpandedDecapsWycheproofVectors` tests threw `NullPointerException` on
+  invalid test cases (which lack `ek` and `K` fields). Fixed by moving field
+  extraction inside the `"valid"` result branch.
 
 ## [0.1.0] — 2026-08-15
 

@@ -60,7 +60,8 @@ The pure-Kotlin implementations live in `commonMain`. Three arithmetic engines s
 
 - **Radix-2^26 field engine** (`FieldElement`) — serves X25519 and Ed25519. Operates over GF(2^255−19). Uses 10 limbs, bitwise `cswap`, and no `BigInteger` (see [ADR-0001](../adr/0001-field-arithmetic-radix-2-26.md)). Both X25519 and Ed25519 share this engine.
 - **32-bit / 64-bit word engine** — serves SHA-256, SHA-512, HMAC-SHA256, HKDF-SHA256, ChaCha20, Poly1305, and ChaCha20-Poly1305. Uses fixed-round arithmetic with no `BigInteger`.
-- **NTT engine** (`MLDSANtt.kt`) — serves ML-DSA-44 (FIPS 204). Implements the number-theoretic transform over Z_q (q = 8380417) with 256 precomputed zetas, branch-free Montgomery and Barrett reduction. The first NTT-based primitive; future lattice primitives will share it.
+- **NTT engine** (`MLDSANtt.kt`) — serves ML-DSA-44 (FIPS 204). Implements the number-theoretic transform over Z_q (q = 8380417) with 256 precomputed zetas, branch-free Montgomery and Barrett reduction.
+- **ML-KEM-512 NTT engine** (`MLKEMNtt.kt`) — serves ML-KEM-512 (FIPS 203). Separate NTT implementation over Z_q (q = 3329) with 128 precomputed zetas, branch-free Montgomery and Barrett reduction. Cannot share ML-DSA's NTT — different field modulus requires separate zetas table and Montgomery constants.
 
 The engines are independent. They do not share code.
 

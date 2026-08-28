@@ -1,25 +1,31 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * iOS actual for platform-optimized little-endian byte-to-Long conversion (ADR-0001).
+ * Android actual for platform-optimized little-endian byte-to-Long conversion (ADR-0001).
  *
- * iOS Kotlin/Native lacks java.nio.ByteBuffer (JVM-only API). Uses a manual shl/or/and chain
- * for byte-level LE conversion. The constant-time nature of this conversion is not critical —
- * it is only applied to non-secret rate data (message bytes, padded blocks).
+ * Uses fully unrolled manual byte extraction — no ByteBuffer allocation.
+ * Same approach as KotlinCrypto/bitops `unpackLELong`/`packLELong`.
  */
 package ch.trancee.meshlink.crypto
 
 @PublishedApi
-internal actual fun leBytesToLong(data: ByteArray, offset: Int): Long {
-  var value = 0L
-  for (byte in 0 until 8) {
-    value = value or ((data[offset + byte].toLong() and 0xFFL) shl (byte * 8))
-  }
-  return value
-}
+internal actual inline fun leBytesToLong(data: ByteArray, offset: Int): Long =
+    ((data[offset].toLong() and 0xFFL) or
+        ((data[offset + 1].toLong() and 0xFFL) shl 8) or
+        ((data[offset + 2].toLong() and 0xFFL) shl 16) or
+        ((data[offset + 3].toLong() and 0xFFL) shl 24) or
+        ((data[offset + 4].toLong() and 0xFFL) shl 32) or
+        ((data[offset + 5].toLong() and 0xFFL) shl 40) or
+        ((data[offset + 6].toLong() and 0xFFL) shl 48) or
+        ((data[offset + 7].toLong() and 0xFFL) shl 56))
 
 @PublishedApi
-internal actual fun longToLEBytes(value: Long, data: ByteArray, offset: Int) {
-  for (byte in 0 until 8) {
-    data[offset + byte] = (value ushr (byte * 8)).toByte()
-  }
+internal actual inline fun longToLEBytes(value: Long, data: ByteArray, offset: Int) {
+  data[offset] = (value and 0xFFL).toByte()
+  data[offset + 1] = (value ushr 8).toByte()
+  data[offset + 2] = (value ushr 16).toByte()
+  data[offset + 3] = (value ushr 24).toByte()
+  data[offset + 4] = (value ushr 32).toByte()
+  data[offset + 5] = (value ushr 40).toByte()
+  data[offset + 6] = (value ushr 48).toByte()
+  data[offset + 7] = (value ushr 56).toByte()
 }

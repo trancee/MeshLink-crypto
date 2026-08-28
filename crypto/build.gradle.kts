@@ -63,6 +63,12 @@ tasks
 
 // JUnit 5 trait-tag filter (ADR-0003, seam 3). Tests carry @Tag annotations.
 tasks.named<org.gradle.api.tasks.testing.Test>("jvmTest") {
+  jvmArgs(
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:FreqInlineSize=32000",
+      "-XX:MaxInlineSize=1000",
+      "-XX:InlineSmallCode=5000",
+  )
   useJUnitPlatform {
     // includeTags("positive", "critical-path")
     // includeTags("timing")  // opt-in: timing variance assertions (ADR-0003 §4)
@@ -130,12 +136,16 @@ kover {
               "ch.trancee.meshlink.crypto.CryptoBridgeKt",
               "ch.trancee.meshlink.crypto.KeccakEngineKt",
               "ch.trancee.meshlink.crypto.MLDSASamplingKt",
+              "ch.trancee.meshlink.crypto.MLKEMGenMatrixFallbackKt",
           )
           // MLDSASamplingKt contains rejection-sampling refill loops that are
           // statistically unreachable for ML-DSA-44 (Q=8380417, acceptance
           // ~99.9%; refill requires a ~45-sigma event). Main paths are
           // exercised by Wycheproof vectors; only refill loops cannot be
           // deterministically covered.
+          //
+          // MLKEMGenMatrixFallbackKt: same pattern for ML-KEM-512
+          // (Q=3329, acceptance ~80.6%; refill requires a >22-sigma event).
         }
       }
       xml { onCheck = true }

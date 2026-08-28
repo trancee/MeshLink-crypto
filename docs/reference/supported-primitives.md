@@ -4,7 +4,7 @@
 
 ## Overview
 
-The library implements eleven RFC/FIPS-standard cryptographic primitives. Each primitive is available as a pure-Kotlin implementation. Each primitive also has a native fallback path where the host platform provides the same operation. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 is pure-Kotlin only — native integration is pending.
+The library implements twelve RFC/FIPS-standard cryptographic primitives. Each primitive is available as a pure-Kotlin implementation. Each primitive also has a native fallback path where the host platform provides the same operation. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 is pure-Kotlin only — native integration is pending.
 
 | Primitive | RFC | Pure-K | JVM native | Android native | iOS native |
 |---|---|---|---|---|---|
@@ -19,6 +19,7 @@ The library implements eleven RFC/FIPS-standard cryptographic primitives. Each p
 | SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 | SHAKE128 | [FIPS 202 §8.3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 | ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes (in development) | None — pure-K only | None — pure-K only | None — pure-K only |
+| ML-KEM-512 | [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 
 ## Native availability by API level
 
@@ -59,6 +60,7 @@ See [ADR-0002](../adr/0002-fallback-strategy.md) for the dispatch rationale and 
 | SHAKE256 | Variable (any positive byte count) | N/A |
 | SHAKE128 | Variable (any positive byte count) | N/A |
 | ML-DSA-44 | 2420 bytes (signature) | 800 bytes (public key), 2400 bytes (secret key), 32 bytes (seed) |
+| ML-KEM-512 | 768 bytes (ciphertext) | 800 bytes (public key), 1632 bytes (secret key), 768 bytes (ciphertext), 32 bytes (shared secret) |
 
 The library provides public key derivation as a convenience API layered on top of the X25519 and Ed25519 primitives. This is the same scalar multiplication used during key agreement and signing — the public key is derived from the private key material using the standard base point (X25519) or the RFC 8032 algorithm (Ed25519).
 

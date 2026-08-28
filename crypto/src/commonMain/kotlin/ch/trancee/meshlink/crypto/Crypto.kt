@@ -142,4 +142,27 @@ public object Crypto {
       key: SecretKey,
       ciphertext: ByteArray,
   ): Result<ByteArray?> = Aead.chacha20Poly1305Decrypt(key, ciphertext)
+
+  // -- ML-KEM-512 (FIPS 203) -----------------------------------------
+
+  /**
+   * Generates an ML-KEM-512 key pair from 64 bytes of randomness [seed]. Delegates to
+   * [Kem.mlkem512KeyPair].
+   */
+  public fun mlkem512KeyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>> =
+      Kem.mlkem512KeyPair(seed)
+
+  /**
+   * Encapsulates a shared secret using [publicKey] with ML-KEM-512. Delegates to
+   * [Kem.mlkem512Encaps].
+   */
+  public fun mlkem512Encaps(publicKey: ByteArray): Result<Pair<ByteArray, ByteArray>> =
+      Kem.mlkem512Encaps(publicKey)
+
+  /**
+   * Decapsulates a shared secret from [ciphertext] using [secretKey] with ML-KEM-512. Delegates to
+   * [Kem.mlkem512Decaps].
+   */
+  public fun mlkem512Decaps(secretKey: ByteArray, ciphertext: ByteArray): Result<ByteArray> =
+      Kem.mlkem512Decaps(secretKey, ciphertext)
 }

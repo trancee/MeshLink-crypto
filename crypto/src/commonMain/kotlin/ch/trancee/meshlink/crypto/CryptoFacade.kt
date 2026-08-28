@@ -1,5 +1,5 @@
 /*
- * Public API facade for MAC, KDF, key exchange, signing, and AEAD (ADR-0005).
+ * Public API facade for MAC, KDF, key exchange, signing, KEM, and AEAD (ADR-0005).
  *
  * All entry points are stateless, thread-safe, and return Result<T> (no
  * exceptions crossing the KMP boundary). Each primitive routes through the
@@ -196,4 +196,28 @@ public object Aead {
       runCatching {
         ChaCha20Poly1305.decrypt(key.bytes, ciphertext)
       }
+}
+
+/**
+ * ML-KEM-512 key encapsulation (FIPS 203) entry points.
+ *
+ * Example:
+ * ```
+ * val (pk, sk) = Kem.mlkem512KeyPair(seed).getOrThrow()
+ * val (ct, ss) = Kem.mlkem512Encaps(pk).getOrThrow()
+ * val recovered = Kem.mlkem512Decaps(sk, ct).getOrThrow()
+ * ```
+ */
+public object Kem {
+  /** Generates an ML-KEM-512 keypair from 64 bytes of randomness. */
+  public fun mlkem512KeyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>> =
+      MLKEM512.keyPair(seed)
+
+  /** Encapsulates a shared secret using the given ML-KEM-512 public key. */
+  public fun mlkem512Encaps(publicKey: ByteArray): Result<Pair<ByteArray, ByteArray>> =
+      MLKEM512.encaps(publicKey)
+
+  /** Decapsulates a shared secret from ciphertext using the given ML-KEM-512 secret key. */
+  public fun mlkem512Decaps(secretKey: ByteArray, ciphertext: ByteArray): Result<ByteArray> =
+      MLKEM512.decaps(secretKey, ciphertext)
 }
