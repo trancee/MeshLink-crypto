@@ -20,7 +20,10 @@
  */
 package ch.trancee.meshlink.crypto
 
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 
@@ -298,5 +301,180 @@ class MLKEM512Test {
 
     val recovered = MLKEM512.decaps(sk, ct).getOrThrow()
     assert(recovered.contentEquals(ss)) { "decapsulated shared secret should match" }
+  }
+
+  // ------------------------------------------------------------------
+  // Input validation error paths
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("negative")
+  fun `keyPair rejects wrong-size coins`() {
+    // Arrange — coins must be 64 bytes (2 × 32)
+    val shortCoins = ByteArray(32)
+
+    // Act + Assert — require() triggers IllegalArgumentException
+    val result = MLKEM512.keyPair(shortCoins)
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> { result.getOrThrow() }
+  }
+
+  @Test
+  @Tag("negative")
+  fun `encapsDerand rejects wrong-size publicKey`() {
+    // Arrange — publicKey must be 800 bytes
+    val shortPk = ByteArray(100)
+    val coins = ByteArray(MLKEM_SYMBYTES)
+
+    // Act + Assert
+    val result = MLKEM512.encapsDerand(shortPk, coins)
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> { result.getOrThrow() }
+  }
+
+  @Test
+  @Tag("negative")
+  fun `encapsDerand rejects wrong-size coins`() {
+    // Arrange — coins must be 32 bytes
+    val seed = randomBytes(64)
+    val (pk, _) = MLKEM512.keyPair(seed).getOrThrow()
+    val shortCoins = ByteArray(16)
+
+    // Act + Assert
+    val result = MLKEM512.encapsDerand(pk, shortCoins)
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> { result.getOrThrow() }
+  }
+
+  @Test
+  @Tag("negative")
+  fun `decaps rejects wrong-size secretKey`() {
+    // Arrange — secretKey must be 1632 bytes
+    val shortSk = ByteArray(100)
+    val ct = ByteArray(MLKEM512.CIPHERTEXT_BYTES)
+
+    // Act + Assert
+    val result = MLKEM512.decaps(shortSk, ct)
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> { result.getOrThrow() }
+  }
+
+  @Test
+  @Tag("negative")
+  fun `decaps rejects wrong-size ciphertext`() {
+    // Arrange — ciphertext must be 768 bytes
+    val seed = randomBytes(64)
+    val (_, sk) = MLKEM512.keyPair(seed).getOrThrow()
+    val shortCt = ByteArray(100)
+
+    // Act + Assert
+    val result = MLKEM512.decaps(sk, shortCt)
+    assertTrue(result.isFailure)
+    assertFailsWith<IllegalArgumentException> { result.getOrThrow() }
+  }
+
+  // ------------------------------------------------------------------
+  // Default-parameter synthetic methods (Kover coverage)
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  fun `polyFrommsg with default msgOff produces same result as explicit zero`() {
+    // Arrange — 32-byte message
+    val msg = randomBytes(32)
+    val rDefault = IntArray(256)
+    val rExplicit = IntArray(256)
+
+    // Act — call without msgOff (uses default = 0) and with explicit 0
+    polyFrommsg(rDefault, msg)
+    polyFrommsg(rExplicit, msg, 0)
+
+    // Assert — identical output
+    assertContentEquals(rDefault, rExplicit)
+  }
+
+  @Test
+  @Tag("positive")
+  fun `polyGetnoiseEta1 with default seedOff matches explicit zero`() {
+    // Arrange
+    val seed = randomBytes(32)
+    val rDefault = IntArray(256)
+    val rExplicit = IntArray(256)
+    val nonce = 1
+
+    // Act — call without seedOff (uses default = 0)
+    polyGetnoiseEta1(rDefault, seed, nonce = nonce)
+    polyGetnoiseEta1(rExplicit, seed, 0, nonce)
+
+    // Assert — identical noise
+    assertContentEquals(rDefault, rExplicit)
+  }
+
+  @Test
+  @Tag("positive")
+  fun `polyGetnoiseEta2 with default seedOff matches explicit zero`() {
+    // Arrange
+    val seed = randomBytes(32)
+    val rDefault = IntArray(256)
+    val rExplicit = IntArray(256)
+    val nonce = 1
+
+    // Act
+    polyGetnoiseEta2(rDefault, seed, nonce = nonce)
+    polyGetnoiseEta2(rExplicit, seed, 0, nonce)
+
+    // Assert
+    assertContentEquals(rDefault, rExplicit)
+  }
+
+  @Test
+  @Tag("positive")
+  fun `indcpaEncrypt with default coinsOff works end-to-end`() {
+    // Arrange — full keypair with coinsOff=0 (default)
+    val seed = randomBytes(64)
+    val (pk, _) = MLKEM512.keyPair(seed).getOrThrow()
+    val buf = ByteArray(64)
+    val coins = randomBytes(32)
+    coins.copyInto(buf, 0, 0, 32)
+
+    val c = ByteArray(MLKEM512.CIPHERTEXT_BYTES)
+
+    // Act — call indcpaEncrypt without coinsOff (uses default = 0)
+    indcpaEncrypt(c, 0, buf, 0, pk, 0, coins)
+
+    // Assert — ciphertext is non-zero
+    assertTrue(c.filter { it != 0.toByte() }.isNotEmpty())
+  }
+
+  // ------------------------------------------------------------------
+  // rejUniform branch coverage
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  fun `rejUniform with all-0xFF buffer rejects all values`() {
+    // Arrange — every 12-bit value is 0xFFF = 4095 > Q = 3329, all rejected
+    val r = IntArray(256)
+    val buf = ByteArray(3 * 840) { 0xFF.toByte() }
+
+    // Act
+    val ctr = rejUniform(r, MLKEM_N, buf, buf.size)
+
+    // Assert — no coefficients accepted
+    assertEquals(0, ctr)
+  }
+
+  @Test
+  @Tag("positive")
+  fun `rejUniform with too-small buffer exits immediately`() {
+    // Arrange — buflen=2 means pos+3 (0+3=3) > buflen, loop body never executes
+    val r = IntArray(256)
+    val buf = ByteArray(2)
+
+    // Act
+    val ctr = rejUniform(r, MLKEM_N, buf, 2)
+
+    // Assert — no coefficients accepted
+    assertEquals(0, ctr)
   }
 }

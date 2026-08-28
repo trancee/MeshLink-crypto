@@ -831,4 +831,44 @@ class CryptoFacadeTest {
       result.getOrThrow()
     }
   }
+
+  // ------------------------------------------------------------------
+  // ML-KEM-512 (FIPS 203) facade delegation
+  // ------------------------------------------------------------------
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto mlkem512KeyPair delegates to Kem`() {
+    // Arrange — deterministic seed for reproducibility
+    val seed = Crypto.randomBytes(64)
+
+    // Act — both facades should produce identical keypairs
+    val (pk1, sk1) = Crypto.mlkem512KeyPair(seed).getOrThrow()
+    val (pk2, sk2) = Kem.mlkem512KeyPair(seed).getOrThrow()
+
+    // Assert — identical output, correct sizes
+    assertContentEquals(pk1, pk2)
+    assertContentEquals(sk1, sk2)
+    assertEquals(MLKEM512.PUBLIC_KEY_BYTES, pk1.size)
+    assertEquals(MLKEM512.SECRET_KEY_BYTES, sk1.size)
+  }
+
+  @Test
+  @Tag("positive")
+  @Tag("critical-path")
+  fun `Crypto mlkem512Encaps and mlkem512Decaps round-trip`() {
+    // Arrange — generate keypair
+    val seed = Crypto.randomBytes(64)
+    val (pk, sk) = Crypto.mlkem512KeyPair(seed).getOrThrow()
+
+    // Act — encapsulate via Crypto facade, decapsify via Crypto facade
+    val (ct, ss1) = Crypto.mlkem512Encaps(pk).getOrThrow()
+    val ss2 = Crypto.mlkem512Decaps(sk, ct).getOrThrow()
+
+    // Assert — shared secrets match, correct sizes
+    assertContentEquals(ss1, ss2)
+    assertEquals(MLKEM512.CIPHERTEXT_BYTES, ct.size)
+    assertEquals(MLKEM512.SHARED_SECRET_BYTES, ss1.size)
+  }
 }

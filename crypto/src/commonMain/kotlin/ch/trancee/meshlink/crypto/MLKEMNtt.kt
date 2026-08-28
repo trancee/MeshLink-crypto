@@ -334,17 +334,6 @@ internal object MLKEMNtt {
   }
 
   /**
-   * In-place conditional add-Q: adds Q to each negative coefficient (branch-free).
-   *
-   * Uses arithmetic right shift by 31 to produce a mask: Q if a < 0, 0 if a ≥ 0.
-   */
-  internal fun polyCaddq(a: IntArray) {
-    for (i in a.indices) {
-      a[i] += (a[i] shr 31) and Q
-    }
-  }
-
-  /**
    * Convert coefficients from standard to Montgomery domain (ref/poly.c `poly_tomont`).
    *
    * Computes `montgomeryReduce(coeff * MONT32)` = `coeff * 2^32 / 2^16 mod Q` = `coeff * R mod Q`

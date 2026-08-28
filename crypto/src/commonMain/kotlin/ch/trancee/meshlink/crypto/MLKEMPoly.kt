@@ -191,9 +191,8 @@ internal fun polyNtt(a: IntArray) {
 /**
  * Inverse NTT + Montgomery normalization (ref/poly.c `poly_invntt_tomont`).
  *
- * Delegates to [MLKEMNtt.invnttTomont]. After this call, coefficients are in standard order but in
- * Montgomery domain (scaled by R = 2^16). A subsequent [MLKEMNtt.polyCaddq] + [MLKEMNtt.polyReduce]
- * brings them to standard form.
+ * In Montgomery domain (scaled by R = 2^16). A subsequent [MLKEMNtt.polyReduce] brings them to
+ * standard form (polyCaddq is a no-op — invnttTomont outputs are already in range).
  *
  * @param a coefficient array of length 256; **modified in place**
  */

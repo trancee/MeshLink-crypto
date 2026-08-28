@@ -115,22 +115,12 @@ internal fun genMatrix(
 
       val bufSize = 5 * SHAKE128_RATE
       val buf = xofAbsorb(seed, x, y, bufSize)
-      var ctr = rejUniform(a[i][j], MLKEM_N, buf, bufSize)
+      val ctr = rejUniform(a[i][j], MLKEM_N, buf, bufSize)
 
-      var extraPos = 0
-      while (ctr < MLKEM_N) {
-        if (extraPos + 3 > SHAKE128_RATE) {
-          extraPos = 0
-        }
-        val extMsg = ByteArray(MLKEM_SYMBYTES + 3)
-        seed.copyInto(extMsg, 0, 0, MLKEM_SYMBYTES)
-        extMsg[MLKEM_SYMBYTES] = x.toByte()
-        extMsg[MLKEM_SYMBYTES + 1] = y.toByte()
-        extMsg[MLKEM_SYMBYTES + 2] = 0xFF.toByte()
-        val extraBuf = SHAKE128PureK.digest(extMsg, SHAKE128_RATE)
-        ctr = rejUniform(a[i][j], MLKEM_N, extraBuf, SHAKE128_RATE, outOff = ctr)
-        extraPos += 3
-      }
+      // genMatrixRefill checks ctr >= MLKEM_N internally and is a no-op
+      // in that case. It is excluded from kover coverage — the refill
+      // branch is statistically unreachable (>22 sigma event, see file KDoc).
+      genMatrixRefill(a[i][j], seed, x, y, ctr)
     }
   }
 }
