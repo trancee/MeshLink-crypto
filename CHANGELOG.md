@@ -23,6 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Falcon-512` KAT `.rsp` parser for NIST Round 3 test vectors — test infrastructure
+  only (no `commonMain` changes). `FalconKatLoader.kt` parses the NIST `.rsp` format
+  (count/seed/mlen/msg/pk/sk/smlen/sm fields) with strict validation: unknown,
+  missing, and duplicate fields rejected; ASCII-hex validated; exact byte-width
+  checks (seed=48, pk=897, sk=1281 bytes). `Falcon512KatResourceTest.kt` loads all
+  100 vectors and verifies structural invariants; `FalconKatLoaderTest.kt` provides
+  18 edge-case unit tests (`requireHex` and `parseRsp`). Resource at
+  `crypto/src/jvmTest/resources/falcon/falcon512-KAT.rsp`.
+- `loadResourceText(path)` extracted to `TestUtil.kt` (UTF-8 explicit) as a shared
+  classpath-resource reader; `WycheproofJson.parseResource` now delegates to it.
+
 - `SHA3-256` message digest (FIPS 202 §6.1) — pure-Kotlin Keccak-f[1600] engine
   reusing the shared `keccakF1600` permutation from `KeccakEngine.kt` with domain
   separation suffix `0x06` (vs SHAKE's `0x1F`). Parameters: rate = 136 bytes,
