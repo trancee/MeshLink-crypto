@@ -1,37 +1,81 @@
 # AGENTS
 
-## Project
+AI execution policy. Before repository mutation: load [`CONSTITUTION.md`](CONSTITUTION.md) fully; summary != source.
 
-A Kotlin Multiplatform (KMP) cryptography library: pure-Kotlin, constant-time implementations of RFC-standard primitives, with per-primitive fallback to a target's native crypto provider when available. Spec texts live in `docs/rfcs/`; test vectors come from the Wycheproof corpus.
+```text
+R/X/D/O := Constitution notation
+priority := CONSTITUTION > AGENTS > scoped docs/ADRs > config/templates/comments
+conflict => higher priority + report; lower priority may refine, X weaken
+```
 
-## Tooling
+## START
 
-- **Build**: Gradle with Kotlin DSL (Kotlin 2.4.10). Always invoke `./gradlew` with `--rerun-tasks` and `--no-build-cache` — see [docs/agents/build.md](docs/agents/build.md).
-- **GitHub**: Use the `gh` CLI for issues, PRs, and workflow runs.
-- **Git commits**: Always ask before committing. Prepare Conventional Commits after each unit of work, pending your approval. PR titles must use Conventional Commit format too.
+1. Load Constitution + task-scope docs/specs/ADRs.
+2. Derive commands from repo scripts/metadata/build/CI; X assume stack/layout/framework.
+3. Inspect worktree; preserve user/concurrent changes.
+4. Map affected contracts/callers/tests/artifacts/platforms/docs/gates.
+5. Non-trivial task => short ordered plan, checkable completion, exactly one active implementation step.
 
-## Documentation
+START complete iff behavior source-of-truth + proof commands known.
 
-Write documentation in ASD-STE100 Simplified Technical English.
+## PATH
 
-- Use short sentences. One idea per sentence.
-- State one fact per sentence.
-- Use active voice.
-- Use simple, approved words. Avoid jargon.
-- Use the simple present for instructions. Use the simple past for descriptions.
-- Avoid vague words and nominalizations.
+- `feature|fix` => TDD: one behavioral test => run expected red => smallest complete implementation => run green => refactor green => repeat. Pre-change pass or setup-failure != red.
+- `refactor` => establish green behavior check; preserve observable behavior; migrate all callers; delete obsolete path. Alias/dead path only if Q7 requires deprecation.
+- `docs-only` => verify claims against source/config/executable commands; run repo link/markup/spelling/example checks; X unrelated app suite unless docs affect executable/generated content.
+- `security|protocol|schema|persistence` => load applicable ADR; update/create O3 ADR; test applicable valid/invalid/incompatible/replayed/truncated/boundary cases.
 
-## Workflow
+## ASK
 
-Follow the 5-step agent workflow:
+- Unclear requirement/constraint/outcome/material tradeoff OR human-only input => R use `ask` tool.
+- Before ask: exhaust repo/docs/config/tools; X ask tool-answerable facts.
+- Ask payload R self-contained `{objective,current behavior/state,exact unknown,why it matters,distinct options,each option's cost/risk/compatibility/irreversibility}`.
+- O recommendation; if given R identify+justify against known constraints.
+- R ask minimum blocking input; finish independent work first.
+- X confirmation request when Constitution/docs/local convention determines answer.
 
-1. Read relevant skill files before implementation, refactors, or any task where an established best practice applies.
-2. Prepare a Conventional Commit after each unit of work (pending approval — see Git above).
-3. Before opening a PR, run the `/code-review` skill and resolve any genuine issues it finds.
-4. Use `gh` CLI for GitHub operations.
-5. When a design choice has multiple reasonable approaches (not a routine call covered by an existing rule), present the options and wait for your decision.
+## IMPLEMENT
 
-See [docs/agents/workflow.md](docs/agents/workflow.md) for full details.
+- R existing compliant structure/naming; X parallel convention.
+- R root-cause fix; X error suppression/fixture special-case/validation weakening.
+- R requested scope; X unrelated cleanup/speculative retry/fallback/config/abstraction.
+- Contract change => clean cutover: update all affected callers/platforms/tests/docs/examples/specs/compat records/generated artifacts/release metadata; delete obsolete paths.
+- R repository formatter; X manual formatter workaround.
+- Generated files => owning command only.
+- Materially different compliant product/compat/security/maintenance choices => ASK.
+
+IMPLEMENT complete iff zero repository-controlled consumer needs old behavior.
+
+## VERIFY
+
+1. Run narrow changed behavior/test/program path.
+2. Run every applicable broader gate: format/static-analysis/build/test/coverage/security/compat/docs/benchmark/platform.
+3. Use clean/forced execution when supported; cache-only != proof.
+4. Performance-sensitive => compare committed baseline.
+5. Review result against applicable Constitution IDs.
+
+Failure => incomplete; fix cause+rerun. External prerequisite failure => finish reachable work; report exact command/failure/missing prerequisite.
+
+## GIT/EXTERNAL
+
+- R feature branch; X protected-default direct commit.
+- Without explicit user approval X commit/push/open-or-merge PR/publish/change external service.
+- X discard unrelated work/rewrite history/force-push/destructive cleanup without explicit approval.
+- Approved commit => repository format, else Conventional Commits; AI co-author trailer if repository requires.
+- R repository-preferred issue/PR/CI integration tool.
+
+## DONE
+
+Yield only if all true:
+
+- request+acceptance criteria complete;
+- applicable TDD observed expected red then green;
+- affected callers/platforms/docs/examples/specs/compat/generated/release state agree;
+- applicable local+CI-equivalent gates pass, or exact external blocker recorded;
+- zero temporary/placeholder/disabled/stale/unjustified suppression/`TODO` state;
+- Constitution compliant.
+
+Final report R `{changed files+behavior, exact commands+observed results, docs/API/compat/security/performance impact, blocker/unverified state, specialized instructions/skills used}`. X claim unobserved command/test/review/runtime behavior.
 
 ## Agent skills
 

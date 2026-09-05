@@ -16,3 +16,20 @@ internal fun hex(s: String): ByteArray {
     (hi shl 4 or lo).toByte()
   }
 }
+
+/**
+ * Reads a classpath resource as a non-blank UTF-8 string.
+ *
+ * Shared by [WycheproofJson.parseResource] and [loadFalconKat512Vectors] to avoid duplicating the
+ * getResourceAsStream + InputStreamReader + isNotBlank pattern. Strips a leading `/` so callers may
+ * use absolute-style paths.
+ */
+internal fun loadResourceText(path: String): String {
+  val resourceName = path.removePrefix("/")
+  val stream =
+      Thread.currentThread().contextClassLoader.getResourceAsStream(resourceName)
+          ?: error("resource not found: $path")
+  val text = stream.use { java.io.InputStreamReader(it, Charsets.UTF_8).readText() }
+  require(text.isNotBlank()) { "empty resource: $path" }
+  return text
+}

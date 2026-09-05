@@ -18,13 +18,7 @@ internal object WycheproofJson {
   fun parse(input: String): Any? = Parser(input).parse()
 
   /** Reads a resource from the classpath and parses it as JSON. */
-  fun parseResource(path: String): Any? {
-    val stream =
-        WycheproofJson::class.java.getResourceAsStream(path) ?: error("resource not found: $path")
-    val text = stream.use { java.io.InputStreamReader(it).readText() }
-    require(text.isNotBlank()) { "empty resource: $path" }
-    return parse(text)
-  }
+  fun parseResource(path: String): Any? = parse(loadResourceText(path))
 
   // ---------------------------------------------------------------------------
   // Compact recursive-descent parser
