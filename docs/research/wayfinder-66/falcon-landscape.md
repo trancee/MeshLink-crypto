@@ -95,9 +95,9 @@ Use the **NIST KAT files** (`falcon512-KAT.rsp`, `falcon1024-KAT.rsp`) from <htt
 
 ### pq-crystals/falcon repo
 
-- **GitHub**: <https://github.com/pq-crystals/falcon>
-- **Status**: Main branch removed; repo **archived Aug 4, 2026** (read-only)
-- **Contents**: `Extra/c/` directory contains the canonical C reference implementation
+- **GitHub**: Repo **removed** from GitHub (HTTP 404 as of 2026-09-05); canonical source: <https://falcon-sign.info/>
+- **Status**: Original repo archived Aug 4, 2026, later **removed**; reference code mirrored in PQClean (`crypto_sign/falcon-512/clean/`)
+- **Contents**: `Extra/c/` directory contained the canonical C reference implementation
 
 ### PQClean Falcon (clean variant)
 
@@ -265,9 +265,8 @@ Key takeaways from <https://csrc.nist.gov/csrc/media/presentations/2025/fips-206
 1. Falcon specification v1.2: <https://falcon-sign.info/falcon.pdf>
 2. Falcon project: <https://falcon-sign.info/>
 3. PQClean Falcon (archived): <https://github.com/PQClean/PQClean/tree/master/crypto_sign/falcon-512>
-4. pq-crystals/falcon (archived): <https://github.com/pq-crystals/falcon>
-5. Official KATs: <https://falcon-sign.info/falcon-round3.zip>
-6. NIST PQC status: <https://csrc.nist.gov/projects/post-quantum-cryptography/post-quantum-cryptography-standardization>
-7. FIPS 206 slide deck: <https://csrc.nist.gov/csrc/media/presentations/2025/fips-206-fn-dsa-(falcon)/images-media/fips_206-perlner_2.1.pdf>
-8. BouncyCastle Falcon: <https://github.com/bcgit/bc-java/tree/main/core/src/main/java/org/bouncycastle/pqc/crypto/falcon>
-9. C2SP/Wycheproof: <https://github.com/c2spro/wycheproof> (no Falcon vectors)
+4. Official KATs: <https://falcon-sign.info/falcon-round3.zip>
+5. NIST PQC status: <https://csrc.nist.gov/projects/post-quantum-cryptography/post-quantum-cryptography-standardization>
+6. FIPS 206 slide deck: <https://csrc.nist.gov/csrc/media/presentations/2025/fips-206-fn-dsa-(falcon)/images-media/fips_206-perlner_2.1.pdf>
+7. BouncyCastle Falcon: <https://github.com/bcgit/bc-java/tree/main/core/src/main/java/org/bouncycastle/pqc/crypto/falcon>
+8. Google Wycheproof: <https://github.com/google/wycheproof> (no Falcon vectors)
