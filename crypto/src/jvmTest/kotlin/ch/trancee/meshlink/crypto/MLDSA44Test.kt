@@ -20,7 +20,10 @@
  */
 package ch.trancee.meshlink.crypto
 
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 
@@ -312,5 +315,102 @@ class MLDSA44Test {
     val wrongCtx = "wrong context".toByteArray()
     val invalid = MLDSA44PureK.verify(signature, message, pk, wrongCtx)
     assert(!invalid) { "signature with wrong context should not verify" }
+  }
+
+  // ------------------------------------------------------------------
+  // Public façade input validation: require() error paths
+  // ------------------------------------------------------------------
+
+  @Test
+  fun `public keyPair rejects seed with wrong size`() {
+    val shortSeed = ByteArray(MLDSA_SEEDBYTES - 1) { 0x42 }
+    val failure = MLDSA44.keyPair(shortSeed)
+    assertTrue(failure.isFailure, "keyPair with short seed should return Result.failure")
+  }
+
+  @Test
+  fun `public sign rejects secret key with wrong size`() {
+    val seed = ByteArray(MLDSA_SEEDBYTES) { 0x01 }
+    val (_, sk) = MLDSA44PureK.keypairFromSeed(seed)
+    val shortSk = ByteArray(MLDSA_SECRETKEYBYTES - 1) { 0x00 }
+    val message = "test".toByteArray()
+    val failure = MLDSA44.sign(message, shortSk)
+    assertTrue(failure.isFailure, "sign with short secret key should return Result.failure")
+  }
+
+  @Test
+  fun `public keyPair accepts correct seed size`() {
+    val seed = ByteArray(MLDSA_SEEDBYTES) { 0x01 }
+    val (pk, sk) = MLDSA44.keyPair(seed).getOrThrow()
+    assertEquals(MLDSA_PUBLICKEYBYTES, pk.size, "public key should be $MLDSA_PUBLICKEYBYTES bytes")
+    assertEquals(MLDSA_SECRETKEYBYTES, sk.size, "secret key should be $MLDSA_SECRETKEYBYTES bytes")
+  }
+
+  // ------------------------------------------------------------------
+  // Public Crypto/Signer facade delegation chain
+  // ------------------------------------------------------------------
+
+  @Test
+  fun `Crypto facade mldsa44 round-trip matches pureK`() {
+    val seed = ByteArray(MLDSA_SEEDBYTES) { (it + 1).toByte() }
+    val message = "facade test message".toByteArray()
+    val context = "ctx".toByteArray()
+
+    // Crypto.mldsa44KeyPair delegates to Signer.mldsa44KeyPair → MLDSA44.keyPair → MLDSA44PureK
+    val (pk, sk) = Crypto.mldsa44KeyPair(seed).getOrThrow()
+    val (pkPureK, skPureK) = MLDSA44PureK.keypairFromSeed(seed)
+    assertContentEquals(pkPureK, pk, "Crypto facade keyPair should match pureK")
+    assertContentEquals(skPureK, sk, "Crypto facade keyPair should match pureK")
+
+    // Crypto.mldsa44Sign delegates to Signer.mldsa44Sign → MLDSA44.sign → MLDSA44PureK
+    val sigPureK = MLDSA44PureK.sign(message, sk, context)
+    val sigFacade = Crypto.mldsa44Sign(message, sk, context).getOrThrow()
+    assertContentEquals(sigPureK, sigFacade, "Crypto facade sign should match pureK")
+
+    // Default context parameter (exercises $default synthetic methods)
+    val sigPureKDefault = MLDSA44PureK.sign(message, sk, byteArrayOf())
+    val sigFacadeDefault = Crypto.mldsa44Sign(message, sk).getOrThrow()
+    assertContentEquals(
+        sigPureKDefault,
+        sigFacadeDefault,
+        "sign without context should match pureK with empty context",
+    )
+
+    // Crypto.mldsa44Verify delegates to Signer.mldsa44Verify → MLDSA44.verify → MLDSA44PureK
+    val validPureK = MLDSA44PureK.verify(sigPureK, message, pk, context)
+    val validFacade = Crypto.mldsa44Verify(message, sigPureK, pk, context).getOrThrow()
+    assertEquals(validPureK, validFacade, "Crypto facade verify should match pureK")
+
+    // Default context parameter for verify (exercises $default synthetic methods)
+    val validPureKDefault = MLDSA44PureK.verify(sigPureKDefault, message, pk, byteArrayOf())
+    val validFacadeDefault = Crypto.mldsa44Verify(message, sigPureKDefault, pk).getOrThrow()
+    assertEquals(
+        validPureKDefault,
+        validFacadeDefault,
+        "verify without context should match pureK with empty context",
+    )
+
+    // Tampered message through the facade must return false
+    val tampered = "tampered".toByteArray()
+    val invalidFacade = Crypto.mldsa44Verify(tampered, sigPureK, pk, context).getOrThrow()
+    assertFalse(invalidFacade, "tampered message should fail verification through facade")
+
+    val invalidFacadeDefault = Crypto.mldsa44Verify(tampered, sigPureKDefault, pk).getOrThrow()
+    assertFalse(
+        invalidFacadeDefault,
+        "tampered message should fail verification through facade (default context)",
+    )
+
+    // Direct Signer.mldsa44* calls without context to cover Signer.$default synthetic methods
+    val signerSig = Signer.mldsa44Sign(message, sk).getOrThrow()
+    assertContentEquals(
+        sigPureKDefault,
+        signerSig,
+        "Signer sign without context should match pureK",
+    )
+    val signerValid = Signer.mldsa44Verify(message, sigPureKDefault, pk).getOrThrow()
+    assertEquals(validPureKDefault, signerValid, "Signer verify without context should match pureK")
+    val signerInvalid = Signer.mldsa44Verify(tampered, sigPureKDefault, pk).getOrThrow()
+    assertFalse(signerInvalid, "Signer verify with tampered message should fail")
   }
 }

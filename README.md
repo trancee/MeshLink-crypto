@@ -25,7 +25,7 @@ The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator
 | ChaCha20-Poly1305 | [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) | Yes | JCA Cipher, CryptoKit (iOS) |
 | SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
 | SHAKE128 | [FIPS 202 §8.3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | Pure-K only (no native) |
-| ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes | Pure-K only (in development) |
+| ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes | Pure-K only |
 | ML-KEM-512 | [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | Yes | Pure-K only (Wycheproof-verified) |
 
 ## How it works

@@ -18,7 +18,7 @@ The library implements thirteen RFC/FIPS-standard cryptographic primitives. Each
 | Ed25519 | [RFC 8032 §5.1](https://datatracker.ietf.org/doc/html/rfc8032#section-5.1) | Yes | JCA (`Signature`) | JCA (`Signature`, API 29+) | Security.framework (`SecKeyCreateSignature`, iOS 14+) |
 | SHAKE256 | [FIPS 202 §8.4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 | SHAKE128 | [FIPS 202 §8.3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
-| ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes (in development) | None — pure-K only | None — pure-K only | None — pure-K only |
+| ML-DSA-44 | [FIPS 204 §7](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 | ML-KEM-512 | [FIPS 203](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf) | Yes | None — pure-K only | None — pure-K only | None — pure-K only |
 
 ## Native availability by API level

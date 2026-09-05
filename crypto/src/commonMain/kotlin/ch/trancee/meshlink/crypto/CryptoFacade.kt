@@ -165,6 +165,47 @@ public object Signer {
   public fun ed25519PublicKeyFromPrivate(secretKey: PrivateKey): Result<ByteArray> = runCatching {
     Ed25519.publicKeyFromPrivate(secretKey.bytes)
   }
+
+  // -- ML-DSA-44 (FIPS 204 §7) ------------------------------------------
+
+  /**
+   * Generates an ML-DSA-44 keypair from a deterministic 32-byte seed.
+   *
+   * @param seed 32-byte entropy seed
+   * @return a pair of (publicKey, secretKey) byte arrays
+   */
+  public fun mldsa44KeyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>> =
+      MLDSA44.keyPair(seed)
+
+  /**
+   * Signs [message] with ML-DSA-44 using [secretKey].
+   *
+   * @param message the message to sign
+   * @param secretKey the 2560-byte secret key
+   * @param context optional context string (≤ 255 bytes)
+   * @return the 2420-byte signature
+   */
+  public fun mldsa44Sign(
+      message: ByteArray,
+      secretKey: ByteArray,
+      context: ByteArray = byteArrayOf(),
+  ): Result<ByteArray> = MLDSA44.sign(message, secretKey, context)
+
+  /**
+   * Verifies an ML-DSA-44 [signature] for [message] against [publicKey].
+   *
+   * @param message the message that was signed
+   * @param signature the 2420-byte signature
+   * @param publicKey the 1312-byte public key
+   * @param context optional context string (must match signing context)
+   * @return `Result.success(true)` if valid, `Result.success(false)` if invalid
+   */
+  public fun mldsa44Verify(
+      message: ByteArray,
+      signature: ByteArray,
+      publicKey: ByteArray,
+      context: ByteArray = byteArrayOf(),
+  ): Result<Boolean> = MLDSA44.verify(signature, message, publicKey, context)
 }
 
 /**

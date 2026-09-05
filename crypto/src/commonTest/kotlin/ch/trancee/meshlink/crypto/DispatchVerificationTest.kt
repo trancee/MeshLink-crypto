@@ -188,4 +188,26 @@ internal class DispatchVerificationTest {
         )
     assertContentEquals(expected, SHAKE128.digest(input, 64))
   }
+
+  // ------------------------------------------------------------------
+  // ML-DSA-44 (FIPS 204 §7) — pure-Kotlin only; no native path
+  // ------------------------------------------------------------------
+  @Test
+  fun mldsa44_dispatchSignAndVerifyRoundTrip() {
+    println("DISPATCH_TEST: ML-DSA-44, path=PureK")
+    val seed = ByteArray(32) { 0x01 }
+    val (pk, sk) = MLDSA44.keyPair(seed).getOrThrow()
+    val message = "Hello, ML-DSA-44!".encodeToByteArray()
+
+    val signature = MLDSA44.sign(message, sk).getOrThrow()
+    assertTrue(signature.size == MLDSA_BYTES, "signature should be ${MLDSA_BYTES} bytes")
+
+    val valid = MLDSA44.verify(signature, message, pk).getOrThrow()
+    assertTrue(valid, "signature should verify")
+
+    // Tampered message must fail
+    val tampered = "Hello, ML-DSA-99!".encodeToByteArray()
+    val invalid = MLDSA44.verify(signature, tampered, pk).getOrThrow()
+    assertTrue(!invalid, "tampered message should fail verification")
+  }
 }

@@ -71,6 +71,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Crypto.mlkem512KeyPair(seed)`, `Crypto.mlkem512Encaps(pk)`, `Crypto.mlkem512Decaps(sk, ct)`
   and `Kem.mlkem512*` equivalents. Verified against all 563 C2SP/wycheproof
   ML-KEM-512 test vectors (100 keygen, 261 encaps, 153 round-trip, 3 semi-expanded).
+- ML-DSA-44 digital signature (FIPS 204 §7) — pure-Kotlin implementation with NTT-based
+  verification, deterministic signing via SHAKE256, and FIPS 204 context parameter support
+  (`pre = {0, ctxlen, ctx}`). Parameters: K=4, L=4, polynomial degree 256, modulus q=8380417,
+  NTT order K=64. Public API: `Crypto.mldsa44KeyPair(seed)`, `Crypto.mldsa44Sign(message,
+  secretKey, context)`, `Crypto.mldsa44Verify(message, signature, publicKey, context)` and
+  `Signer.mldsa44*` / `MLDSA44` equivalents. Key sizes: public key 1312 bytes, secret key 2560
+  bytes, signature 2420 bytes, seed 32 bytes. Verified against 180 Wycheproof test vectors
+  (verify: 77 valid, 103 invalid across 27 groups; sign-seed: 74 valid across 25 groups;
+  sign-noseed: 61 valid across 21 groups).
 
 ### Changed
 

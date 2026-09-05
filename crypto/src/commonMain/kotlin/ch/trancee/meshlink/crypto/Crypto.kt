@@ -165,4 +165,37 @@ public object Crypto {
    */
   public fun mlkem512Decaps(secretKey: ByteArray, ciphertext: ByteArray): Result<ByteArray> =
       Kem.mlkem512Decaps(secretKey, ciphertext)
+
+  // -- ML-DSA-44 (FIPS 204) -----------------------------------------------
+
+  /**
+   * Generates an ML-DSA-44 keypair from a deterministic 32-byte seed. Delegates to
+   * [Signer.mldsa44KeyPair].
+   */
+  public fun mldsa44KeyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>> =
+      Signer.mldsa44KeyPair(seed)
+
+  /**
+   * Signs [message] with ML-DSA-44 using [secretKey]. Delegates to [Signer.mldsa44Sign].
+   *
+   * @param message the message to sign
+   * @param secretKey the 2560-byte secret key
+   * @param context optional context string (≤ 255 bytes)
+   */
+  public fun mldsa44Sign(
+      message: ByteArray,
+      secretKey: ByteArray,
+      context: ByteArray = byteArrayOf(),
+  ): Result<ByteArray> = Signer.mldsa44Sign(message, secretKey, context)
+
+  /**
+   * Verifies an ML-DSA-44 [signature] for [message] against [publicKey]. Delegates to
+   * [Signer.mldsa44Verify].
+   */
+  public fun mldsa44Verify(
+      message: ByteArray,
+      signature: ByteArray,
+      publicKey: ByteArray,
+      context: ByteArray = byteArrayOf(),
+  ): Result<Boolean> = Signer.mldsa44Verify(message, signature, publicKey, context)
 }
