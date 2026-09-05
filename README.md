@@ -6,7 +6,7 @@ MeshLink-crypto provides pure-Kotlin, constant-time cryptographic primitives for
 
 ## What it is
 
-MeshLink-crypto provides twelve RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
+MeshLink-crypto provides thirteen RFC/FIPS-standard cryptographic primitives as pure-Kotlin, constant-time implementations. Each primitive also has a native fallback path. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is implemented as pure-Kotlin only — native integration is pending.
 
 The library targets **JVM**, **Android (API 21+)**, and **iOS (arm64 + simulator)**. JS and WebAssembly targets are out of scope. Built with Kotlin 2.4.10.
 

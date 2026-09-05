@@ -37,7 +37,7 @@ grep "library" gradle/libs.versions.toml
 To release a new version, update the line:
 
 ```toml
-library = "0.1.0"  # ← change this
+library = "0.1.1"  # ← change this
 ```
 
 Commit with a Conventional Commit:

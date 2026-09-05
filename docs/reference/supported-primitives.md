@@ -4,7 +4,7 @@
 
 ## Overview
 
-The library implements twelve RFC/FIPS-standard cryptographic primitives. Each primitive is available as a pure-Kotlin implementation. Each primitive also has a native fallback path where the host platform provides the same operation. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 is pure-Kotlin only — native integration is pending.
+The library implements thirteen RFC/FIPS-standard cryptographic primitives. Each primitive is available as a pure-Kotlin implementation. Each primitive also has a native fallback path where the host platform provides the same operation. The library selects per-primitive at each call site. Callers never choose a provider. ML-DSA-44 (FIPS 204) is pure-Kotlin only — native integration is pending.
 
 | Primitive | RFC | Pure-K | JVM native | Android native | iOS native |
 |---|---|---|---|---|---|

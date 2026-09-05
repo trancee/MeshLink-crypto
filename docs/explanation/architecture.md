@@ -4,7 +4,7 @@
 
 ## What the library is
 
-The library is a Kotlin Multiplatform (KMP) cryptography library. It provides nine RFC/FIPS-standard primitives as pure-Kotlin, constant-time implementations. It also offers a native fallback path where the host platform already provides the same operation.
+The library implements thirteen RFC/FIPS-standard primitives as pure-Kotlin, constant-time implementations. It also offers a native fallback path where the host platform already provides the same operation.
 
 The library targets JVM, Android (API 21+), and iOS (arm64 + simulator). JS and WebAssembly targets are out of scope. See [CONTEXT.md](../../CONTEXT.md) for the full terminology glossary.
 
