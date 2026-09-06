@@ -13,7 +13,7 @@ Targets: JVM, Android (API 21+), iOS arm64 + simulator. JS/WASM out of scope.
 
 - **Kotlin** 2.4.10 (pinned in `gradle/libs.versions.toml`)
 - **JDK** 21 (`jvmToolchain(21)`)
-- **AGP** 9.3.1 (`com.android.kotlin.multiplatform.library`)
+- **AGP** 9.4.0 (`com.android.kotlin.multiplatform.library`)
 - **Build tool** Gradle 9.7.0 (wrapper)
 - **Format** ktfmt (Google style)
 - **Lint** detekt 2.0.0-alpha.6 (includes custom `ConstantTimeRule`)
@@ -200,8 +200,10 @@ When you add, remove, or change a public method in `crypto/src/commonMain/`:
      across compileSdk 21/28/29/37. Tests run on JVM/JDK 21, not on Android.
 - **Publish workflow**: `.github/workflows/publish.yml` runs on `v*` tags.
   Publishes to Maven Central with GPG signing. Requires secrets:
-  `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY_ID`,
-  `SIGNING_KEY`, `SIGNING_KEY_PASSWORD`.
+  `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY`,
+  `SIGNING_KEY_PASSWORD`.
+  (`SIGNING_KEY_ID` is **not** needed — the signing plugin extracts the key ID
+  from the PGP private key block automatically. See `docs/how-to/prepare-release.md`.)
 - **CI summary**: `scripts/ci-summary.py` generates an inline test/coverage
   summary in the Actions run summary (no artifact download needed).
 

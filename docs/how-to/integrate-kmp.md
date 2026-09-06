@@ -36,7 +36,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("ch.trancee.meshlink:meshlink-crypto:0.1.0-SNAPSHOT")
+                implementation("ch.trancee.meshlink:meshlink-crypto:0.1.1-SNAPSHOT")
             }
         }
     }
