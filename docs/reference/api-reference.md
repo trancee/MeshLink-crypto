@@ -26,9 +26,8 @@ Use the **unified `Crypto` object** for new code. It delegates to the per-primit
 | Key derivation | `Crypto.hkdfSha256()` / `Crypto.extract()` / `Crypto.expand()` or `Kdf` | `Crypto.hkdfSha256(ikm, salt, info, 32)` |
 | Key agreement | `Crypto.x25519()` / `Crypto.deriveX25519PublicKey()` or `KeyExchange` | `Crypto.x25519(scalar, u)`, `Crypto.deriveX25519PublicKey(key)` |
 | Public key derivation | `Crypto.deriveX25519PublicKey()` / `Crypto.ed25519PublicKeyFromPrivate()` | `Crypto.deriveX25519PublicKey(key)`, `Crypto.ed25519PublicKeyFromPrivate(key)` |
-| Signing | `Crypto.ed25519Sign()` / `Crypto.ed25519Verify()` / `Crypto.ed25519PublicKeyFromPrivate()` or `Signer` | `Crypto.ed25519Sign(key, msg)`, `Crypto.ed25519PublicKeyFromPrivate(key)` |
-| Randomness | `Crypto.randomBytes()` | `Crypto.randomBytes(32)` |
-| Authenticated encryption | `Crypto.chacha20Poly1305Encrypt()` / `Crypto.chacha20Poly1305Decrypt()` or `Aead` | `Crypto.chacha20Poly1305Encrypt(key, msg)`|
+| Signing (Ed25519) | `Crypto.ed25519Sign()` / `Crypto.ed25519Verify()` / `Crypto.ed25519PublicKeyFromPrivate()` or `Signer` | `Crypto.ed25519Sign(key, msg)`, `Crypto.ed25519PublicKeyFromPrivate(key)` |
+| Digital signatures (ML-DSA-44) | `Crypto.mldsa44KeyPair()` / `Crypto.mldsa44Sign()` / `Crypto.mldsa44Verify()` or `Signer` / `MLDSA44` | `Crypto.mldsa44Sign(sk, msg)` |
 | Key encapsulation (ML-KEM-512) | `Crypto.mlkem512KeyPair()` / `Crypto.mlkem512Encaps()` / `Crypto.mlkem512Decaps()` or `Kem` | `Crypto.mlkem512Encaps(pk)` |
 
 ## Key handle types
@@ -276,7 +275,54 @@ Verifies an Ed25519 signature.
 | `signature` | The 64-byte signature to verify. |
 | **Returns** | `Result.success(true)` if valid; `Result.success(false)` if invalid. |
 
-> **ML-DSA-44 (FIPS 204)** is implemented as a pure-Kotlin, constant-time engine (`MLDSA44PureK`) and verified against Wycheproof test vectors, but has not yet been wired into the public `Crypto` facade. The implementation supports the FIPS 204 context parameter (`pre = {0, ctxlen, ctx}`), deterministic signing via SHAKE256, and the full NTT-based verification path. Public API exposure and `CryptoProvider` integration are planned.
+### Digital signatures (ML-DSA-44)
+
+```kotlin
+fun mldsa44KeyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>>
+```
+
+Generates an ML-DSA-44 keypair from a 32-byte seed (FIPS 204 §7.1). Delegates to
+`Signer.mldsa44KeyPair` → `MLDSA44.keyPair` → `MLDSA44PureK`.
+
+| Parameter | Description |
+|---|---|
+| `seed` | 32-byte deterministic entropy seed. |
+| **Returns** | `Pair<ByteArray, ByteArray>` of (publicKey 1312 bytes, secretKey 2560 bytes). |
+
+```kotlin
+fun mldsa44Sign(message: ByteArray, secretKey: ByteArray, context: ByteArray = byteArrayOf()): Result<ByteArray>
+```
+
+Signs a message with ML-DSA-44 (FIPS 204 §7.2). Supports the optional FIPS 204 context
+parameter. Delegates to `Signer.mldsa44Sign` → `MLDSA44.sign` → `MLDSA44PureK`.
+
+| Parameter | Description |
+|---|---|
+| `message` | The message to sign. Any length (including empty). |
+| `secretKey` | 2560-byte ML-DSA-44 secret key (from `mldsa44KeyPair`). |
+| `context` | Optional context string (≤ 255 bytes per FIPS 204). Empty by default. |
+| **Returns** | 2420-byte signature on success. |
+
+```kotlin
+fun mldsa44Verify(message: ByteArray, signature: ByteArray, publicKey: ByteArray, context: ByteArray = byteArrayOf()): Result<Boolean>
+```
+
+Verifies an ML-DSA-44 signature (FIPS 204 §7.3). Supports the context parameter, which
+must match the context used during signing. Delegates to `Signer.mldsa44Verify` →
+`MLDSA44.verify` → `MLDSA44PureK`.
+
+| Parameter | Description |
+|---|---|
+| `message` | The message that was signed. |
+| `signature` | 2420-byte ML-DSA-44 signature. |
+| `publicKey` | 1312-byte ML-DSA-44 public key. |
+| `context` | Context string (must match signing context, empty by default). |
+| **Returns** | `Result.success(true)` if valid; `Result.success(false)` if invalid. |
+
+> **ML-DSA-44 (FIPS 204)** is pure-Kotlin only — no native fallback exists on JVM, Android,
+> or iOS (ADR-0001). The implementation supports the FIPS 204 context parameter
+> (`pre = {0, ctxlen, ctx}`), deterministic signing via SHAKE256, and the full NTT-based
+> verification path. Verified against 180 Wycheproof test vectors.
 
 ```kotlin
 fun chacha20Poly1305Encrypt(key: SecretKey, message: ByteArray): Result<ByteArray>

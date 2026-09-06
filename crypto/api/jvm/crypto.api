@@ -27,6 +27,11 @@ public final class ch/trancee/meshlink/crypto/Crypto {
 	public final fun extract-gIAlu-s ([B[B)Ljava/lang/Object;
 	public final fun hkdfSha256-BWLJW6A ([B[B[BI)Ljava/lang/Object;
 	public final fun hmacSha256-gIAlu-s (Lch/trancee/meshlink/crypto/SecretKey;[B)Ljava/lang/Object;
+	public final fun mldsa44KeyPair-IoAF18A ([B)Ljava/lang/Object;
+	public final fun mldsa44Sign-0E7RQCE ([B[B[B)Ljava/lang/Object;
+	public static synthetic fun mldsa44Sign-0E7RQCE$default (Lch/trancee/meshlink/crypto/Crypto;[B[B[BILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mldsa44Verify-BWLJW6A ([B[B[B[B)Ljava/lang/Object;
+	public static synthetic fun mldsa44Verify-BWLJW6A$default (Lch/trancee/meshlink/crypto/Crypto;[B[B[B[BILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mlkem512Decaps-gIAlu-s ([B[B)Ljava/lang/Object;
 	public final fun mlkem512Encaps-IoAF18A ([B)Ljava/lang/Object;
 	public final fun mlkem512KeyPair-IoAF18A ([B)Ljava/lang/Object;
@@ -88,6 +93,18 @@ public final class ch/trancee/meshlink/crypto/KeyExchange {
 	public final fun x25519-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;Lch/trancee/meshlink/crypto/PublicKey;)Ljava/lang/Object;
 }
 
+public final class ch/trancee/meshlink/crypto/MLDSA44 {
+	public static final field INSTANCE Lch/trancee/meshlink/crypto/MLDSA44;
+	public static final field PUBLIC_KEY_BYTES I
+	public static final field SECRET_KEY_BYTES I
+	public static final field SIGNATURE_BYTES I
+	public final fun keyPair-IoAF18A ([B)Ljava/lang/Object;
+	public final fun sign-0E7RQCE ([B[B[B)Ljava/lang/Object;
+	public static synthetic fun sign-0E7RQCE$default (Lch/trancee/meshlink/crypto/MLDSA44;[B[B[BILjava/lang/Object;)Ljava/lang/Object;
+	public final fun verify-BWLJW6A ([B[B[B[B)Ljava/lang/Object;
+	public static synthetic fun verify-BWLJW6A$default (Lch/trancee/meshlink/crypto/MLDSA44;[B[B[B[BILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class ch/trancee/meshlink/crypto/MLKEM512 {
 	public static final field CIPHERTEXT_BYTES I
 	public static final field INSTANCE Lch/trancee/meshlink/crypto/MLKEM512;
@@ -130,6 +147,11 @@ public final class ch/trancee/meshlink/crypto/Signer {
 	public final fun ed25519PublicKeyFromPrivate-IoAF18A (Lch/trancee/meshlink/crypto/PrivateKey;)Ljava/lang/Object;
 	public final fun ed25519Sign-gIAlu-s (Lch/trancee/meshlink/crypto/PrivateKey;[B)Ljava/lang/Object;
 	public final fun ed25519Verify-0E7RQCE (Lch/trancee/meshlink/crypto/PublicKey;[B[B)Ljava/lang/Object;
+	public final fun mldsa44KeyPair-IoAF18A ([B)Ljava/lang/Object;
+	public final fun mldsa44Sign-0E7RQCE ([B[B[B)Ljava/lang/Object;
+	public static synthetic fun mldsa44Sign-0E7RQCE$default (Lch/trancee/meshlink/crypto/Signer;[B[B[BILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mldsa44Verify-BWLJW6A ([B[B[B[B)Ljava/lang/Object;
+	public static synthetic fun mldsa44Verify-BWLJW6A$default (Lch/trancee/meshlink/crypto/Signer;[B[B[B[BILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class ch/trancee/meshlink/crypto/VersionKt {

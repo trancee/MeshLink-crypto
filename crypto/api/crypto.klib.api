@@ -71,6 +71,9 @@ final object ch.trancee.meshlink.crypto/Crypto { // ch.trancee.meshlink.crypto/C
     final fun extract(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.extract|extract(kotlin.ByteArray;kotlin.ByteArray){}[0]
     final fun hkdfSha256(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/Int): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.hkdfSha256|hkdfSha256(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.Int){}[0]
     final fun hmacSha256(ch.trancee.meshlink.crypto/SecretKey, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.hmacSha256|hmacSha256(ch.trancee.meshlink.crypto.SecretKey;kotlin.ByteArray){}[0]
+    final fun mldsa44KeyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Crypto.mldsa44KeyPair|mldsa44KeyPair(kotlin.ByteArray){}[0]
+    final fun mldsa44Sign(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray = ...): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.mldsa44Sign|mldsa44Sign(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun mldsa44Verify(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray = ...): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/Crypto.mldsa44Verify|mldsa44Verify(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
     final fun mlkem512Decaps(kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Crypto.mlkem512Decaps|mlkem512Decaps(kotlin.ByteArray;kotlin.ByteArray){}[0]
     final fun mlkem512Encaps(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Crypto.mlkem512Encaps|mlkem512Encaps(kotlin.ByteArray){}[0]
     final fun mlkem512KeyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Crypto.mlkem512KeyPair|mlkem512KeyPair(kotlin.ByteArray){}[0]
@@ -111,6 +114,19 @@ final object ch.trancee.meshlink.crypto/KeyExchange { // ch.trancee.meshlink.cry
     final fun x25519(ch.trancee.meshlink.crypto/PrivateKey, ch.trancee.meshlink.crypto/PublicKey): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/KeyExchange.x25519|x25519(ch.trancee.meshlink.crypto.PrivateKey;ch.trancee.meshlink.crypto.PublicKey){}[0]
 }
 
+final object ch.trancee.meshlink.crypto/MLDSA44 { // ch.trancee.meshlink.crypto/MLDSA44|null[0]
+    final const val PUBLIC_KEY_BYTES // ch.trancee.meshlink.crypto/MLDSA44.PUBLIC_KEY_BYTES|{}PUBLIC_KEY_BYTES[0]
+        final fun <get-PUBLIC_KEY_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLDSA44.PUBLIC_KEY_BYTES.<get-PUBLIC_KEY_BYTES>|<get-PUBLIC_KEY_BYTES>(){}[0]
+    final const val SECRET_KEY_BYTES // ch.trancee.meshlink.crypto/MLDSA44.SECRET_KEY_BYTES|{}SECRET_KEY_BYTES[0]
+        final fun <get-SECRET_KEY_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLDSA44.SECRET_KEY_BYTES.<get-SECRET_KEY_BYTES>|<get-SECRET_KEY_BYTES>(){}[0]
+    final const val SIGNATURE_BYTES // ch.trancee.meshlink.crypto/MLDSA44.SIGNATURE_BYTES|{}SIGNATURE_BYTES[0]
+        final fun <get-SIGNATURE_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLDSA44.SIGNATURE_BYTES.<get-SIGNATURE_BYTES>|<get-SIGNATURE_BYTES>(){}[0]
+
+    final fun keyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/MLDSA44.keyPair|keyPair(kotlin.ByteArray){}[0]
+    final fun sign(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray = ...): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/MLDSA44.sign|sign(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun verify(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray = ...): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/MLDSA44.verify|verify(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+}
+
 final object ch.trancee.meshlink.crypto/MLKEM512 { // ch.trancee.meshlink.crypto/MLKEM512|null[0]
     final const val CIPHERTEXT_BYTES // ch.trancee.meshlink.crypto/MLKEM512.CIPHERTEXT_BYTES|{}CIPHERTEXT_BYTES[0]
         final fun <get-CIPHERTEXT_BYTES>(): kotlin/Int // ch.trancee.meshlink.crypto/MLKEM512.CIPHERTEXT_BYTES.<get-CIPHERTEXT_BYTES>|<get-CIPHERTEXT_BYTES>(){}[0]
@@ -131,6 +147,9 @@ final object ch.trancee.meshlink.crypto/Signer { // ch.trancee.meshlink.crypto/S
     final fun ed25519PublicKeyFromPrivate(ch.trancee.meshlink.crypto/PrivateKey): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Signer.ed25519PublicKeyFromPrivate|ed25519PublicKeyFromPrivate(ch.trancee.meshlink.crypto.PrivateKey){}[0]
     final fun ed25519Sign(ch.trancee.meshlink.crypto/PrivateKey, kotlin/ByteArray): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Signer.ed25519Sign|ed25519Sign(ch.trancee.meshlink.crypto.PrivateKey;kotlin.ByteArray){}[0]
     final fun ed25519Verify(ch.trancee.meshlink.crypto/PublicKey, kotlin/ByteArray, kotlin/ByteArray): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/Signer.ed25519Verify|ed25519Verify(ch.trancee.meshlink.crypto.PublicKey;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun mldsa44KeyPair(kotlin/ByteArray): kotlin/Result<kotlin/Pair<kotlin/ByteArray, kotlin/ByteArray>> // ch.trancee.meshlink.crypto/Signer.mldsa44KeyPair|mldsa44KeyPair(kotlin.ByteArray){}[0]
+    final fun mldsa44Sign(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray = ...): kotlin/Result<kotlin/ByteArray> // ch.trancee.meshlink.crypto/Signer.mldsa44Sign|mldsa44Sign(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun mldsa44Verify(kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray, kotlin/ByteArray = ...): kotlin/Result<kotlin/Boolean> // ch.trancee.meshlink.crypto/Signer.mldsa44Verify|mldsa44Verify(kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray;kotlin.ByteArray){}[0]
 }
 
 final fun ch.trancee.meshlink.crypto/moduleVersion(): kotlin/String // ch.trancee.meshlink.crypto/moduleVersion|moduleVersion(){}[0]

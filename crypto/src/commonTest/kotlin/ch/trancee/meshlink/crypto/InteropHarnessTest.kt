@@ -133,4 +133,28 @@ class InteropHarnessTest {
         SHAKE128.digest(input, 64),
     )
   }
+
+  @Test
+  fun mldsa44_matchesPureK() {
+    val seed = ByteArray(32) { (it + 1).toByte() }
+    val message = "test message".encodeToByteArray()
+    val context = "ctx".encodeToByteArray()
+
+    // keyPair must agree
+    val (pk, sk) = MLDSA44PureK.keypairFromSeed(seed)
+    val (pk2, sk2) = MLDSA44.keyPair(seed).getOrThrow()
+    assertContentEquals(pk, pk2)
+    assertContentEquals(sk, sk2)
+
+    // sign must agree
+    val sig1 = MLDSA44PureK.sign(message, sk, context)
+    val sig2 = MLDSA44.sign(message, sk, context).getOrThrow()
+    assertContentEquals(sig1, sig2)
+
+    // verify must agree
+    assertEquals(
+        MLDSA44PureK.verify(sig1, message, pk, context),
+        MLDSA44.verify(sig1, message, pk, context).getOrThrow(),
+    )
+  }
 }

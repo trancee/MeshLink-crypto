@@ -182,4 +182,24 @@ internal class PureKFallbackVerificationTest {
         )
     assertContentEquals(expected, SHAKE128PureK.digest("abc".encodeToByteArray(), 64))
   }
+
+  // ------------------------------------------------------------------
+  // ML-DSA-44 (FIPS 204 §7)
+  // ------------------------------------------------------------------
+  @Test
+  fun mldsa44_pureKFallbackSignsAndVerifiesCorrectly() {
+    println("DISPATCH_TEST: ML-DSA-44, path=PureK")
+    val seed = ByteArray(32) { 0x01 }
+    val (pk, sk) = MLDSA44PureK.keypairFromSeed(seed)
+    val message = "Hello, ML-DSA-44!".encodeToByteArray()
+
+    val signature = MLDSA44PureK.sign(message, sk)
+    assertTrue(signature.size == MLDSA_BYTES, "signature should be ${MLDSA_BYTES} bytes")
+
+    assertTrue(MLDSA44PureK.verify(signature, message, pk), "signature should verify")
+
+    // Tampered message must fail
+    val tampered = "Hello, ML-DSA-99!".encodeToByteArray()
+    assertTrue(!MLDSA44PureK.verify(signature, tampered, pk), "tampered message should fail")
+  }
 }

@@ -540,3 +540,78 @@ internal object MLDSA44PureK {
     return false
   }
 }
+
+/**
+ * ML-DSA-44 public façade (FIPS 204 §7, parameter set {K=4, L=4}).
+ *
+ * Wraps [MLDSA44PureK] with `Result<T>` returns and input validation, matching the [MLKEM512]
+ * façade pattern. Pure-Kotlin only — no native fallback exists on JVM, Android, or iOS for
+ * ML-DSA-44 (ADR-0001, ticket 34).
+ *
+ * Public API:
+ * - [keyPair]: generates (pk, sk) from a 32-byte seed
+ * - [sign]: signs a message with an optional context string
+ * - [verify]: verifies a signature against a message and public key
+ */
+public object MLDSA44 {
+
+  /** Size of the ML-DSA-44 public key in bytes: 1312 (ρ=32 + K×320). */
+  public const val PUBLIC_KEY_BYTES: Int = MLDSA_PUBLICKEYBYTES
+
+  /** Size of the ML-DSA-44 secret key in bytes: 2560. */
+  public const val SECRET_KEY_BYTES: Int = MLDSA_SECRETKEYBYTES
+
+  /** Size of the ML-DSA-44 signature in bytes: 2420. */
+  public const val SIGNATURE_BYTES: Int = MLDSA_BYTES
+
+  /**
+   * Generate an ML-DSA-44 keypair from a deterministic 32-byte seed (FIPS 204 §7.1).
+   *
+   * @param seed 32-byte entropy seed
+   * @return a pair of (publicKey, secretKey) byte arrays
+   */
+  public fun keyPair(seed: ByteArray): Result<Pair<ByteArray, ByteArray>> = runCatching {
+    require(seed.size == MLDSA_SEEDBYTES) {
+      "seed must be $MLDSA_SEEDBYTES bytes, got ${seed.size}"
+    }
+    MLDSA44PureK.keypairFromSeed(seed)
+  }
+
+  /**
+   * Signs [message] with ML-DSA-44 using [secretKey], producing a deterministic signature (FIPS 204
+   * §7.2).
+   *
+   * @param message the message to sign
+   * @param secretKey the 2560-byte secret key (from [keyPair] or [keyPair])
+   * @param context optional context string (empty by default; ≤ 255 bytes per FIPS 204)
+   * @return the 2420-byte signature
+   */
+  public fun sign(
+      message: ByteArray,
+      secretKey: ByteArray,
+      context: ByteArray = byteArrayOf(),
+  ): Result<ByteArray> = runCatching {
+    require(secretKey.size == MLDSA_SECRETKEYBYTES) {
+      "secretKey must be $MLDSA_SECRETKEYBYTES bytes, got ${secretKey.size}"
+    }
+    MLDSA44PureK.sign(message, secretKey, context)
+  }
+
+  /**
+   * Verifies an ML-DSA-44 [signature] for [message] against [publicKey] (FIPS 204 §7.3).
+   *
+   * @param signature the 2420-byte signature to verify
+   * @param message the message that was signed
+   * @param publicKey the 1312-byte public key
+   * @param context optional context string (must match what was used during signing)
+   * @return `Result.success(true)` if valid, `Result.success(false)` if invalid
+   */
+  public fun verify(
+      signature: ByteArray,
+      message: ByteArray,
+      publicKey: ByteArray,
+      context: ByteArray = byteArrayOf(),
+  ): Result<Boolean> = runCatching {
+    MLDSA44PureK.verify(signature, message, publicKey, context)
+  }
+}
