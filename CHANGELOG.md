@@ -81,6 +81,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (verify: 77 valid, 103 invalid across 27 groups; sign-seed: 74 valid across 25 groups;
   sign-noseed: 61 valid across 21 groups).
 
+  Internal Falcon-512 arithmetic layer: `FalconFpr.kt` — a pure-Kotlin port of
+  PQClean's `fpr.h`/`fpr.c` IEEE 754 binary64 emulation using integer-only `Long`
+  operations (ADR-0001: no `Double`, no `BigInteger`). Covers mantissa normalization
+  (`fprNorm64`), construction (`FPR`), scaled integer conversion (`fpr_scaled`/
+  `fpr_of`), rounding (`fpr_rint`/`fpr_floor`/`fpr_trunc`), arithmetic
+  (`fpr_add`/`fpr_sub`/`fpr_mul`/`fpr_sqr`/`fpr_div`/`fpr_inv`/`fpr_sqrt`/
+  `fpr_neg`/`fpr_half`/`fpr_double`), comparison (`fpr_lt`), exponential
+  (`fpr_expm_p63`), and shift helpers (`fpr_ulsh`/`fpr_ursh`/`fpr_irsh`). Lookup
+  tables (`fpr_gm_tab`, `fpr_p2_tab`, `fpr_inv_sigma`, `fpr_sigma_min`,
+  `EXP_COEFFS`) ported as signed-`Long` decimal literals. Fixed `fpr_add` sign
+  extraction: the sign bit is now read from the raw 12-bit exponent field before
+  masking to 11 bits (C code: `sx = ex >> 11; ex &= 0x7FF`), preventing
+  same-magnitude opposite-sign additions (e.g. `3 + (-2)`) from producing `5`
+  instead of `1`. 58 unit tests, 100% line + branch coverage.
+
 ### Changed
 
 - Extracted the shared `KeccakEngine.kt` (commonMain) containing `keccakF1600`,
